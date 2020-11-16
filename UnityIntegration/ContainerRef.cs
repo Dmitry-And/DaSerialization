@@ -12,7 +12,7 @@ using UnityEditor;
 #endif
 
 [Serializable]
-public struct ContainerRefWithId
+public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
 {
     public static string TextAssetFieldName = nameof(_textAsset);
 
@@ -36,6 +36,8 @@ public struct ContainerRefWithId
     private IContainer _container;
     public IContainer Container { get { Init(); return _container; } }
     public bool IsValid => Init();
+
+    public bool Equals(ContainerRefWithId other) => other.Id == Id && other._textAsset == _textAsset;
 
     public bool Init()
         => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container);
@@ -81,7 +83,7 @@ public struct ContainerRefWithId
 }
 
 [Serializable]
-public struct ContainerRef
+public struct ContainerRef : IEquatable<ContainerRef>
 {
     public static string TextAssetFieldName = nameof(_textAsset);
 
@@ -109,6 +111,8 @@ public struct ContainerRef
         => new ContainerRef() { _textAsset = textAsset };
     //public static ContainerRef FromResourcesAsset(string path)
     //public static ContainerRef FromPersistentAsset(string path)
+
+    public bool Equals(ContainerRef other) => other._textAsset == _textAsset;
 
     public bool Init()
         => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container);
