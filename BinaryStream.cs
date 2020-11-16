@@ -6,7 +6,9 @@ namespace DaSerialization
 {
     public class BinaryStream : IStream<BinaryStream>
     {
-        public const int MagicNumber = 891957691;
+        // first 4 bytes written to the stream to identify it as a valid BinaryStream
+        public const int MagicNumber = 0x35_2A_31_BB; // 891957691
+        private readonly Encoding DefaultStringEncoding = Encoding.UTF8;
 
         private MemoryStream _stream;
         private BinaryReader _reader;
@@ -58,9 +60,9 @@ namespace DaSerialization
 
         private void CreateReaderAndWriter()
         {
-            _reader = new BinaryReader(_stream, Encoding.UTF8, true);
+            _reader = new BinaryReader(_stream, DefaultStringEncoding, true);
             if (Writable)
-                _writer = new BinaryWriter(_stream, Encoding.UTF8, true);
+                _writer = new BinaryWriter(_stream, DefaultStringEncoding, true);
         }
 
         private void WriteMagicNumber()

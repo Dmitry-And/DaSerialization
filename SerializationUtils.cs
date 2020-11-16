@@ -4,6 +4,8 @@ using DaSerialization;
 public static class SerializationUtils
 {
     private static BinaryContainerStorageOnMemory _copyStorage = new BinaryContainerStorageOnMemory();
+    // use stack because technically serialization code may call DeepCode while corresponding
+    // container is in (de)serializing state and cannot perform root (de)serialization
     private static Stack<BinaryContainer> _copyContainers = new Stack<BinaryContainer>();
 
     public static T DeepCopy<T>(this T obj)
