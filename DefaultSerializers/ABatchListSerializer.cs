@@ -19,7 +19,11 @@ namespace DaSerialization
             if (list == null)
                 list = new List<T>(len > 4 ? len : 4);
             else
-                list.ClearAndEnsureCapacity(len);
+            {
+                list.Clear();
+                if (list.Capacity < len)
+                    list.Capacity = len;
+            }
 
             var reader = stream.GetReader();
             T curr = default;
@@ -84,7 +88,11 @@ namespace DaSerialization
             if (list == null)
                 list = new List<T>(len > 4 ? len : 4);
             else
-                list.ClearAndEnsureCapacity(len);
+            {
+                list.Clear();
+                if (list.Capacity < len)
+                    list.Capacity = len;
+            }
 
             var reader = stream.GetReader();
             T curr = default;

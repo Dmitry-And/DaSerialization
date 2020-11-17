@@ -92,15 +92,15 @@ public static class TypeExtensions
         return o.GetType().PrettyName();
     }
 
+    private static StringBuilder _tempStringBuilder = new StringBuilder(64);
     public static string PrettyName(this Type t)
     {
         if (t == null)
             return "null";
-        using (C.Temporary.BorrowStringBuilder(out var sb))
-        {
-            t.PrettyNameTo(sb);
-            return sb.ToString();
-        }
+        t.PrettyNameTo(_tempStringBuilder);
+        var result = _tempStringBuilder.ToString();
+        _tempStringBuilder.Clear();
+        return result;
     }
 
     public static void PrettyNameTo(this Type t, StringBuilder sb)
@@ -113,10 +113,10 @@ public static class TypeExtensions
             int dimensions = t.GetArrayRank();
             int initialPos = sb.Length;
             t.GetElementType().PrettyNameTo(sb);
-            int genericEndPos = sb.LastIndexOf('>');
+            int genericEndPos = LastIndexOf(sb, '>');
             if (genericEndPos <= initialPos)
                 genericEndPos = initialPos;
-            int insertPos = sb.IndexOf('[', genericEndPos);
+            int insertPos = IndexOf(sb, '[', genericEndPos);
             if (insertPos < 0)
             {
                 sb.Append("[");
@@ -149,5 +149,20 @@ public static class TypeExtensions
             return;
         }
         sb.Append(t.Name);
+    }
+
+    private static int IndexOf(StringBuilder sb, char c, int startIndex = 0)
+    {
+        for (int i = startIndex, max = sb.Length; i < max; i++)
+            if (sb[i] == c)
+                return i;
+        return -1;
+    }
+    private static int LastIndexOf(StringBuilder sb, char c)
+    {
+        for (int i = sb.Length - 1; i >= 0; i--)
+            if (sb[i] == c)
+                return i;
+        return -1;
     }
 }

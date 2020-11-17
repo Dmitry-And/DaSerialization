@@ -14,7 +14,8 @@ namespace DaSerialization
                 arr = null;
                 return;
             }
-            ArrayUtils.EnsureSizeOf(ref arr, length);
+            if (arr == null || arr.Length != length)
+                arr = new T[length];
             for (int i = 0; i < length; i++)
                 ReadElement(ref arr[i], reader, container);
         }
@@ -49,7 +50,8 @@ namespace DaSerialization
                 arr = null;
                 return;
             }
-            ArrayUtils.EnsureSizeOf(ref arr, length);
+            if (arr == null || arr.Length != length)
+                arr = new T[length];
             for (int i = 0; i < length; i++)
                 ReadElement(ref arr[i], reader, container);
         }

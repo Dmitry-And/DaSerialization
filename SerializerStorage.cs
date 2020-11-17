@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Reflection;
+using DaSerialization.Internal;
 
 namespace DaSerialization
 {
@@ -46,7 +47,7 @@ namespace DaSerialization
         };
 
         public override string ToString()
-            => $"{Type.PrettyName()} (id={Id.ToStringFast()})";
+            => $"{Type.PrettyName()} (id={Id})";
     }
 
     public class SerializerStorage<TStream> where TStream : class, IStream<TStream>, new()
@@ -115,7 +116,6 @@ namespace DaSerialization
                     if (!TypeIsValidSerializer(t))
                         continue;
                     ISerializer s = Activator.CreateInstance(t) as ISerializer;
-                    C.DebugAssert(s != null);
                     serializers.Add(s);
                 }
 
@@ -124,7 +124,6 @@ namespace DaSerialization
                     if (!TypeIsValidSerializer(t))
                         continue;
                     IDeserializer d = Activator.CreateInstance(t) as IDeserializer;
-                    C.DebugAssert(d != null);
                     deserializers.Add(d);
                 }
             }
@@ -134,7 +133,7 @@ namespace DaSerialization
         {
             if (t.IsValueType)
             {
-                C.LogError($"(De)serializer {t.PrettyName()} is a value type, which is not allowed");
+                SerializationLogger.LogError($"(De)serializer {t.PrettyName()} is a value type, which is not allowed");
                 return false;
             }
             var constructor = t.GetConstructor(
@@ -142,7 +141,7 @@ namespace DaSerialization
                 null, Type.EmptyTypes, null);
             if (constructor == null)
             {
-                C.LogError($"(De)serializer {t.PrettyName()} doesn't have a parameterless constructor");
+                SerializationLogger.LogError($"(De)serializer {t.PrettyName()} doesn't have a parameterless constructor");
                 return false;
             }
             return true;
@@ -311,8 +310,8 @@ namespace DaSerialization
                 _typeInfos[index] = tInfo;
             }
 
-            var report = $"{this.PrettyTypeName()} initialized with {_serializerInfos.Count.ToStringFast()} serializers, {_deserializerInfos.Count.ToStringFast()} deserializers and {_typeInfos.Count.ToStringFast()} types";
-            C.Log(report);
+            var report = $"{this.PrettyTypeName()} initialized with {_serializerInfos.Count} serializers, {_deserializerInfos.Count} deserializers and {_typeInfos.Count} types";
+            SerializationLogger.Log(report);
 
             // to reduce conditions in some inner loops in search of required (de)serializers
             _serializerInfos.Add(new SerializerInfo() { TypeId = -1 });

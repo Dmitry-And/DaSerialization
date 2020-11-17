@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Runtime.CompilerServices;
+using DaSerialization.Internal;
 
 namespace DaSerialization
 {
@@ -330,7 +331,7 @@ namespace DaSerialization
             {
                 var parentTypeInfo = SerializerStorage.GetTypeInfo(_parentSerializingType);
                 var serializer = SerializerStorage.GetSerializer(parentTypeInfo);
-                C.LogWarning($"Serializing nested {typeInfo.Type.PrettyName()} within {_parentSerializingType.PrettyName()} type by serializer {serializer.PrettyTypeName()} which doesn't implement {nameof(ISerializerWritesContainer)} interfase.\nThis may lead to incorrect {nameof(UpdateSerializers)} effects of not updating serializers within nested containers");
+                SerializationLogger.LogWarning($"Serializing nested {typeInfo.Type.PrettyName()} within {_parentSerializingType.PrettyName()} type by serializer {serializer.PrettyTypeName()} which doesn't implement {nameof(ISerializerWritesContainer)} interfase.\nThis may lead to incorrect {nameof(UpdateSerializers)} effects of not updating serializers within nested containers");
             }
             oldValue = _allowContainerSerialization;
             _allowContainerSerialization = typeInfo.LatestSerializerWritesContainer;
@@ -563,7 +564,8 @@ namespace DaSerialization
                 arr = null;
                 return;
             }
-            ArrayUtils.EnsureSizeOf(ref arr, len);
+            if (arr == null || arr.Length != len)
+                arr = new T[len];
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
@@ -938,7 +940,6 @@ namespace DaSerialization
 
         private long SetStreamPositionAndGetEndPosition(int entryIndex)
         {
-            C.DebugAssert(entryIndex >= 0);
             var entry = _contentTable[entryIndex];
             long position = entry.Position;
             _stream.Seek(position);

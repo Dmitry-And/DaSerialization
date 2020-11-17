@@ -133,7 +133,7 @@ public class ContainerInAssetWindow : EditorWindow
     }
     public TextAsset Target;
     [NonSerialized] private ContainerInfo _info;
-    [NonSerialized] private Cached<TextAsset> __target = new Cached<TextAsset>();
+    [NonSerialized] private TextAsset _target;
     private Vector2 _scrollPos;
 
     [MenuItem("Window/Container Viewer")]
@@ -147,8 +147,12 @@ public class ContainerInAssetWindow : EditorWindow
     void OnGUI()
     {
         Target = (TextAsset)EditorGUILayout.ObjectField("Target", Target, typeof(TextAsset), false);
-        if (__target.Update(Target))
+        if (_target != Target)
+        {
+            // only if target changed
+            _target = Target;
             _info = GetContainerInfo(Target);
+        }
         _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
         if (Target != null & _info == null)
             EditorGUILayout.HelpBox("This is not a container", MessageType.Error);

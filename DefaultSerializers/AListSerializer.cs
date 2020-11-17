@@ -16,8 +16,8 @@ namespace DaSerialization
             }
             if (list == null)
                 list = new List<T>(len > 4 ? len : 4);
-            else
-                list.EnsureCapacity(len);
+            else if (list.Capacity < len)
+                list.Capacity = len;
             var reader = stream.GetReader();
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
@@ -68,8 +68,8 @@ namespace DaSerialization
             }
             if (list == null)
                 list = new List<T>(len > 4 ? len : 4);
-            else
-                list.EnsureCapacity(len);
+            else if (list.Capacity < len)
+                list.Capacity = len;
             var reader = stream.GetReader();
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {

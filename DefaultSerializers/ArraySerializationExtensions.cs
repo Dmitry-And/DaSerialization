@@ -61,7 +61,8 @@ namespace DaSerialization
                 arrayLength = array.Length;
             arrayLength = arrayLength < count ? count : arrayLength;
 
-            ArrayUtils.EnsureSizeOf(ref array, arrayLength);
+            if (array == null || array.Length != arrayLength)
+                array = new T[arrayLength];
             return count;
         }
 

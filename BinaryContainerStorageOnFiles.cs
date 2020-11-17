@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using DaSerialization.Internal;
 
 namespace DaSerialization
 {
@@ -28,7 +29,7 @@ namespace DaSerialization
             if (!File.Exists(filePath))
             {
                 if (errorIfNotExist)
-                    C.LogError($"File '{filePath}' does not exist");
+                    SerializationLogger.LogError($"File '{filePath}' does not exist");
                 return null;
             }
             var data = File.ReadAllBytes(filePath);
@@ -80,13 +81,13 @@ namespace DaSerialization
                 Directory.CreateDirectory(directory);
             if (!Directory.Exists(directory))
             {
-                C.LogError($"Unable to create directory '{directory}'");
+                SerializationLogger.LogError($"Unable to create directory '{directory}'");
                 return false;
             }
             File.WriteAllText(filePath, "");
             if (!File.Exists(filePath))
             {
-                C.LogError($"Unable to create file '{filePath}'");
+                SerializationLogger.LogError($"Unable to create file '{filePath}'");
                 return false;
             }
             return true;

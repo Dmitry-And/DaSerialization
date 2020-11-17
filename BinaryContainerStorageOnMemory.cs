@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.IO;
+using DaSerialization.Internal;
 
 namespace DaSerialization
 {
@@ -31,7 +32,7 @@ namespace DaSerialization
                 container = new BinaryContainer(binStream, _serializers);
             }
             else if (errorIfNotExist)
-                C.LogError($"Container '{name}' does not exist in {this.PrettyTypeName()}");
+                SerializationLogger.LogError($"Container '{name}' does not exist in {this.PrettyTypeName()}");
             return container;
         }
 
