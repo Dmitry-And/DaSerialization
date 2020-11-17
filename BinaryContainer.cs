@@ -107,7 +107,7 @@ namespace DaSerialization.Serialization
             var memStream = c?.GetUnderlyingStream() as MemoryStream;
             if (memStream == null || !memStream.CanWrite)
                 memStream = new MemoryStream(len);
-            var copiedLen = stream.GetUnderlyingStream().CopyToPartial(memStream, len);
+            var copiedLen = stream.GetUnderlyingStream().CopyPartiallyTo(memStream, len);
             if (copiedLen != len)
                 throw new Exception($"Failed to read {c.PrettyTypeName()}: {copiedLen} bytes read instead of {len} expected");
             var binStream = new BinaryStream(memStream, writable);
