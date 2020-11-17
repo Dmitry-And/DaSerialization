@@ -1,5 +1,6 @@
 /UnityIntegration/Serializers/*.meta
 /DefaultSerializers/*.meta
+/Helpers/*.meta
 /*.meta
 # Mac OS
 *.DS_Store
