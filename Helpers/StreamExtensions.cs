@@ -1,6 +1,6 @@
 ﻿using System.IO;
 
-namespace DaSerialization
+namespace DaSerialization.Internal
 {
     public static class StreamExtensions
     {
