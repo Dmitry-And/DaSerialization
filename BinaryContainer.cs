@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.IO;
 using System;
+using DaSerialization.Internal;
 
 namespace DaSerialization
 {
