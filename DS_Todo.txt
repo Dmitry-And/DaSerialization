@@ -3,6 +3,8 @@
 	PLAN
 ===================================================================================
 
++	Edtr 	fix table column headers offset
++	Edtr 	show human-friendly object size labels
 	Edtr	fix SerializeList/Array entries in editor window
 				show correct entry ref types
 				show the list/array entries in gray

@@ -73,31 +73,33 @@ namespace DaSerialization.Editor
             var pos = GetNextLineRect();
             EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
             GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceLeft(80f), info.Size + " bytes", Normal);
+            EditorGUI.LabelField(pos.SliceLeft(80f), Size(info.Size), Normal);
             GUI.contentColor = Color.grey;
-            EditorGUI.LabelField(pos, info.TableSize + " tbl", Normal);
+            EditorGUI.LabelField(pos, Size(info.TableSize) + " tbl", Normal);
 
-            pos = GetNextLineRect();
-            GUI.contentColor = Color.gray;
-            EditorGUI.LabelField(pos.SliceLeft(IdWidth), "Id", NormalRight);
-            EditorGUI.LabelField(pos.SliceRight(SizeWidth), TotalHeader, NormalRight);
-            EditorGUI.LabelField(pos.SliceRight(SizeWidth), SelfHeader, NormalRight);
-            pos.SliceLeft(16f);
-            EditorGUI.LabelField(pos, "Ref Type : Object Type", Normal);
-            GUI.contentColor = Color.white;
+            var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-
             foreach (var e in info.RootObjects)
             {
                 pos = GetNextLineRect();
                 DrawEntry(pos, e);
             }
-
+            float inScrollWidth = GetNextLineRect().width;
             EditorGUILayout.EndScrollView();
+
+            // we render column header section after the table because we want to know its layout
+            // particularly the width of the view area as the vertical scroll bar may or may not be visible
+            GUI.contentColor = Color.gray;
+            colHeaderRect = colHeaderRect.SliceLeft(inScrollWidth, false);
+            EditorGUI.LabelField(colHeaderRect.SliceLeft(IdWidth), "Id", NormalRight);
+            EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), TotalHeader, NormalRight);
+            EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), SelfHeader, NormalRight);
+            colHeaderRect.SliceLeft(16f);
+            EditorGUI.LabelField(colHeaderRect, "Ref Type : Object Type", Normal);
         }
 
-        private const float SizeWidth = 52f;
+        private const float SizeWidth = 46f;
         private const float IdWidth = 50f;
         private static GUIStyle Bold;
         private static GUIStyle Normal;
@@ -107,6 +109,7 @@ namespace DaSerialization.Editor
         private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
+
         private Rect GetNextLineRect()
         {
             var lineHeight = EditorGuiUtils.GetLinesHeight(1);
@@ -126,24 +129,24 @@ namespace DaSerialization.Editor
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
         {
-            pos.SliceLeft(indent);
-
             // id
             var idRect = pos.SliceLeft(IdWidth);
             if (e.Id != -1)
             {
                 bool isRoot = indent == 0f;
-                GUI.contentColor = isRoot ? Color.red : Color.grey;
+                GUI.contentColor = isRoot ? Color.red : new Color(0.5f, 0.5f, 0.5f, 0.33f);
                 EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
             }
 
+            pos.SliceLeft(indent);
+
             // size
             GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceRight(SizeWidth), e.TotalSize.ToString(), BoldRight);
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.TotalSize), BoldRight);
             if (e.SelfSize > 0)
             {
                 GUI.contentColor = Color.gray;
-                EditorGUI.LabelField(pos.SliceRight(SizeWidth), e.SelfSize.ToString(), NormalRight);
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.SelfSize), NormalRight);
             }
 
             // expanded
@@ -171,9 +174,35 @@ namespace DaSerialization.Editor
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))
                 foreach (var inner in e.InnerObjects)
-                    DrawEntry(GetNextLineRect(), inner, indent + 16f);
+                    DrawEntry(GetNextLineRect(), inner, indent + 12f);
 
             return result;
+        }
+
+        private static string Size(long size)
+        {
+            if (size < 1024)
+                return size.ToStringFast();
+            float kSize = size / 1024f;
+            if (kSize < 10f)
+                return kSize.ToStringFast(2, false) + "k";
+            if (kSize < 100f)
+                return kSize.ToStringFast(1, false) + "k";
+            if (kSize < 1024f)
+                return kSize.ToStringFast(0) + "k";
+            float mSize = kSize / 1024f;
+            if (mSize < 10f)
+                return mSize.ToStringFast(2, false) + "m";
+            if (mSize < 100f)
+                return mSize.ToStringFast(1, false) + "m";
+            if (mSize < 1024f)
+                return mSize.ToStringFast(0) + "m";
+            float gSize = mSize / 1024f;
+            if (gSize < 10f)
+                return gSize.ToStringFast(2, false) + "g";
+            if (gSize < 100f)
+                return gSize.ToStringFast(1, false) + "g";
+            return gSize.ToStringFast(0) + "g";
         }
     }
 }
