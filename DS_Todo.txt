@@ -1,0 +1,50 @@
+
+===================================================================================
+	PLAN
+===================================================================================
+
+	Edtr	fix SerializeList/Array entries in editor window
+				show correct entry ref types
+				show the list/array entries in gray
+	Edtr	add Json view of the objects in popup window
+	Edtr 	check and fix correctness of total/self sizes in tables
+	Edtr 	update ContainerRef(WithId) property renderers
+				add popup window with container content
+	Hlpr 	get rid of external dependencies after refactoring
+	Othr	add readme
+				motivation
+				concepts
+				API
+				Unity integration
+	Othr	add licence
+
+
+===================================================================================
+	BACKLOG
+===================================================================================
+
+	Edtr 	add 'remove entry from container' button
+	Edtr 	add 'collapse similar inner entries' display option
+	Srlz 	add serializers for common Unity types
+				Mesh
+				Material
+				Renderer
+	Core 	use C#5 Dictionary class to improve performance
+	Core 	avoid allocations/copies in Container.CleanUp
+
+
+===================================================================================
+	DONE/RELEASES
+===================================================================================
+
+
+
+
+
+
+
+
+
+
+
+
