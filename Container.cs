@@ -460,6 +460,7 @@ namespace DaSerialization
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
+                OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, _stream, this);
                 OnDeserializeEnd();
@@ -468,6 +469,7 @@ namespace DaSerialization
             for (int i = list.Count; i < len; i++)
             {
                 T v = default;
+                OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, _stream, this);
                 OnDeserializeEnd();
@@ -623,6 +625,7 @@ namespace DaSerialization
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
+                OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, _stream, this);
                 OnDeserializeEnd();
