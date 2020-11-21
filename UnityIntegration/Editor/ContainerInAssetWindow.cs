@@ -82,7 +82,7 @@ namespace DaSerialization.Editor
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             foreach (var e in info.RootObjects)
             {
-                pos = GetNextLineRect();
+                pos = GetNextLineRect(true);
                 DrawEntry(pos, e);
             }
             float inScrollWidth = GetNextLineRect().width;
@@ -110,12 +110,16 @@ namespace DaSerialization.Editor
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
 
-        private Rect GetNextLineRect()
+        private bool _nextLineIsEven;
+        private Rect GetNextLineRect(bool evenLineHighlighted = false)
         {
             var lineHeight = EditorGuiUtils.GetLinesHeight(1);
             var rect = GUILayoutUtility.GetRect(100f, 2000f, lineHeight, lineHeight);
             rect.SliceLeft(2f);
             rect.SliceRight(2f);
+            _nextLineIsEven = !_nextLineIsEven;
+            if (_nextLineIsEven & evenLineHighlighted)
+                EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 0.13f));
             return rect;
         }
 
@@ -174,7 +178,7 @@ namespace DaSerialization.Editor
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))
                 foreach (var inner in e.InnerObjects)
-                    DrawEntry(GetNextLineRect(), inner, indent + 12f);
+                    DrawEntry(GetNextLineRect(true), inner, indent + 12f);
 
             return result;
         }

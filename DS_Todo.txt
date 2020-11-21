@@ -8,6 +8,7 @@
 +	Edtr	fix SerializeList/Array entries in editor window
 +				show correct entry ref types
 +				show the list/array entries in normal font
++	Edtr 	add even/odd line background
 	Edtr 	check and fix correctness of total/self sizes in tables
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
