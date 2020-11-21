@@ -169,7 +169,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = e.IsSupported
                 ? e.IsNull ? Color.grey : Color.black
                 : Color.red;
-            EditorGUI.LabelField(pos, e.Name, Bold);
+            EditorGUI.LabelField(pos, e.Name, e.IsRealObject ? Bold : Normal);
 
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))

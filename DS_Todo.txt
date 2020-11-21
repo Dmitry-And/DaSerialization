@@ -5,10 +5,12 @@
 
 +	Edtr 	fix table column headers offset
 +	Edtr 	show human-friendly object size labels
-	Edtr	fix SerializeList/Array entries in editor window
++	Edtr	fix SerializeList/Array entries in editor window
 +				show correct entry ref types
-				show the list/array entries in gray
++				show the list/array entries in normal font
 	Edtr 	check and fix correctness of total/self sizes in tables
+	Edtr 	show is/has old version markers
+				expand all 'has' sub-objects on click
 	Edtr	add Json view of the objects in popup window
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content

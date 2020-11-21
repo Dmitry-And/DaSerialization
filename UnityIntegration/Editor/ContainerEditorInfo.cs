@@ -46,11 +46,13 @@ namespace DaSerialization.Editor
         }
         public class InnerObjectInfo
         {
-            public int Id; // for inner object it's an index inside the parent one
+            public bool IsSupported => SelfSize >= 0;
             public bool IsExpandable => InnerObjects != null;
             public bool OldVersion => LatestVersion > Version;
             public bool IsNull => TypeInfo.Type == null;
-            public bool IsSupported => SelfSize >= 0;
+            public bool IsRealObject => TypeInfo.IsValid;
+
+            public int Id; // for inner object it's an index inside the parent one
             public bool HasOldVersions;
             public Type RefType;
             public SerializationTypeInfo TypeInfo;
