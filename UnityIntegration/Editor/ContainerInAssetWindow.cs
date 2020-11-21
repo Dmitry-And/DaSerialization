@@ -94,8 +94,11 @@ namespace DaSerialization.Editor
             colHeaderRect = colHeaderRect.SliceLeft(inScrollWidth, false);
             EditorGUI.LabelField(colHeaderRect.SliceLeft(IdWidth), "Id", NormalRight);
             EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), TotalHeader, NormalRight);
-            EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), SelfHeader, NormalRight);
+            GUI.contentColor = _renderSelfSize ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfHeader, NormalRight))
+                _renderSelfSize = !_renderSelfSize;
             colHeaderRect.SliceLeft(16f);
+            GUI.contentColor = Color.gray;
             EditorGUI.LabelField(colHeaderRect, "Ref Type : Object Type", Normal);
         }
 
@@ -130,28 +133,24 @@ namespace DaSerialization.Editor
                 EditorGUI.HelpBox(nameRect.SliceRightRelative(0.7f), e.Error, MessageType.Error);
         }
 
+        private bool _renderSelfSize = true;
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
         {
+            bool isRoot = indent == 0f;
+
+            if (isRoot)
+                EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
+
             // id
             var idRect = pos.SliceLeft(IdWidth);
             if (e.Id != -1)
             {
-                bool isRoot = indent == 0f;
-                GUI.contentColor = isRoot ? Color.red : new Color(0.5f, 0.5f, 0.5f, 0.33f);
+                GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
                 EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
             }
-
+            
             pos.SliceLeft(indent);
-
-            // size
-            GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.TotalSize), BoldRight);
-            if (e.SelfSize > 0)
-            {
-                GUI.contentColor = Color.gray;
-                EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.SelfSize), NormalRight);
-            }
 
             // expanded
             var expandRect = pos.SliceLeft(16f);
@@ -166,6 +165,15 @@ namespace DaSerialization.Editor
                     else
                         _expandedObjects.Add(e);
                 }
+            }
+
+            // size
+            GUI.contentColor = Color.white;
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.TotalSize), BoldRight);
+            if (_renderSelfSize & e.SelfSize > 0)
+            {
+                GUI.contentColor = Color.gray;
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.SelfSize), NormalRight);
             }
 
             // name
