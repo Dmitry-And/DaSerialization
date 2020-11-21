@@ -33,7 +33,7 @@ namespace DaSerialization
         public bool Fits(int objectId, int typeId, int version) { return TypeId == typeId & ObjectId == objectId & LocalVersion == version; }
     }
 
-    public abstract class AContainer<TStream> : IContainer
+    public abstract class AContainer<TStream> : IContainer, IContainerInternals
         where TStream : class, IStream<TStream>, new()
     {
         public bool Writable { get => _stream.Writable; }
@@ -156,6 +156,33 @@ namespace DaSerialization
                 obj = default;
             var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
             DeserializeStatic(ref obj, readTypeInfo);
+        }
+        void IContainerInternals.Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion)
+        {
+            _stream.Seek(streamPos);
+            OnDeserializeMetaBegin(typeInfo.Type);
+            CheckStreamReady();
+            IDeserializer<TStream> deserializerTypeless = null;
+            if (typeInfo.Id != -1
+                & deserializerVersion != 0)
+            {
+                deserializerTypeless = SerializerStorage.GetDeserializer(typeInfo, deserializerVersion);
+                if (deserializerTypeless == null)
+                    throw new Exception($"Unable to find deserializer for type {typeInfo}, stream '{typeof(TStream).PrettyName()}', version {deserializerVersion}");
+            }
+            if (deserializerTypeless == null)
+            {
+                obj = default;
+                OnDeserializeDataBegin();
+                OnDeserializeEnd();
+                return;
+            }
+            LockDeserialization();
+            OnDeserializeDataBegin(typeInfo, deserializerTypeless);
+            deserializerTypeless.ReadDataToTypelessObject(ref obj, _stream, this);
+            OnDeserializeEnd();
+            UnlockDeserialization();
+            ClearStreamPosition();
         }
 
         private IDeserializer<T, TStream> ReadDeserializer<T>(SerializationTypeInfo typeInfo)
@@ -1095,5 +1122,10 @@ namespace DaSerialization
         }
 
         #endregion
+    }
+
+    public interface IContainerInternals
+    {
+        void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion);
     }
 }

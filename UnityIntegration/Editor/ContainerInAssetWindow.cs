@@ -34,6 +34,7 @@ namespace DaSerialization.Editor
         void OnGUI()
         {
             Init();
+            _nextLineIsEven = false;
             EditorGUILayout.BeginHorizontal();
             Target = (TextAsset)EditorGUILayout.ObjectField("Target", Target, typeof(TextAsset), false);
             if (GUILayout.Button("Refresh", GUILayout.Width(60f)))
@@ -80,6 +81,7 @@ namespace DaSerialization.Editor
             var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+            _parentEntry.Clear();
             foreach (var e in info.RootObjects)
             {
                 pos = GetNextLineRect(true);
@@ -93,6 +95,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.gray;
             colHeaderRect = colHeaderRect.SliceLeft(inScrollWidth, false);
             EditorGUI.LabelField(colHeaderRect.SliceLeft(IdWidth), "Id", NormalRight);
+            EditorGUI.LabelField(colHeaderRect.SliceRight(18f), JsonLabel, NormalRight);
             EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), TotalHeader, NormalRight);
             GUI.contentColor = _renderSelfSize ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfHeader, NormalRight))
@@ -112,6 +115,7 @@ namespace DaSerialization.Editor
         private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
+        private static GUIContent JsonLabel = new GUIContent("J", "Show JSON representation of the object...");
 
         private bool _nextLineIsEven;
         private Rect GetNextLineRect(bool evenLineHighlighted = false)
@@ -133,11 +137,12 @@ namespace DaSerialization.Editor
                 EditorGUI.HelpBox(nameRect.SliceRightRelative(0.7f), e.Error, MessageType.Error);
         }
 
+        private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntry = new Stack<ContainerEditorInfo.InnerObjectInfo>();
         private bool _renderSelfSize = true;
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
         {
-            bool isRoot = indent == 0f;
+            bool isRoot = _parentEntry.Count == 0;
 
             if (isRoot)
                 EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
@@ -150,7 +155,9 @@ namespace DaSerialization.Editor
                 EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
             }
             
-            pos.SliceLeft(indent);
+            var collapseRect = pos.SliceLeft(indent);
+            if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
+                ToggleExpand(_parentEntry.Peek());
 
             // expanded
             var expandRect = pos.SliceLeft(16f);
@@ -159,12 +166,21 @@ namespace DaSerialization.Editor
                 GUI.contentColor = Color.gray;
                 bool expanded = _expandedObjects.Contains(e);
                 if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
+                    ToggleExpand(e);
+            }
+
+            // json
+            var jsonRect = pos.SliceRight(18f);
+            if (e.IsRealObject & !e.IsNull & e.IsSupported)
+            {
+                GUI.backgroundColor = e.JsonHasErrors ? new Color(0.9f, 0.7f, 0.7f, 0.6f)
+                    : e.JsonData == null ? Color.clear : new Color(0.7f, 0.9f, 0.7f, 0.6f);
+                if (GUI.Button(jsonRect, "J"))
                 {
-                    if (expanded)
-                        _expandedObjects.Remove(e);
-                    else
-                        _expandedObjects.Add(e);
+                    _info.UpdateJsonData(e);
+                    PopupWindow.Show(jsonRect, new JsonPopupWindow(e));
                 }
+                GUI.backgroundColor = Color.white;
             }
 
             // size
@@ -181,18 +197,32 @@ namespace DaSerialization.Editor
             GUI.contentColor = e.IsSupported
                 ? e.IsNull ? Color.grey : Color.black
                 : Color.red;
-            EditorGUI.LabelField(pos, e.Name, e.IsRealObject ? Bold : Normal);
+            if (GUI.Button(pos, e.Caption, e.IsRealObject ? Bold : Normal)
+                & e.IsExpandable)
+                ToggleExpand(e);
 
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))
+            {
+                _parentEntry.Push(e);
                 foreach (var inner in e.InnerObjects)
                     DrawEntry(GetNextLineRect(true), inner, indent + 12f);
+                _parentEntry.Pop();
+            }
 
             return result;
+        }
+        private void ToggleExpand(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            if (_expandedObjects.Contains(e))
+                _expandedObjects.Remove(e);
+            else
+                _expandedObjects.Add(e);
         }
 
         private static string Size(long size)
         {
+            return size.ToStringFast();
             if (size < 1024)
                 return size.ToStringFast();
             float kSize = size / 1024f;
@@ -216,6 +246,68 @@ namespace DaSerialization.Editor
                 return gSize.ToStringFast(1, false) + "g";
             return gSize.ToStringFast(0) + "g";
         }
+    }
+
+    public class JsonPopupWindow : PopupWindowContent
+    {
+        private static GUIStyle TextStyle;
+        private readonly ContainerEditorInfo.InnerObjectInfo _objectInfo;
+
+        public JsonPopupWindow(ContainerEditorInfo.InnerObjectInfo objInfo)
+        {
+            _objectInfo = objInfo;
+            if (TextStyle == null)
+            {
+                TextStyle = new GUIStyle(EditorStyles.textArea);
+                TextStyle.wordWrap = true;
+            }
+        }
+
+        private float _width = -1f;
+        private Vector2 _windowSize;
+        public override Vector2 GetWindowSize()
+        {
+            const float MaxWidth = 260f;
+            const float MaxHeight = 400f;
+
+            if (_width > 0f)
+                return _windowSize;
+
+            var size = TextStyle.CalcSize(new GUIContent(_objectInfo.JsonData));
+            _width = size.x < MaxWidth ? size.x : MaxWidth;
+            float height = size.y + 6f;
+            EditorGuiUtils.AddLineHeight(ref height);
+            if (_objectInfo.JsonHasErrors)
+            {
+                EditorGuiUtils.AddLineHeight(ref height);
+                EditorGuiUtils.AddLineHeight(ref height);
+                _width = MaxWidth;
+                while (size.x > _width)
+                {
+                    EditorGuiUtils.AddLineHeight(ref height);
+                    size.x -= _width - 30f;
+                }
+            }
+            if (height > MaxHeight)
+                height = MaxHeight;
+            if (height < 120f)
+                height = 120f;
+            _windowSize = new Vector2(_width + 20f, height);
+            return _windowSize;
+        }
+
+        private Vector2 _scrollPos;
+        public override void OnGUI(Rect rect)
+        {
+            EditorGUILayout.LabelField(_objectInfo.Caption);
+            if (_objectInfo.JsonHasErrors)
+                EditorGUILayout.HelpBox("There were errors during JSON serialization. They are displayed at the end", MessageType.Warning);
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+            EditorGUILayout.TextArea(_objectInfo.JsonData, TextStyle, GUILayout.Width(_width));
+            EditorGUILayout.EndScrollView();
+        }
+        public override void OnOpen() { }
+        public override void OnClose() { }
     }
 }
 

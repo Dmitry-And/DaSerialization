@@ -2,6 +2,8 @@
 
 using System;
 using System.Collections.Generic;
+using System.Text;
+using Newtonsoft.Json;
 using UnityEngine;
 
 namespace DaSerialization.Editor
@@ -54,6 +56,7 @@ namespace DaSerialization.Editor
 
             public int Id; // for inner object it's an index inside the parent one
             public bool HasOldVersions;
+            public bool JsonHasErrors;
             public Type RefType;
             public SerializationTypeInfo TypeInfo;
             public int Version; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>
@@ -63,7 +66,7 @@ namespace DaSerialization.Editor
             public int DataSize;
             public int TotalSize => MetaSize + DataSize;
             public int SelfSize; // DataSize excluding all inner objects' total size
-            public string Name;
+            public string Caption;
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
@@ -74,7 +77,7 @@ namespace DaSerialization.Editor
                 MetaSize = 0;
                 DataSize = totalSize;
                 SelfSize = -1;
-                Name = refType != null
+                Caption = refType != null
                     ? $"{RefType.PrettyName()} : [Error]"
                     : "[Error]";
                 HasOldVersions = false;
@@ -87,7 +90,7 @@ namespace DaSerialization.Editor
                 LatestVersion = latestVersion;
                 StreamPosition = streamPos;
                 MetaSize = metaSize;
-                Name = RefType == TypeInfo.Type
+                Caption = RefType == TypeInfo.Type
                     ? RefType.PrettyName()
                     : $"{RefType.PrettyName()} : {TypeInfo.Type.PrettyName()}";
             }
@@ -149,6 +152,58 @@ namespace DaSerialization.Editor
             _container.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
             _container.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
+        }
+
+        private static JsonSerializerSettings _jsonSettings;
+        private static List<string> _jsonErrors = new List<string>();
+        public void UpdateJsonData(InnerObjectInfo info)
+        {
+            if (_jsonSettings == null)
+            {
+                _jsonSettings = new JsonSerializerSettings()
+                {
+                    Culture = System.Globalization.CultureInfo.InvariantCulture,
+                    Formatting = Formatting.Indented,
+                    DefaultValueHandling = DefaultValueHandling.Include,
+                    NullValueHandling = NullValueHandling.Include,
+                    MissingMemberHandling = MissingMemberHandling.Ignore,
+                    ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                    Error = delegate (object sender, Newtonsoft.Json.Serialization.ErrorEventArgs args)
+                    {
+                        if (args.ErrorContext.Error is JsonSerializationException)
+                        {
+                            _jsonErrors.Add(args.ErrorContext.Error.Message);
+                            args.ErrorContext.Handled = true;
+                        }
+                    },
+                };
+            }
+            if (info.JsonData == null & !info.JsonHasErrors)
+            {
+                try
+                {
+                    object obj = null;
+                    var container = _container as IContainerInternals;
+                    container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
+                    info.JsonData = JsonConvert.SerializeObject(obj, _jsonSettings);
+                    info.JsonHasErrors = _jsonErrors.Count > 0;
+                    if (_jsonErrors.Count > 0)
+                    {
+                        var sb = new StringBuilder(info.JsonData);
+                        sb.AppendLine("\n\n");
+                        sb.AppendLine("=== ERRORS ===");
+                        foreach (var err in _jsonErrors)
+                            sb.AppendLine(err);
+                        info.JsonData = sb.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    info.JsonHasErrors = true;
+                    info.JsonData = ex.Message;
+                }
+                _jsonErrors.Clear();
+            }
         }
 
         private InnerObjectInfo _rootInfo;
