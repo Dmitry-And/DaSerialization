@@ -1,8 +1,6 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
-using System;
 using System.Collections.Generic;
-using DaSerialization;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,215 +8,172 @@ namespace DaSerialization.Editor
 {
     public class ContainerInAssetWindow : EditorWindow
     {
-        [Serializable]
-        public class ContainerInfo : ContainerInfo.IEntriesHolder
-        {
-            [Serializable]
-            public class Entry : IEntriesHolder
-            {
-                public string TypeName;
-                public Type Type;
-                public object Reference;
-                public int Id;
-                public int Size;
-                public int SizeSelf;
-                public List<Entry> InnerEntries;
-                public bool IsNull;
-                public Entry(Type type, object obj, long size, int metaInfoSize)
-                {
-                    Id = -1;
-                    IsNull = obj == null;
-                    Type = type;
-                    TypeName = IsNull ? type.PrettyName() : obj.PrettyTypeName();
-                    Reference = obj;
-                    Size = (int)size;
-                    SizeSelf = Size - metaInfoSize;
-                }
-                public void AddInner(Entry entry)
-                {
-                    InnerEntries = InnerEntries ?? new List<Entry>();
-                    InnerEntries.Add(entry);
-                    SizeSelf -= entry.Size;
-                }
-            }
-            public interface IEntriesHolder
-            {
-                void AddInner(Entry entry);
-            }
-
-            public long Size;
-            public long ContentTableLength;
-            public List<Entry> Entries;
-            public TextAsset Asset;
-
-            public ContainerInfo(BinaryContainer container)
-            {
-                Size = container.GetUnderlyingStream().Length;
-                var contentTable = container.GetContentTable();
-                ContentTableLength = container.CountContentTableLenght(contentTable);
-                Entries = new List<Entry>(contentTable.Count);
-                container.EnableDeserializationInspection = true;
-                container.ObjectDeserializationFinished += OnObjectDeserializationFinished;
-                _activeEntries.Clear();
-                _activeEntries.Push(new List<IEntriesHolder> { this });
-                foreach (var e in contentTable)
-                {
-                    object o = null;
-                    container.Deserialize(ref o, e.ObjectId, e.TypeId);
-                    OnObjectDeserializationFinished(null, null, 0, 0, -1);
-                    if (Entries.Count > 0)
-                        Entries[Entries.Count - 1].Id = e.ObjectId;
-                }
-                container.EnableDeserializationInspection = false;
-                _activeEntries.Clear();
-                Sort();
-            }
-            public void AddInner(Entry entry)
-            {
-                Entries.Add(entry);
-            }
-            public void Save()
-            {
-                var path = AssetDatabase.GetAssetPath(Asset);
-                var container = UnityStorage.Instance.CreateContainer();
-                foreach (var entry in Entries)
-                    if (entry.Id != -1)
-                        container.Serialize(entry.Reference, entry.Id, entry.Type);
-                UnityStorage.Instance.SaveContainerAtPath(container, path);
-                AssetDatabase.Refresh();
-            }
-
-            public void Sort()
-            {
-                Entries.Sort(
-                    (x, y) =>
-                    {
-                        int c = x.Id.CompareTo(y.Id);
-                        if (c == 0)
-                            c = string.CompareOrdinal(x.TypeName, y.TypeName);
-                        return c;
-                    });
-            }
-
-            private Stack<List<IEntriesHolder>> _activeEntries = new Stack<List<IEntriesHolder>>();
-            private void OnObjectDeserializationFinished(Type type, object obj, long dataSize, int metaSize, int nestedLevel)
-            {
-                var newEntry = new Entry(type, obj, dataSize + metaSize, metaSize);
-                bool added = false;
-                int index = nestedLevel + 2;
-                while (_activeEntries.Count > index)
-                {
-                    var addedEntries = _activeEntries.Pop();
-                    IEntriesHolder lastParentEntry;
-                    if (_activeEntries.Count == index)
-                    {
-                        if (index == 1)
-                            lastParentEntry = _activeEntries.Peek()[_activeEntries.Peek().Count - 1];
-                        else
-                        {
-                            _activeEntries.Peek().Add(newEntry);
-                            lastParentEntry = newEntry;
-                        }
-                        added = true;
-                    }
-                    else
-                        throw new Exception();
-                    foreach (var e in addedEntries)
-                        lastParentEntry.AddInner(e as Entry);
-                    addedEntries.Clear();
-                }
-                while (_activeEntries.Count < index)
-                    _activeEntries.Push(new List<IEntriesHolder>());
-                if (!added)
-                    _activeEntries.Peek().Add(newEntry);
-            }
-        }
         public TextAsset Target;
-        [NonSerialized] private ContainerInfo _info;
-        [NonSerialized] private TextAsset _target;
-        private Vector2 _scrollPos;
+        private ContainerEditorInfo _info;
 
         [MenuItem("Window/Container Viewer")]
-        public static void Init()
+        public static void InitWindow()
         {
             ContainerInAssetWindow window = (ContainerInAssetWindow)GetWindow(typeof(ContainerInAssetWindow));
             window.name = "Container Viewer";
             window.Show();
         }
 
+        public static void Init()
+        {
+            if (Bold != null)
+                return;
+            Bold = EditorGuiUtils.whiteBoldLabel;
+            Normal = EditorStyles.whiteLabel;
+            BoldRight = new GUIStyle(Bold);
+            BoldRight.alignment = TextAnchor.LowerRight;
+            NormalRight = new GUIStyle(Normal);
+            NormalRight.alignment = TextAnchor.LowerRight;
+        }
+
         void OnGUI()
         {
+            Init();
+            EditorGUILayout.BeginHorizontal();
             Target = (TextAsset)EditorGUILayout.ObjectField("Target", Target, typeof(TextAsset), false);
-            if (_target != Target)
+            if (GUILayout.Button("Refresh", GUILayout.Width(60f)))
+                Refresh();
+            EditorGUILayout.EndHorizontal();
+
+            if (Target != null && (_info == null || _info.Asset != Target))
             {
-                // only if target changed
-                _target = Target;
-                _info = GetContainerInfo(Target);
+                _info = new ContainerEditorInfo(Target);
+                _info.UpdateDetailedInfo();
+                _expandedObjects.Clear();
             }
+            if (Target == null)
+                _info = null;
+            DrawContainerContent(_info);
+        }
+
+        public void Refresh()
+        {
+            _info = null;
+            _expandedObjects.Clear();
+        }
+
+        private Vector2 _scrollPos;
+        public void DrawContainerContent(ContainerEditorInfo info)
+        {
+            if (info == null)
+            {
+                EditorGUILayout.HelpBox("Select a container asset", MessageType.Info);
+                return;
+            }
+            if (!info.IsValid)
+            {
+                EditorGUILayout.HelpBox("This is not a valid container", MessageType.Error);
+                return;
+            }
+            var pos = GetNextLineRect();
+            EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
+            GUI.contentColor = Color.white;
+            EditorGUI.LabelField(pos.SliceLeft(80f), info.Size + " bytes", Normal);
+            GUI.contentColor = Color.grey;
+            EditorGUI.LabelField(pos, info.TableSize + " tbl", Normal);
+
+            pos = GetNextLineRect();
+            GUI.contentColor = Color.gray;
+            EditorGUI.LabelField(pos.SliceLeft(IdWidth), "Id", NormalRight);
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), TotalHeader, NormalRight);
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), SelfHeader, NormalRight);
+            pos.SliceLeft(16f);
+            EditorGUI.LabelField(pos, "Ref Type : Object Type", Normal);
+            GUI.contentColor = Color.white;
+
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-            if (Target != null & _info == null)
-                EditorGUILayout.HelpBox("This is not a container", MessageType.Error);
-            else
-                DrawContainerContent(_info);
+
+            foreach (var e in info.RootObjects)
+            {
+                pos = GetNextLineRect();
+                DrawEntry(pos, e);
+            }
+
             EditorGUILayout.EndScrollView();
         }
 
-        public static ContainerInfo GetContainerInfo(TextAsset asset)
+        private const float SizeWidth = 52f;
+        private const float IdWidth = 50f;
+        private static GUIStyle Bold;
+        private static GUIStyle Normal;
+        private static GUIStyle BoldRight;
+        private static GUIStyle NormalRight;
+        private static GUIContent TotalHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
+        private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
+        private static GUIContent ExpandButton = new GUIContent("+", "Expand");
+        private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
+        private Rect GetNextLineRect()
         {
-            if (asset == null)
-                return null;
-            var container = UnityStorage.Instance.GetContainerFromData(asset.bytes, false);
-            if (container == null)
-                return null;
-            var info = new ContainerInfo(container);
-            info.Asset = asset;
-            return info;
+            var lineHeight = EditorGuiUtils.GetLinesHeight(1);
+            var rect = GUILayoutUtility.GetRect(100f, 2000f, lineHeight, lineHeight);
+            rect.SliceLeft(2f);
+            rect.SliceRight(2f);
+            return rect;
         }
-        public static void DrawContainerContent(ContainerInfo containerInfo)
+
+        private void DrawEntry(Rect pos, ContainerEditorInfo.RootObjectInfo e)
         {
-            if (containerInfo == null)
+            var nameRect = DrawEntry(pos, e.Data, 0f);
+            if (!e.IsSupported)
+                EditorGUI.HelpBox(nameRect.SliceRightRelative(0.7f), e.Error, MessageType.Error);
+        }
+
+        private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
+        private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
+        {
+            pos.SliceLeft(indent);
+
+            // id
+            var idRect = pos.SliceLeft(IdWidth);
+            if (e.Id != -1)
             {
-                EditorGUILayout.HelpBox("No container", MessageType.Info);
-                return;
+                bool isRoot = indent == 0f;
+                GUI.contentColor = isRoot ? Color.red : Color.grey;
+                EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
             }
 
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("Container", EditorStyles.boldLabel);
+            // size
             GUI.contentColor = Color.white;
-            GUILayout.Label(containerInfo.Size + " bytes", EditorStyles.whiteLabel, sizeWidth);
-            GUI.contentColor = Color.grey;
-            GUILayout.Label(containerInfo.ContentTableLength + " tbl", EditorStyles.whiteLabel, sizeWidth);
-            GUI.contentColor = Color.white;
-            if (containerInfo.Asset != null && GUILayout.Button("Save", GUILayout.Width(40f)))
-                containerInfo.Save();
-            EditorGUILayout.EndHorizontal();
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), e.TotalSize.ToString(), BoldRight);
+            if (e.SelfSize > 0)
+            {
+                GUI.contentColor = Color.gray;
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), e.SelfSize.ToString(), NormalRight);
+            }
 
-            foreach (var e in containerInfo.Entries)
-                DrawEntry(e, 0, true);
-        }
+            // expanded
+            var expandRect = pos.SliceLeft(16f);
+            if (e.IsExpandable)
+            {
+                GUI.contentColor = Color.gray;
+                bool expanded = _expandedObjects.Contains(e);
+                if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
+                {
+                    if (expanded)
+                        _expandedObjects.Remove(e);
+                    else
+                        _expandedObjects.Add(e);
+                }
+            }
 
-        private static GUILayoutOption idWidth = GUILayout.Width(70f);
-        private static GUILayoutOption sizeWidth = GUILayout.Width(80f);
-        private static void DrawEntry(ContainerInfo.Entry e, int indent, bool expanded)
-        {
-            EditorGUILayout.BeginHorizontal();
-            GUILayout.Label("", EditorStyles.whiteLabel, GUILayout.Width(25f * indent));
-            GUI.contentColor = Color.red;
-            EditorGUILayout.LabelField(e.Id != -1 ? e.Id.ToString() : "", EditorStyles.whiteLabel, idWidth);
-            GUI.contentColor = e.IsNull ? Color.grey : Color.black;
-            GUILayout.Label(e.TypeName, EditorStyles.whiteLabel);
+            // name
+            var result = pos;
+            GUI.contentColor = e.IsSupported
+                ? e.IsNull ? Color.grey : Color.black
+                : Color.red;
+            EditorGUI.LabelField(pos, e.Name, Bold);
 
-            // TODO: draw Edit button;
+            // internal entries
+            if (e.IsExpandable && _expandedObjects.Contains(e))
+                foreach (var inner in e.InnerObjects)
+                    DrawEntry(GetNextLineRect(), inner, indent + 16f);
 
-            GUI.contentColor = Color.white;
-            GUILayout.Label(e.Size + " bytes", EditorStyles.whiteLabel, sizeWidth);
-            GUI.contentColor = Color.grey;
-            GUILayout.Label(e.SizeSelf == 0 ? "-" : (e.SizeSelf + " self"), EditorStyles.whiteLabel, sizeWidth);
-            GUI.contentColor = Color.white;
-            EditorGUILayout.EndHorizontal();
-            if (expanded && e.InnerEntries != null)
-                foreach (var inner in e.InnerEntries)
-                    DrawEntry(inner, indent + 1, true); // todo: expanded
+            return result;
         }
     }
 }
