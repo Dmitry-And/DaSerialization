@@ -13,6 +13,13 @@
 +	Edtr	add Json view of the objects in popup window
 +	Edtr 	improve Json popup window
 +	Core 	fix erroneous meta size for root objects and table
++	Edtr 	make Json preview pretty
++				add info about object types
++				show warning for Json-izing large objects
+-				monospace font (not so necessary, but hard to implement robustly)
++				4 characters indent
++				hide quotes around the property/field names
++				get rid of top level curved brackets and indent
 	Edtr 	improve size modes in the table
 				right column modes: total/effective(non-meta)
 				left column modes: none/self
@@ -24,13 +31,6 @@
 				support multiple container view windows
 				move context menu options to the top
 				hide context menu options for non-container text assets
-	Edtr 	make Json preview pretty
-+				add info about object types
-+				show warning for Json-izing large objects
-				monospace font
-				4 characters indent
-				hide quotes around the property/field names
-				get rid of top level curved brackets and indent
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content
 	Hlpr 	get rid of external dependencies after refactoring

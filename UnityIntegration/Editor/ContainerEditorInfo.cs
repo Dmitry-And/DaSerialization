@@ -164,13 +164,13 @@ namespace DaSerialization.Editor
                 typeName = serializedType.PrettyName();
             }
         }
-        private static JsonSerializerSettings _jsonSettings;
+        private static JsonSerializer _jsonSerializer;
         private static List<string> _jsonErrors = new List<string>();
         public void UpdateJsonData(InnerObjectInfo info)
         {
-            if (_jsonSettings == null)
+            if (_jsonSerializer == null)
             {
-                _jsonSettings = new JsonSerializerSettings()
+                _jsonSerializer = new JsonSerializer()
                 {
                     Culture = System.Globalization.CultureInfo.InvariantCulture,
                     Formatting = Formatting.Indented,
@@ -178,32 +178,60 @@ namespace DaSerialization.Editor
                     NullValueHandling = NullValueHandling.Include,
                     MissingMemberHandling = MissingMemberHandling.Ignore,
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
-                    TypeNameHandling = TypeNameHandling.Objects,
                     TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
                     SerializationBinder = new SerializationTypeBinder(),
-                    Error = delegate (object sender, Newtonsoft.Json.Serialization.ErrorEventArgs args)
+                };
+                _jsonSerializer.Error += (sender, args) =>
+                {
+                    if (args.ErrorContext.Error is JsonSerializationException jErr)
                     {
-                        if (args.ErrorContext.Error is JsonSerializationException jErr)
-                        {
-                            _jsonErrors.Add(jErr.Message);
-                            args.ErrorContext.Handled = true;
-                        }
-                    },
+                        _jsonErrors.Add(jErr.Message);
+                        args.ErrorContext.Handled = true;
+                    }
                 };
             }
             if (info.JsonData == null & !info.JsonHasErrors)
             {
                 try
                 {
+                    const int indentation = 4;
+                    const bool showTypes = true;
+
                     object obj = null;
                     var container = _container as IContainerInternals;
                     container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
-                    info.JsonData = JsonConvert.SerializeObject(obj, info.TypeInfo.Type, _jsonSettings);
-                    info.JsonHasErrors = _jsonErrors.Count > 0;
-                    info.JsonCreated = true;
+
+                    var stringWriter = new System.IO.StringWriter();
+                    using (var writer = new JsonTextWriter(stringWriter))
+                    {
+                        writer.QuoteName = false;
+                        writer.Formatting = Formatting.Indented;
+                        writer.Indentation = indentation;
+                        writer.IndentChar = ' ';
+                        _jsonSerializer.TypeNameHandling = showTypes ? TypeNameHandling.Objects : TypeNameHandling.None;
+                        _jsonSerializer.Serialize(writer, obj, info.TypeInfo.Type);
+                    }
+                    var json = stringWriter.ToString();
+
+                    var sb = new StringBuilder(json.Length);
+                    int i = json.IndexOf('\n') + 1; // skip first line with opening bracket
+                    if (i >= 0)
+                        i = json.IndexOf('\n', i) + 1 + indentation; // skip second line with $type info
+                    if (i >= 0)
+                        for (int max = json.Length; i < max; i++)
+                        {
+                            var c = json[i];
+                            if (c == '\n')
+                            {
+                                i += indentation;
+                                if (i >= max)
+                                    break;
+                            }
+                            sb.Append(c);
+                        }
+
                     if (_jsonErrors.Count > 0)
                     {
-                        var sb = new StringBuilder(info.JsonData);
                         sb.AppendLine("\n\n");
                         sb.Append("===== ERRORS =====");
                         foreach (var err in _jsonErrors)
@@ -212,8 +240,10 @@ namespace DaSerialization.Editor
                             sb.AppendLine();
                             sb.Append(err);
                         }
-                        info.JsonData = sb.ToString();
                     }
+                    info.JsonData = sb.ToString();
+                    info.JsonHasErrors = _jsonErrors.Count > 0;
+                    info.JsonCreated = true;
                 }
                 catch (Exception ex)
                 {
