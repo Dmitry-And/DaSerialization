@@ -20,9 +20,9 @@
 +				4 characters indent
 +				hide quotes around the property/field names
 +				get rid of top level curved brackets and indent
-	Edtr 	improve size modes in the table
-				right column modes: total/effective(non-meta)
-				left column modes: none/self
++	Edtr 	improve size modes in the table
++				right column modes: total/effective(non-meta)
++				left column modes: none/self
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
 	Edtr 	show content of internal containers

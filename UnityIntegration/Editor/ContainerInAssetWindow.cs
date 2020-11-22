@@ -1,5 +1,6 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
+using System;
 using System.Collections.Generic;
 using System.Text;
 using UnityEditor;
@@ -10,13 +11,13 @@ namespace DaSerialization.Editor
     public class ContainerInAssetWindow : EditorWindow
     {
         private const float SizeWidth = 48f;
-        private const float IdWidth = 50f;
         private static GUIStyle Bold;
         private static GUIStyle Normal;
         private static GUIStyle BoldRight;
         private static GUIStyle NormalRight;
-        private static GUIContent TotalHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
-        private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
+        private static GUIContent TotalSizeHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
+        private static GUIContent DataSizeHeader = new GUIContent("Data", "Size of this object, excluding meta-information.\nIn bytes");
+        private static GUIContent SelfSizeHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
         private static GUIContent JsonLabel = new GUIContent("J", "Show JSON representation of the object...");
@@ -25,6 +26,10 @@ namespace DaSerialization.Editor
         public TextAsset Target;
         private ContainerEditorInfo _info;
         private GUIContent _sizeText;
+        private bool _renderSelfSize = true;
+        private bool _renderTotalSize = true; // if not - effective size will be rendered
+        private bool _renderRefType = true; // if not - only object type will be rendered
+        private float _idWidth;
 
         [MenuItem("Window/Container Viewer")]
         public static void InitWindow()
@@ -66,6 +71,7 @@ namespace DaSerialization.Editor
                 _info.UpdateDetailedInfo();
                 _sizeText = new GUIContent(Size(_info.Size), $"Total size: {_info.Size}\nMeta data: {_info.MetaInfoSize}\nUseful: {_info.Size - _info.MetaInfoSize}");
                 _expandedObjects.Clear();
+                _idWidth = GetMaxIdWidth(_info, _idWidth);
             }
             if (Target == null)
                 _info = null;
@@ -75,6 +81,7 @@ namespace DaSerialization.Editor
         public void Refresh()
         {
             _info = null;
+            _idWidth = 20f;
             _expandedObjects.Clear();
         }
 
@@ -99,7 +106,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.white;
             EditorGUI.LabelField(pos.SliceRight(46f), info.EntriesCount.ToStringFast(), Bold);
             GUI.contentColor = Color.grey;
-            EditorGUI.LabelField(pos.SliceRight(45f), "Entries:", NormalRight);
+            EditorGUI.LabelField(pos.SliceRight(52f), "Objects:", NormalRight);
             EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
 
             var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
@@ -118,15 +125,18 @@ namespace DaSerialization.Editor
             // particularly the width of the view area as the vertical scroll bar may or may not be visible
             GUI.contentColor = Color.gray;
             colHeaderRect = colHeaderRect.SliceLeft(inScrollWidth, false);
-            EditorGUI.LabelField(colHeaderRect.SliceLeft(IdWidth), "Id", NormalRight);
+            EditorGUI.LabelField(colHeaderRect.SliceLeft(_idWidth), "Id", NormalRight);
             EditorGUI.LabelField(colHeaderRect.SliceRight(18f), JsonLabel, NormalRight);
-            EditorGUI.LabelField(colHeaderRect.SliceRight(SizeWidth), TotalHeader, NormalRight);
+            if (GUI.Button(colHeaderRect.SliceRight(SizeWidth),
+                _renderTotalSize ? TotalSizeHeader : DataSizeHeader, NormalRight))
+                _renderTotalSize = !_renderTotalSize;
             GUI.contentColor = _renderSelfSize ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
-            if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfHeader, NormalRight))
+            if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfSizeHeader, NormalRight))
                 _renderSelfSize = !_renderSelfSize;
             colHeaderRect.SliceLeft(16f);
             GUI.contentColor = Color.gray;
-            EditorGUI.LabelField(colHeaderRect, "Ref : Object", Normal);
+            if (GUI.Button(colHeaderRect, _renderRefType ? "Ref : Object" : "Object", Normal))
+                _renderRefType = !_renderRefType;
         }
 
         private bool _nextLineIsEven;
@@ -150,7 +160,6 @@ namespace DaSerialization.Editor
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntry = new Stack<ContainerEditorInfo.InnerObjectInfo>();
-        private bool _renderSelfSize = true;
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private static GUIContent _tempContent = new GUIContent();
         private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
@@ -161,7 +170,7 @@ namespace DaSerialization.Editor
                 EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
 
             // id
-            var idRect = pos.SliceLeft(IdWidth);
+            var idRect = pos.SliceLeft(_idWidth);
             if (e.Id != -1)
             {
                 GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
@@ -204,7 +213,7 @@ namespace DaSerialization.Editor
             var nameRect = pos;
             // size (persistent)
             {
-                _tempContent.text = Size(e.TotalSize);
+                _tempContent.text = Size(_renderTotalSize ? e.TotalSize : e.DataSize);
                 var width = BoldRight.CalcSize(_tempContent).x;
                 nameRect.xMax = pos.xMax - width;
                 GUI.contentColor = Color.white;
@@ -225,7 +234,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = e.IsSupported
                 ? e.IsNull ? Color.grey : Color.black
                 : Color.red;
-            if (GUI.Button(nameRect, e.Caption, e.IsRealObject ? Bold : Normal)
+            if (GUI.Button(nameRect, _renderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
                 & e.IsExpandable)
                 ToggleExpand(e);
 
@@ -246,6 +255,28 @@ namespace DaSerialization.Editor
                 _expandedObjects.Remove(e);
             else
                 _expandedObjects.Add(e);
+        }
+
+        private static float GetMaxIdWidth(ContainerEditorInfo info, float minValue = 0f)
+        {
+            int maxId = 0;
+            foreach (var root in info.RootObjects)
+            {
+                var rootId = GetMaxAbsId(root.Data);
+                maxId = maxId > rootId ? maxId : rootId;
+            }
+            float width = Bold.CalcSize(new GUIContent("-" + maxId)).x;
+            return width > minValue ? width : minValue;
+        }
+        private static int GetMaxAbsId(ContainerEditorInfo.InnerObjectInfo info)
+        {
+            int maxAbsId = Math.Abs(info.Id);
+            foreach (var inner in info.InnerObjects)
+            {
+                int innerId = Math.Abs(GetMaxAbsId(inner));
+                maxAbsId = maxAbsId > innerId ? maxAbsId : innerId;
+            }
+            return maxAbsId;
         }
 
         private static StringBuilder _sb = new StringBuilder(16);
