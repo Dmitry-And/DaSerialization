@@ -173,7 +173,9 @@ namespace DaSerialization.Editor
             var jsonRect = pos.SliceRight(18f);
             if (e.IsRealObject & !e.IsNull & e.IsSupported)
             {
-                GUI.backgroundColor = e.JsonHasErrors ? new Color(0.9f, 0.7f, 0.7f, 0.6f)
+                GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
+                GUI.backgroundColor = e.JsonHasErrors
+                    ? e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f)
                     : e.JsonData == null ? Color.clear : new Color(0.7f, 0.9f, 0.7f, 0.6f);
                 if (GUI.Button(jsonRect, "J"))
                 {
@@ -267,32 +269,27 @@ namespace DaSerialization.Editor
         private Vector2 _windowSize;
         public override Vector2 GetWindowSize()
         {
-            const float MaxWidth = 260f;
+            const float MaxWidth = 300f;
             const float MaxHeight = 400f;
 
             if (_width > 0f)
                 return _windowSize;
 
-            var size = TextStyle.CalcSize(new GUIContent(_objectInfo.JsonData));
-            _width = size.x < MaxWidth ? size.x : MaxWidth;
-            float height = size.y + 6f;
+            var textContent = new GUIContent(_objectInfo.JsonData);
+            _width = TextStyle.CalcSize(textContent).x;
+            if (_objectInfo.JsonHasErrors | _width > MaxWidth)
+                _width = MaxWidth;
+            float height = TextStyle.CalcHeight(textContent, _width);
             EditorGuiUtils.AddLineHeight(ref height);
             if (_objectInfo.JsonHasErrors)
-            {
-                EditorGuiUtils.AddLineHeight(ref height);
-                EditorGuiUtils.AddLineHeight(ref height);
-                _width = MaxWidth;
-                while (size.x > _width)
-                {
-                    EditorGuiUtils.AddLineHeight(ref height);
-                    size.x -= _width - 30f;
-                }
-            }
+                EditorGuiUtils.AddLineHeight(ref height, 20f);
+            _windowSize.x = _width + 6f;
             if (height > MaxHeight)
+            {
                 height = MaxHeight;
-            if (height < 120f)
-                height = 120f;
-            _windowSize = new Vector2(_width + 20f, height);
+                _windowSize.x += 14f; // scroll bar
+            }
+            _windowSize.y = height + 6f;
             return _windowSize;
         }
 
@@ -301,7 +298,13 @@ namespace DaSerialization.Editor
         {
             EditorGUILayout.LabelField(_objectInfo.Caption);
             if (_objectInfo.JsonHasErrors)
-                EditorGUILayout.HelpBox("There were errors during JSON serialization. They are displayed at the end", MessageType.Warning);
+            {
+                var boxRect = GUILayoutUtility.GetRect(100f, 2000f, 20f, 20f);
+                if (_objectInfo.JsonCreated)
+                    EditorGUI.HelpBox(boxRect, "JSON errors displayed at the end of the text", MessageType.Warning);
+                else
+                    EditorGUI.HelpBox(boxRect, "Failed to serialize to JSON", MessageType.Error);
+            }
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             EditorGUILayout.TextArea(_objectInfo.JsonData, TextStyle, GUILayout.Width(_width));
             EditorGUILayout.EndScrollView();

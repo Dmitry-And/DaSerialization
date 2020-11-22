@@ -11,9 +11,25 @@
 +	Edtr 	add even/odd line background
 +	Edtr 	make 'Self' column optional
 +	Edtr	add Json view of the objects in popup window
++	Edtr 	improve Json popup window
 	Edtr 	check and fix correctness of total/self sizes in tables
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
+	Edtr 	show content of internal containers
+	Edtr 	improve editor UX
+				rename window to 'Container View'
+				support multiple container view windows
+				move context menu options to the top
+				hide context menu options for non-container text assets
+	Edtr 	make Json preview pretty
+				monospace
+				4 characters indent
+				hide quotes around the field names
+				add info about object types
+				get rid of top level curved brackets and indent
+	Edtr 	replace Json.Net dll by source code
+				move to internal namespace
+				strip unused code
 	Edtr 	color scheme should support dark mode
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content
@@ -30,6 +46,9 @@
 	BACKLOG
 ===================================================================================
 
+	Edtr 	correctly handle rare errors when creating ContainerEditorInfo
+				content table reading (ivalid size, position)
+				some entries (partially) outside the stream data
 	Edtr 	add 'remove entry from container' button
 	Edtr 	add 'collapse similar inner entries' display option
 	Srlz 	add serializers for common Unity types

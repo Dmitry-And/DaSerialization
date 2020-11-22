@@ -57,6 +57,7 @@ namespace DaSerialization.Editor
             public int Id; // for inner object it's an index inside the parent one
             public bool HasOldVersions;
             public bool JsonHasErrors;
+            public bool JsonCreated;
             public Type RefType;
             public SerializationTypeInfo TypeInfo;
             public int Version; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>
@@ -170,9 +171,9 @@ namespace DaSerialization.Editor
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
                     Error = delegate (object sender, Newtonsoft.Json.Serialization.ErrorEventArgs args)
                     {
-                        if (args.ErrorContext.Error is JsonSerializationException)
+                        if (args.ErrorContext.Error is JsonSerializationException jErr)
                         {
-                            _jsonErrors.Add(args.ErrorContext.Error.Message);
+                            _jsonErrors.Add(jErr.Message);
                             args.ErrorContext.Handled = true;
                         }
                     },
@@ -187,20 +188,26 @@ namespace DaSerialization.Editor
                     container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
                     info.JsonData = JsonConvert.SerializeObject(obj, _jsonSettings);
                     info.JsonHasErrors = _jsonErrors.Count > 0;
+                    info.JsonCreated = true;
                     if (_jsonErrors.Count > 0)
                     {
                         var sb = new StringBuilder(info.JsonData);
                         sb.AppendLine("\n\n");
-                        sb.AppendLine("=== ERRORS ===");
+                        sb.Append("===== ERRORS =====");
                         foreach (var err in _jsonErrors)
-                            sb.AppendLine(err);
+                        {
+                            sb.AppendLine();
+                            sb.AppendLine();
+                            sb.Append(err);
+                        }
                         info.JsonData = sb.ToString();
                     }
                 }
                 catch (Exception ex)
                 {
+                    info.JsonCreated = false;
                     info.JsonHasErrors = true;
-                    info.JsonData = ex.Message;
+                    info.JsonData = ex.PrettyTypeName() + ": " + ex.Message + "\n\n" + ex.StackTrace;
                 }
                 _jsonErrors.Clear();
             }
