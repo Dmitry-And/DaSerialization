@@ -14,13 +14,13 @@
 +	Edtr 	improve Json popup window
 +	Core 	fix erroneous meta size for root objects and table
 	Edtr 	improve size modes in the table
-				right column modes: total/non-meta
-				left column modes: none/self/self+meta
+				right column modes: total/effective(non-meta)
+				left column modes: none/self
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
 	Edtr 	show content of internal containers
 	Edtr 	improve editor UX
-				rename window to 'Container View'
++				set window name and min size
 				support multiple container view windows
 				move context menu options to the top
 				hide context menu options for non-container text assets
@@ -46,6 +46,7 @@
 
 0.1
 
+	Core 	unify 'size to string' method and move to common tools
 	Core 	move non-root Container.(De)Serialize API to stream
 				and don't pass container as an argument for (de)serialization
 	Edtr 	color scheme should support dark mode

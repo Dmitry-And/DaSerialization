@@ -1,6 +1,7 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
 using System.Collections.Generic;
+using System.Text;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,14 +9,30 @@ namespace DaSerialization.Editor
 {
     public class ContainerInAssetWindow : EditorWindow
     {
+        private const float SizeWidth = 48f;
+        private const float IdWidth = 50f;
+        private static GUIStyle Bold;
+        private static GUIStyle Normal;
+        private static GUIStyle BoldRight;
+        private static GUIStyle NormalRight;
+        private static GUIContent TotalHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
+        private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
+        private static GUIContent ExpandButton = new GUIContent("+", "Expand");
+        private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
+        private static GUIContent JsonLabel = new GUIContent("J", "Show JSON representation of the object...");
+        private static GUIContent RefreshButton = new GUIContent("Refresh", "Reload container from the asset and update all stats");
+
         public TextAsset Target;
         private ContainerEditorInfo _info;
+        private GUIContent _sizeText;
 
         [MenuItem("Window/Container Viewer")]
         public static void InitWindow()
         {
             ContainerInAssetWindow window = (ContainerInAssetWindow)GetWindow(typeof(ContainerInAssetWindow));
-            window.name = "Container Viewer";
+            window.name = "DaSerialization Inspector";
+            window.titleContent = new GUIContent("DaSerialization Inspector");
+            window.minSize = new Vector2(300f, 300f);
             window.Show();
         }
 
@@ -35,16 +52,19 @@ namespace DaSerialization.Editor
         {
             Init();
             _nextLineIsEven = false;
-            EditorGUILayout.BeginHorizontal();
-            Target = (TextAsset)EditorGUILayout.ObjectField("Target", Target, typeof(TextAsset), false);
-            if (GUILayout.Button("Refresh", GUILayout.Width(60f)))
+            var pos = GetNextLineRect();
+            EditorGUI.BeginDisabledGroup(Target == null);
+            if (GUI.Button(pos.SliceRight(60f), RefreshButton))
                 Refresh();
-            EditorGUILayout.EndHorizontal();
+            EditorGUI.EndDisabledGroup();
+            EditorGUI.LabelField(pos.SliceLeft(38f), "Asset");
+            Target = (TextAsset)EditorGUI.ObjectField(pos, Target, typeof(TextAsset), false);
 
             if (Target != null && (_info == null || _info.Asset != Target))
             {
                 _info = new ContainerEditorInfo(Target);
                 _info.UpdateDetailedInfo();
+                _sizeText = new GUIContent(Size(_info.Size), $"Total size: {_info.Size}\nMeta data: {_info.MetaInfoSize}\nUseful: {_info.Size - _info.MetaInfoSize}");
                 _expandedObjects.Clear();
             }
             if (Target == null)
@@ -72,11 +92,15 @@ namespace DaSerialization.Editor
                 return;
             }
             var pos = GetNextLineRect();
-            EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
             GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceLeft(80f), Size(info.Size), Normal);
+            EditorGUI.LabelField(pos.SliceRight(SizeWidth), _sizeText, Bold);
             GUI.contentColor = Color.grey;
-            EditorGUI.LabelField(pos, Size(info.MetaInfoSize) + " meta", Normal);
+            EditorGUI.LabelField(pos.SliceRight(36f), "Size:", NormalRight);
+            GUI.contentColor = Color.white;
+            EditorGUI.LabelField(pos.SliceRight(46f), info.EntriesCount.ToStringFast(), Bold);
+            GUI.contentColor = Color.grey;
+            EditorGUI.LabelField(pos.SliceRight(45f), "Entries:", NormalRight);
+            EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
 
             var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
 
@@ -102,20 +126,8 @@ namespace DaSerialization.Editor
                 _renderSelfSize = !_renderSelfSize;
             colHeaderRect.SliceLeft(16f);
             GUI.contentColor = Color.gray;
-            EditorGUI.LabelField(colHeaderRect, "Ref Type : Object Type", Normal);
+            EditorGUI.LabelField(colHeaderRect, "Ref : Object", Normal);
         }
-
-        private const float SizeWidth = 46f;
-        private const float IdWidth = 50f;
-        private static GUIStyle Bold;
-        private static GUIStyle Normal;
-        private static GUIStyle BoldRight;
-        private static GUIStyle NormalRight;
-        private static GUIContent TotalHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
-        private static GUIContent SelfHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
-        private static GUIContent ExpandButton = new GUIContent("+", "Expand");
-        private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
-        private static GUIContent JsonLabel = new GUIContent("J", "Show JSON representation of the object...");
 
         private bool _nextLineIsEven;
         private Rect GetNextLineRect(bool evenLineHighlighted = false)
@@ -222,31 +234,44 @@ namespace DaSerialization.Editor
                 _expandedObjects.Add(e);
         }
 
+        private static StringBuilder _sb = new StringBuilder(16);
         private static string Size(long size)
         {
-            return size.ToStringFast();
             if (size < 1024)
                 return size.ToStringFast();
-            float kSize = size / 1024f;
-            if (kSize < 10f)
-                return kSize.ToStringFast(2, false) + "k";
-            if (kSize < 100f)
-                return kSize.ToStringFast(1, false) + "k";
-            if (kSize < 1024f)
-                return kSize.ToStringFast(0) + "k";
-            float mSize = kSize / 1024f;
-            if (mSize < 10f)
-                return mSize.ToStringFast(2, false) + "m";
-            if (mSize < 100f)
-                return mSize.ToStringFast(1, false) + "m";
-            if (mSize < 1024f)
-                return mSize.ToStringFast(0) + "m";
-            float gSize = mSize / 1024f;
-            if (gSize < 10f)
-                return gSize.ToStringFast(2, false) + "g";
-            if (gSize < 100f)
-                return gSize.ToStringFast(1, false) + "g";
-            return gSize.ToStringFast(0) + "g";
+
+            char suffix = 'k';
+            float value = size / 1024f;
+            if (value >= 1024f)
+            {
+                value /= 1024f;
+                suffix = 'm';
+            }
+            if (value >= 1024f)
+            {
+                value /= 1024f;
+                suffix = 'g';
+            }
+            if (value >= 1024f)
+            {
+                value /= 1024f;
+                suffix = 't';
+            }
+
+            _sb.Length = 0;
+            if (value < 10f)
+                _sb.AppendFast(value, 2, false);
+            else if (value < 100f)
+                _sb.AppendFast(value, 1, false);
+            else
+                _sb.AppendFast(value, 0, false);
+
+            _sb.Append(' ');
+            _sb.Append(suffix);
+
+            var result = _sb.ToString();
+            _sb.Length = 0;
+            return result;
         }
     }
 
