@@ -309,6 +309,7 @@ namespace DaSerialization.Editor
         private Vector2 _windowSize;
         public override Vector2 GetWindowSize()
         {
+            const float MinWidth = 120f;
             const float MaxWidth = 300f;
             const float MaxHeight = 400f;
 
@@ -319,6 +320,8 @@ namespace DaSerialization.Editor
             _textSize.x = TextStyle.CalcSize(textContent).x;
             if (_objectInfo.JsonHasErrors | _textSize.x > MaxWidth)
                 _textSize.x = MaxWidth;
+            if (_textSize.x < MinWidth)
+                _textSize.x = MinWidth;
             _textSize.y = TextStyle.CalcHeight(textContent, _textSize.x);
             float visibleHeight = _textSize.y;
             EditorGuiUtils.AddLineHeight(ref visibleHeight);
@@ -330,7 +333,7 @@ namespace DaSerialization.Editor
                 visibleHeight = MaxHeight;
                 _windowSize.x += 14f; // scroll bar
             }
-            _windowSize.y = visibleHeight + 6f;
+            _windowSize.y = visibleHeight + 8f;
             return _windowSize;
         }
 
@@ -338,7 +341,7 @@ namespace DaSerialization.Editor
         public override void OnGUI(Rect rect)
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(_objectInfo.Caption);
+            EditorGUILayout.LabelField(_objectInfo.Caption, GUILayout.MinWidth(50f));
             if (GUILayout.Button("Copy", GUILayout.Width(42f)))
                 UniClipboard.SetText(_objectInfo.JsonData);
             EditorGUILayout.EndHorizontal();
@@ -350,7 +353,7 @@ namespace DaSerialization.Editor
                 else
                     EditorGUI.HelpBox(boxRect, "Failed to serialize to JSON", MessageType.Error);
             }
-            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
+            _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos, GUIStyle.none, GUI.skin.verticalScrollbar);
             var textRect = GUILayoutUtility.GetRect(_textSize.x, _textSize.y, TextStyle);
             // TODO: unity has a bug: SelectableLabel cannot select text after a certain line number
             EditorGUI.SelectableLabel(textRect, _objectInfo.JsonData, TextStyle);
