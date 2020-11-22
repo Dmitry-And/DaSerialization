@@ -217,13 +217,17 @@ namespace DaSerialization.Editor
                     int i = json.IndexOf('\n') + 1; // skip first line with opening bracket
                     if (i >= 0)
                         i = json.IndexOf('\n', i) + 1 + indentation; // skip second line with $type info
-                    if (i >= 0)
+                    if (i > 0)
                         for (int max = json.Length; i < max; i++)
                         {
                             var c = json[i];
+                            if (c == '\r')
+                                continue;
                             if (c == '\n')
                             {
-                                i += indentation;
+                                if (sb[sb.Length - 1] == ',')
+                                    sb.Length--; // remove trailing comma
+                                i += indentation; // remove root object indentation
                                 if (i >= max)
                                     break;
                             }
