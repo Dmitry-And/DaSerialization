@@ -379,9 +379,11 @@ namespace DaSerialization.Editor
         public override void OnGUI(Rect rect)
         {
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.LabelField(_objectInfo.Caption, GUILayout.MinWidth(50f));
+            EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorGuiUtils.GetLinesHeight(1)));
             if (GUILayout.Button("Copy", GUILayout.Width(42f)))
                 UniClipboard.SetText(_objectInfo.JsonData);
+            if (GUILayout.Button("X", GUILayout.Width(20f)))
+                editorWindow.Close();
             EditorGUILayout.EndHorizontal();
             if (_objectInfo.JsonHasErrors)
             {
