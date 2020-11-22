@@ -152,6 +152,7 @@ namespace DaSerialization.Editor
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntry = new Stack<ContainerEditorInfo.InnerObjectInfo>();
         private bool _renderSelfSize = true;
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
+        private static GUIContent _tempContent = new GUIContent();
         private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
         {
             bool isRoot = _parentEntry.Count == 0;
@@ -200,21 +201,31 @@ namespace DaSerialization.Editor
                 GUI.backgroundColor = Color.white;
             }
 
-            // size
-            GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.TotalSize), BoldRight);
+            var nameRect = pos;
+            // size (persistent)
+            {
+                _tempContent.text = Size(e.TotalSize);
+                var width = BoldRight.CalcSize(_tempContent).x;
+                nameRect.xMax = pos.xMax - width;
+                GUI.contentColor = Color.white;
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
+            }
+            // size (optional)
             if (_renderSelfSize & e.SelfSize > 0)
             {
+                _tempContent.text = Size(e.SelfSize);
+                var width = BoldRight.CalcSize(_tempContent).x;
+                nameRect.xMax = pos.xMax - width;
                 GUI.contentColor = Color.gray;
-                EditorGUI.LabelField(pos.SliceRight(SizeWidth), Size(e.SelfSize), NormalRight);
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
             }
+            var result = pos;
 
             // name
-            var result = pos;
             GUI.contentColor = e.IsSupported
                 ? e.IsNull ? Color.grey : Color.black
                 : Color.red;
-            if (GUI.Button(pos, e.Caption, e.IsRealObject ? Bold : Normal)
+            if (GUI.Button(nameRect, e.Caption, e.IsRealObject ? Bold : Normal)
                 & e.IsExpandable)
                 ToggleExpand(e);
 
