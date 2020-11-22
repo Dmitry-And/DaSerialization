@@ -25,10 +25,11 @@
 				move context menu options to the top
 				hide context menu options for non-container text assets
 	Edtr 	make Json preview pretty
++				add info about object types
++				show warning for Json-izing large objects
 				monospace font
 				4 characters indent
 				hide quotes around the property/field names
-+				add info about object types
 				get rid of top level curved brackets and indent
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content

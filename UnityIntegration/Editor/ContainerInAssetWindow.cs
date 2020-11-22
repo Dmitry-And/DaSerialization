@@ -185,11 +185,14 @@ namespace DaSerialization.Editor
             var jsonRect = pos.SliceRight(18f);
             if (e.IsRealObject & !e.IsNull & e.IsSupported)
             {
+                bool requiresJsonUpdate = e.JsonData == null;
                 GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.backgroundColor = e.JsonHasErrors
-                    ? e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f)
-                    : e.JsonData == null ? Color.clear : new Color(0.7f, 0.9f, 0.7f, 0.6f);
-                if (GUI.Button(jsonRect, "J"))
+                GUI.backgroundColor = requiresJsonUpdate ? Color.clear
+                    : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
+                    : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
+                if (GUI.Button(jsonRect, "J")
+                    && (!requiresJsonUpdate | e.TotalSize < 1024
+                        || EditorUtility.DisplayDialog("Large object", $"Object \"{e.Caption}\" seems to be large and it may take a while to convert it to Json string.\nAre you sure you want to continue?", "Continue", "Cancel")))
                 {
                     _info.UpdateJsonData(e);
                     PopupWindow.Show(jsonRect, new JsonPopupWindow(e));
