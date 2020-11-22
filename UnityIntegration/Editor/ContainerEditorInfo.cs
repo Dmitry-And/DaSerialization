@@ -155,6 +155,15 @@ namespace DaSerialization.Editor
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
         }
 
+        private class SerializationTypeBinder : Newtonsoft.Json.Serialization.ISerializationBinder
+        {
+            public Type BindToType(string assemblyName, string typeName) => null;
+            public void BindToName(Type serializedType, out string assemblyName, out string typeName)
+            {
+                assemblyName = null;
+                typeName = serializedType.PrettyName();
+            }
+        }
         private static JsonSerializerSettings _jsonSettings;
         private static List<string> _jsonErrors = new List<string>();
         public void UpdateJsonData(InnerObjectInfo info)
@@ -169,6 +178,9 @@ namespace DaSerialization.Editor
                     NullValueHandling = NullValueHandling.Include,
                     MissingMemberHandling = MissingMemberHandling.Ignore,
                     ReferenceLoopHandling = ReferenceLoopHandling.Ignore,
+                    TypeNameHandling = TypeNameHandling.Objects,
+                    TypeNameAssemblyFormatHandling = TypeNameAssemblyFormatHandling.Simple,
+                    SerializationBinder = new SerializationTypeBinder(),
                     Error = delegate (object sender, Newtonsoft.Json.Serialization.ErrorEventArgs args)
                     {
                         if (args.ErrorContext.Error is JsonSerializationException jErr)
@@ -186,7 +198,7 @@ namespace DaSerialization.Editor
                     object obj = null;
                     var container = _container as IContainerInternals;
                     container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
-                    info.JsonData = JsonConvert.SerializeObject(obj, _jsonSettings);
+                    info.JsonData = JsonConvert.SerializeObject(obj, info.TypeInfo.Type, _jsonSettings);
                     info.JsonHasErrors = _jsonErrors.Count > 0;
                     info.JsonCreated = true;
                     if (_jsonErrors.Count > 0)
