@@ -179,16 +179,16 @@ namespace DaSerialization.Editor
             
             var collapseRect = pos.SliceLeft(indent);
             if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
-                ToggleExpand(_parentEntry.Peek());
+                SetExpanded(_parentEntry.Peek(), false, Event.current.alt);
 
             // expanded
             var expandRect = pos.SliceLeft(16f);
+            bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
             if (e.IsExpandable)
             {
                 GUI.contentColor = Color.gray;
-                bool expanded = _expandedObjects.Contains(e);
                 if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
-                    ToggleExpand(e);
+                    SetExpanded(e, !expanded, Event.current.alt);
             }
 
             // json
@@ -236,7 +236,7 @@ namespace DaSerialization.Editor
                 : Color.red;
             if (GUI.Button(nameRect, _renderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
                 & e.IsExpandable)
-                ToggleExpand(e);
+                SetExpanded(e, !expanded, Event.current.alt);
 
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))
@@ -249,33 +249,40 @@ namespace DaSerialization.Editor
 
             return result;
         }
-        private void ToggleExpand(ContainerEditorInfo.InnerObjectInfo e)
+        private void SetExpanded(ContainerEditorInfo.InnerObjectInfo e, bool value, bool child = false)
         {
-            if (_expandedObjects.Contains(e))
+            var oldValue = _expandedObjects.Contains(e);
+            if (!value & oldValue)
                 _expandedObjects.Remove(e);
-            else
+            if (value & !oldValue)
                 _expandedObjects.Add(e);
+            if (child & e.IsExpandable)
+                foreach (var inner in e.InnerObjects)
+                    if (inner.IsExpandable)
+                        SetExpanded(inner, value, true);
         }
 
         private static float GetMaxIdWidth(ContainerEditorInfo info, float minValue = 0f)
         {
             int maxId = 0;
-            foreach (var root in info.RootObjects)
-            {
-                var rootId = GetMaxAbsId(root.Data);
-                maxId = maxId > rootId ? maxId : rootId;
-            }
+            if (info.RootObjects != null)
+                foreach (var root in info.RootObjects)
+                {
+                    var rootId = GetMaxAbsId(root.Data);
+                    maxId = maxId > rootId ? maxId : rootId;
+                }
             float width = Bold.CalcSize(new GUIContent("-" + maxId)).x;
             return width > minValue ? width : minValue;
         }
         private static int GetMaxAbsId(ContainerEditorInfo.InnerObjectInfo info)
         {
             int maxAbsId = Math.Abs(info.Id);
-            foreach (var inner in info.InnerObjects)
-            {
-                int innerId = Math.Abs(GetMaxAbsId(inner));
-                maxAbsId = maxAbsId > innerId ? maxAbsId : innerId;
-            }
+            if (info.IsExpandable)
+                foreach (var inner in info.InnerObjects)
+                {
+                    int innerId = Math.Abs(GetMaxAbsId(inner));
+                    maxAbsId = maxAbsId > innerId ? maxAbsId : innerId;
+                }
             return maxAbsId;
         }
 
