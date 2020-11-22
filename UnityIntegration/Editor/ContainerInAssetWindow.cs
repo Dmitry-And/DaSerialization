@@ -76,7 +76,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.white;
             EditorGUI.LabelField(pos.SliceLeft(80f), Size(info.Size), Normal);
             GUI.contentColor = Color.grey;
-            EditorGUI.LabelField(pos, Size(info.TableSize) + " tbl", Normal);
+            EditorGUI.LabelField(pos, Size(info.MetaInfoSize) + " meta", Normal);
 
             var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
 

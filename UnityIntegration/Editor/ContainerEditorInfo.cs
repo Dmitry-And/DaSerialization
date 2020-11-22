@@ -117,7 +117,7 @@ namespace DaSerialization.Editor
             }
         }
 
-        public int TableSize { get; private set; } = -1;
+        public int MetaInfoSize { get; private set; } = -1;
         public List<RootObjectInfo> RootObjects { get; private set; }
 
         public void UpdateDetailedInfo(bool force = false)
@@ -125,7 +125,7 @@ namespace DaSerialization.Editor
             if (!force & RootObjects != null)
                 return;
             var contentTable = _container.GetContentTable();
-            TableSize = _container.CountContentTableLenght(contentTable).ToInt32();
+            MetaInfoSize = _container.GetMetaDataSize(contentTable).ToInt32();
             RootObjects = new List<RootObjectInfo>(EntriesCount);
             _container.EnableDeserializationInspection = true;
             _container.ObjectDeserializationStarted += OnObjectDeserializationStarted;

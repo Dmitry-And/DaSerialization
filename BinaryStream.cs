@@ -8,6 +8,7 @@ namespace DaSerialization
     {
         // first 4 bytes written to the stream to identify it as a valid BinaryStream
         public const int MagicNumber = 0x35_2A_31_BB; // 891957691
+        public const int MetaDataSize = sizeof(int);
         private readonly Encoding DefaultStringEncoding = Encoding.UTF8;
 
         private MemoryStream _stream;
@@ -173,20 +174,10 @@ namespace DaSerialization
             _locked = true;
         }
 
-        public Stream GetUnderlyingStream()
-        {
-            return _stream;
-        }
-
-        public BinaryReader GetReader()
-        {
-            return _reader;
-        }
-
-        public BinaryWriter GetWriter()
-        {
-            return Writable ? _writer : null;
-        }
+        public Stream GetUnderlyingStream() => _stream;
+        public BinaryReader GetReader() => _reader;
+        public BinaryWriter GetWriter() => Writable ? _writer : null;
+        public int GetMetaDataSize() => MetaDataSize;
 
         public void Clear()
         {

@@ -12,7 +12,10 @@
 +	Edtr 	make 'Self' column optional
 +	Edtr	add Json view of the objects in popup window
 +	Edtr 	improve Json popup window
-	Edtr 	check and fix correctness of total/self sizes in tables
++	Core 	fix erroneous meta size for root objects and table
+	Edtr 	improve size modes in the table
+				right column modes: total/non-meta
+				left column modes: none/self/self+meta
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
 	Edtr 	show content of internal containers
@@ -27,10 +30,6 @@
 				hide quotes around the field names
 				add info about object types
 				get rid of top level curved brackets and indent
-	Edtr 	replace Json.Net dll by source code
-				move to internal namespace
-				strip unused code
-	Edtr 	color scheme should support dark mode
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content
 	Hlpr 	get rid of external dependencies after refactoring
@@ -40,6 +39,19 @@
 				API
 				Unity integration
 	Othr	add licence
+	Core 	update binary container format
+				use UInt32 for position/length in content table
+				use packed uint values in content table
+				change table header and info tokens
+
+0.1
+
+	Core 	move non-root Container.(De)Serialize API to stream
+				and don't pass container as an argument for (de)serialization
+	Edtr 	color scheme should support dark mode
+?	Edtr 	replace Json.Net dll by source code
+				move to internal namespace
+				strip unused code
 
 
 ===================================================================================

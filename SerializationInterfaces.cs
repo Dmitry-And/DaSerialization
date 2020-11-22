@@ -16,6 +16,7 @@ namespace DaSerialization
         void Allocate(long length);
         Stream GetUnderlyingStream();
         void Clear();
+        int GetMetaDataSize();
     }
 
     public interface IContainer : IDisposable

@@ -56,7 +56,9 @@ namespace DaSerialization
 
         protected abstract List<SerializedObjectInfo> ReadContentTable(TStream stream);
         protected abstract void WriteContentTable(TStream stream, List<SerializedObjectInfo> contentTable);
-        public abstract long CountContentTableLenght(List<SerializedObjectInfo> contentTable);
+        public abstract long GetContentTableSize(List<SerializedObjectInfo> contentTable);
+        public virtual long GetMetaDataSize(List<SerializedObjectInfo> contentTable)
+            => GetContentTableSize(contentTable) + _stream.GetMetaDataSize();
 
         public bool Has<T>(int objectId)
             => FindContentEntry(objectId, typeof(T)) >= 0;
@@ -91,8 +93,8 @@ namespace DaSerialization
                 obj = default;
                 return false;
             }
+            OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
-            OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type);
             Deserialize(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
         }
@@ -686,7 +688,7 @@ namespace DaSerialization
                 return;
             RemoveOldVersions();
             long capacity = preserveCapacity ? _stream.Capacity
-                : CountTotalDataLength() + CountContentTableLenght(_contentTable);
+                : CountTotalDataLength() + GetContentTableSize(_contentTable);
             var newStream = new TStream();
             newStream.Allocate(capacity);
             newStream.Seek(newStream.Length);
@@ -1044,15 +1046,17 @@ namespace DaSerialization
         }
 
         [Conditional("INSPECT_DESERIALIZATION")]
-        private void OnDeserializeMetaBegin(Type refType)
+        private void OnDeserializeMetaBegin(Type refType, long startPosition = long.MaxValue)
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
             if (_lastMetaInfoStreamPosition != -1)
                 return;
+            if (startPosition == long.MaxValue)
+                startPosition = _stream.Position;
             _lastRefType = refType;
-            _lastMetaInfoStreamPosition = _stream.Position;
+            _lastMetaInfoStreamPosition = startPosition;
 #endif
         }
         [Conditional("INSPECT_DESERIALIZATION")]
