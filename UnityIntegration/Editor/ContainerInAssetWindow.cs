@@ -57,7 +57,7 @@ namespace DaSerialization.Editor
         {
             Init();
             _nextLineIsEven = false;
-            var pos = GetNextLineRect();
+            var pos = GetNextLine();
             EditorGUI.BeginDisabledGroup(Target == null);
             if (GUI.Button(pos.SliceRight(60f), RefreshButton))
                 Refresh();
@@ -99,7 +99,7 @@ namespace DaSerialization.Editor
                 EditorGUILayout.HelpBox("This is not a valid container", MessageType.Error);
                 return;
             }
-            var pos = GetNextLineRect();
+            var pos = GetNextLine();
             GUI.contentColor = Color.white;
             EditorGUI.LabelField(pos.SliceRight(SizeWidth), _sizeText, Bold);
             GUI.contentColor = Color.grey;
@@ -110,16 +110,13 @@ namespace DaSerialization.Editor
             EditorGUI.LabelField(pos.SliceRight(52f), "Objects:", NormalRight);
             EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
 
-            var colHeaderRect = GetNextLineRect(); // reserve a line for columns rendering (later)
+            var colHeaderRect = GetNextLine(); // reserve a line for columns rendering (later)
 
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
             _parentEntry.Clear();
             foreach (var e in info.RootObjects)
-            {
-                pos = GetNextLineRect(true);
-                DrawEntry(pos, e);
-            }
-            float inScrollWidth = GetNextLineRect().width;
+                DrawEntry(e);
+            float inScrollWidth = GetNextLine().width;
             EditorGUILayout.EndScrollView();
 
             // we render column header section after the table because we want to know its layout
@@ -141,7 +138,7 @@ namespace DaSerialization.Editor
         }
 
         private bool _nextLineIsEven;
-        private Rect GetNextLineRect(bool evenLineHighlighted = false)
+        private Rect GetNextLine(bool evenLineHighlighted = false)
         {
             var lineHeight = EditorGuiUtils.GetLinesHeight(1);
             var rect = GUILayoutUtility.GetRect(100f, 2000f, lineHeight, lineHeight);
@@ -152,103 +149,117 @@ namespace DaSerialization.Editor
                 EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 0.13f));
             return rect;
         }
-
-        private void DrawEntry(Rect pos, ContainerEditorInfo.RootObjectInfo e)
+        private bool GetNextLineVisible(out Rect rect, bool evenLineHighlighted = false)
         {
-            var nameRect = DrawEntry(pos, e.Data, 0f);
+            var lineHeight = EditorGuiUtils.GetLinesHeight(1);
+            rect = GUILayoutUtility.GetRect(100f, 2000f, lineHeight, lineHeight);
+            rect.SliceLeft(2f);
+            rect.SliceRight(2f);
+            _nextLineIsEven = !_nextLineIsEven;
+            bool isVisible = rect.yMax >= _scrollPos.y & rect.yMin <= _scrollPos.y + position.height;
+            if (_nextLineIsEven & evenLineHighlighted & isVisible)
+                EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 0.13f));
+            return isVisible;
+        }
+
+        private void DrawEntry(ContainerEditorInfo.RootObjectInfo e)
+        {
+            var pos = DrawEntry(e.Data, 0f);
             if (!e.IsSupported)
-                EditorGUI.HelpBox(nameRect.SliceRightRelative(0.7f), e.Error, MessageType.Error);
+                EditorGUI.HelpBox(pos.SliceRightRelative(0.7f), e.Error, MessageType.Error);
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntry = new Stack<ContainerEditorInfo.InnerObjectInfo>();
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private static GUIContent _tempContent = new GUIContent();
-        private Rect DrawEntry(Rect pos, ContainerEditorInfo.InnerObjectInfo e, float indent)
+        private Rect DrawEntry(ContainerEditorInfo.InnerObjectInfo e, float indent)
         {
             bool isRoot = _parentEntry.Count == 0;
-
-            if (isRoot)
-                EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
-
-            // id
-            var idRect = pos.SliceLeft(_idWidth);
-            if (e.Id != -1)
+            bool isVisible = GetNextLineVisible(out var pos, true);
+            var lineRect = pos;
+            if (isVisible)
             {
-                GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
-                EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
-            }
-            
-            var collapseRect = pos.SliceLeft(indent);
-            if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
-                SetExpanded(_parentEntry.Peek(), false, Event.current.alt);
+                if (isRoot)
+                    EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
 
-            // expanded
-            var expandRect = pos.SliceLeft(16f);
-            bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
-            if (e.IsExpandable)
-            {
-                GUI.contentColor = Color.gray;
-                if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
+                // id
+                var idRect = pos.SliceLeft(_idWidth);
+                if (e.Id != -1)
+                {
+                    GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+                    EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
+                }
+
+                var collapseRect = pos.SliceLeft(indent);
+                if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
+                    SetExpanded(_parentEntry.Peek(), false, Event.current.alt);
+
+                // expanded
+                var expandRect = pos.SliceLeft(16f);
+                bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
+                if (e.IsExpandable)
+                {
+                    GUI.contentColor = Color.gray;
+                    if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
+                        SetExpanded(e, !expanded, Event.current.alt);
+                }
+
+                // json
+                var jsonRect = pos.SliceRight(18f);
+                if (e.IsRealObject & !e.IsNull & e.IsSupported)
+                {
+                    bool requiresJsonUpdate = e.JsonData == null;
+                    GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
+                    GUI.backgroundColor = requiresJsonUpdate ? Color.clear
+                        : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
+                        : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
+                    if (GUI.Button(jsonRect, "J")
+                        && (!requiresJsonUpdate | e.TotalSize < 1024
+                            || EditorUtility.DisplayDialog("Large object", $"Object \"{e.Caption}\" seems to be large and it may take a while to convert it to Json string.\nAre you sure you want to continue?", "Continue", "Cancel")))
+                    {
+                        _info.UpdateJsonData(e);
+                        PopupWindow.Show(jsonRect, new JsonPopupWindow(e));
+                    }
+                    GUI.backgroundColor = Color.white;
+                }
+
+                var nameRect = pos;
+                // size (persistent)
+                {
+                    _tempContent.text = Size(_renderTotalSize ? e.TotalSize : e.DataSize);
+                    var width = BoldRight.CalcSize(_tempContent).x;
+                    nameRect.xMax = pos.xMax - width;
+                    GUI.contentColor = Color.white;
+                    EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
+                }
+                // size (optional)
+                if (_renderSelfSize & e.SelfSize > 0)
+                {
+                    _tempContent.text = Size(e.SelfSize);
+                    var width = BoldRight.CalcSize(_tempContent).x;
+                    nameRect.xMax = pos.xMax - width;
+                    GUI.contentColor = Color.gray;
+                    EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
+                }
+
+                // name
+                GUI.contentColor = e.IsSupported
+                    ? e.IsNull ? Color.grey : Color.black
+                    : Color.red;
+                if (GUI.Button(nameRect, _renderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
+                    & e.IsExpandable)
                     SetExpanded(e, !expanded, Event.current.alt);
             }
-
-            // json
-            var jsonRect = pos.SliceRight(18f);
-            if (e.IsRealObject & !e.IsNull & e.IsSupported)
-            {
-                bool requiresJsonUpdate = e.JsonData == null;
-                GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
-                GUI.backgroundColor = requiresJsonUpdate ? Color.clear
-                    : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
-                    : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
-                if (GUI.Button(jsonRect, "J")
-                    && (!requiresJsonUpdate | e.TotalSize < 1024
-                        || EditorUtility.DisplayDialog("Large object", $"Object \"{e.Caption}\" seems to be large and it may take a while to convert it to Json string.\nAre you sure you want to continue?", "Continue", "Cancel")))
-                {
-                    _info.UpdateJsonData(e);
-                    PopupWindow.Show(jsonRect, new JsonPopupWindow(e));
-                }
-                GUI.backgroundColor = Color.white;
-            }
-
-            var nameRect = pos;
-            // size (persistent)
-            {
-                _tempContent.text = Size(_renderTotalSize ? e.TotalSize : e.DataSize);
-                var width = BoldRight.CalcSize(_tempContent).x;
-                nameRect.xMax = pos.xMax - width;
-                GUI.contentColor = Color.white;
-                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
-            }
-            // size (optional)
-            if (_renderSelfSize & e.SelfSize > 0)
-            {
-                _tempContent.text = Size(e.SelfSize);
-                var width = BoldRight.CalcSize(_tempContent).x;
-                nameRect.xMax = pos.xMax - width;
-                GUI.contentColor = Color.gray;
-                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
-            }
-            var result = pos;
-
-            // name
-            GUI.contentColor = e.IsSupported
-                ? e.IsNull ? Color.grey : Color.black
-                : Color.red;
-            if (GUI.Button(nameRect, _renderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
-                & e.IsExpandable)
-                SetExpanded(e, !expanded, Event.current.alt);
 
             // internal entries
             if (e.IsExpandable && _expandedObjects.Contains(e))
             {
                 _parentEntry.Push(e);
                 foreach (var inner in e.InnerObjects)
-                    DrawEntry(GetNextLineRect(true), inner, indent + 12f);
+                    DrawEntry(inner, indent + 12f);
                 _parentEntry.Pop();
             }
-
-            return result;
+            return lineRect;
         }
         private void SetExpanded(ContainerEditorInfo.InnerObjectInfo e, bool value, bool child = false)
         {
