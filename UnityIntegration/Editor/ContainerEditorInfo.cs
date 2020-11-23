@@ -21,7 +21,7 @@ namespace DaSerialization.Editor
         public ContainerEditorInfo(TextAsset textAsset)
         {
             Asset = textAsset;
-            var containerRef = ContainerRef.FromTextAsset(Asset);
+            var containerRef = ContainerRef.FromTextAsset(Asset, false);
             _container = containerRef.Container as BinaryContainer;
         }
 

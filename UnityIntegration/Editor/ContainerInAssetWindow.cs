@@ -68,7 +68,8 @@ namespace DaSerialization.Editor
             if (Target != null && (_info == null || _info.Asset != Target))
             {
                 _info = new ContainerEditorInfo(Target);
-                _info.UpdateDetailedInfo();
+                if (_info.IsValid)
+                    _info.UpdateDetailedInfo();
                 _sizeText = new GUIContent(Size(_info.Size), $"Total size: {_info.Size}\nMeta data: {_info.MetaInfoSize}\nUseful: {_info.Size - _info.MetaInfoSize}");
                 _expandedObjects.Clear();
                 _idWidth = GetMaxIdWidth(_info, _idWidth);
