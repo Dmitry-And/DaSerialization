@@ -12,7 +12,6 @@ namespace DaSerialization.Editor
         public static void OpenInContainerViewer()
         {
             var text = Selection.activeObject as TextAsset;
-            ContainerInspectorWindow.Init();
             ContainerInspectorWindow window = (ContainerInspectorWindow)EditorWindow.GetWindow(typeof(ContainerInspectorWindow));
             window.Target = text;
         }

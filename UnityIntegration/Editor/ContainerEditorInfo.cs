@@ -12,7 +12,6 @@ namespace DaSerialization.Editor
     {
         #region basic info
 
-        public TextAsset Asset { get; private set; }
         public bool IsValid => _container != null;
         public long Size => _container == null ? 0 : _container.Size;
         public int EntriesCount => _container == null ? 0 : _container.GetContentTable().Count;
@@ -20,9 +19,12 @@ namespace DaSerialization.Editor
 
         public ContainerEditorInfo(TextAsset textAsset)
         {
-            Asset = textAsset;
-            var containerRef = ContainerRef.FromTextAsset(Asset, false);
+            var containerRef = ContainerRef.FromTextAsset(textAsset, false);
             _container = containerRef.Container as BinaryContainer;
+        }
+        public ContainerEditorInfo(BinaryContainer container)
+        {
+            _container = container;
         }
 
         #endregion
