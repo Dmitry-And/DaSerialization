@@ -1,5 +1,6 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -8,19 +9,27 @@ namespace DaSerialization.Editor
     public class ContainerInspectorWindow : EditorWindow
     {
         private static GUIContent RefreshButton = new GUIContent("Refresh", "Reload container from the asset and update all stats");
+        private static Type[] _docksNextTo = new[] { typeof(ContainerInspectorWindow), null };
 
         public TextAsset Target;
         private TextAsset _displayedAsset;
         private ContainerEditorView _containerView;
 
-        [MenuItem("Window/Container Viewer")]
-        public static void InitWindow()
+        [MenuItem("Window/Container Inspector")]
+        protected static void OpenContainerWindow()
+            => GetOrCreateWindow();
+
+        public static ContainerInspectorWindow GetOrCreateWindow(bool forceCreateNew = false)
         {
-            ContainerInspectorWindow window = (ContainerInspectorWindow)GetWindow(typeof(ContainerInspectorWindow));
-            window.name = "Container Inspector";
-            window.titleContent = new GUIContent("Container Inspector");
+            if (_docksNextTo[1] == null)
+                _docksNextTo[1] = typeof(EditorWindow).Assembly.GetType("UnityEditor.InspectorWindow");
+
+            var window = forceCreateNew
+                ? CreateWindow<ContainerInspectorWindow>("Container Inspector", _docksNextTo)
+                : GetWindow<ContainerInspectorWindow>("Container Inspector", true, _docksNextTo);
             window.minSize = new Vector2(300f, 300f);
             window.Show();
+            return window;
         }
 
         void OnGUI()

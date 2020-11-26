@@ -12,10 +12,18 @@ namespace DaSerialization.Editor
         public static void OpenInContainerViewer()
         {
             var text = Selection.activeObject as TextAsset;
-            ContainerInspectorWindow window = (ContainerInspectorWindow)EditorWindow.GetWindow(typeof(ContainerInspectorWindow));
+            var window = ContainerInspectorWindow.GetOrCreateWindow();
+            window.Target = text;
+        }
+        [MenuItem("Assets/Container/Open in New Inspector...", priority = 21)]
+        public static void OpenInNewContainerViewer()
+        {
+            var text = Selection.activeObject as TextAsset;
+            var window = ContainerInspectorWindow.GetOrCreateWindow(true);
             window.Target = text;
         }
         [MenuItem("Assets/Container/Open in Inspector...", true)]
+        [MenuItem("Assets/Container/Open in New Inspector...", true)]
         public static bool SelectionIsContainer()
         {
             var text = Selection.activeObject as TextAsset;

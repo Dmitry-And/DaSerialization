@@ -23,13 +23,13 @@
 +	Edtr 	improve size modes in the table
 +				right column modes: total/effective(non-meta)
 +				left column modes: none/self
-	Edtr 	show is/has old version markers
-				expand all 'has' sub-objects on click
-	Edtr 	improve editor UX
++	Edtr 	improve editor UX
 +				set window name and min size
 +				move context menu options to the top
 -				hide context menu options for non-container text assets (seems impossible)
-				support multiple container view windows
++				support multiple container view windows
+	Edtr 	show is/has old version markers
+				expand all 'has' sub-objects on click
 	Edtr 	update ContainerRef(WithId) property renderers
 				add popup window with container content
 	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
