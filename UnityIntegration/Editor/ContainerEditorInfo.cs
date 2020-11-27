@@ -27,6 +27,14 @@ namespace DaSerialization.Editor
             _container = container;
         }
 
+        public bool ContainsObjectWithId(int id)
+        {
+            foreach (var e in _container.GetContentTable())
+                if (e.ObjectId == id)
+                    return true;
+            return false;
+        }
+
         #endregion
 
         #region detailed info

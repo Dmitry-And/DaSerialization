@@ -28,10 +28,10 @@
 +				move context menu options to the top
 -				hide context menu options for non-container text assets (seems impossible)
 +				support multiple container view windows
++	Edtr 	update ContainerRef(WithId) property renderers
++				add popup window with container content
 	Edtr 	show is/has old version markers
 				expand all 'has' sub-objects on click
-	Edtr 	update ContainerRef(WithId) property renderers
-				add popup window with container content
 	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
 	Hlpr 	get rid of external dependencies after refactoring
 	Othr	add readme

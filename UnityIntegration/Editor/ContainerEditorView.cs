@@ -272,7 +272,7 @@ namespace DaSerialization.Editor
         }
 
         private static StringBuilder _sb = new StringBuilder(16);
-        private static string Size(long size)
+        public static string Size(long size)
         {
             if (size < 1024)
                 return size.ToStringFast();

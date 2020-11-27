@@ -1,6 +1,5 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
-using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -10,39 +9,39 @@ namespace DaSerialization.Editor
     [CustomPropertyDrawer(typeof(ContainerRef))]
     public class ContainerRefWithIdDrawer : PropertyDrawer
     {
+        private static GUIContent notSelectedLabel = new GUIContent("---", "No container selected");
+        private static GUIContent invalidLabel = new GUIContent("Inv", "Selected TextAsset is not a valid container");
+        private static GUIContent noIdLabel = new GUIContent("NoID", "The ID specified is not present in the container");
+
         private ContainerEditorInfo _container;
-        private float _height;
         private TextAsset _text;
+        private GUIContent _infoLabel;
+        private Color _color;
 
         private void UpdateContainer(SerializedProperty property)
         {
             var text = property.objectReferenceValue as TextAsset;
+            if (_container == null | _text != text)
+                ForceUpdateContainer(property);
+        }
+        private void ForceUpdateContainer(SerializedProperty property)
+        {
+            var text = property.objectReferenceValue as TextAsset;
+            _text = text;
+            _container = text == null ? null : new ContainerEditorInfo(text);
 
-            if (text == null)
+            _color = Color.white;
+            if (_container == null)
+                _infoLabel = notSelectedLabel;
+            else if (!_container.IsValid)
             {
-                _text = text;
-                _height = EditorGUIUtility.singleLineHeight;
-                _container = null;
-                return;
+                _color = Color.red;
+                _infoLabel = invalidLabel;
             }
-            // TODO: check file content was changed OR add manual refresh
-            if (_container == null
-                | _text != text)
+            else
             {
-                _text = text;
-                var container = new ContainerEditorInfo(text);
-                if (!container.IsValid)
-                {
-                    // text asset is not a container
-                    _height = EditorGUIUtility.singleLineHeight * 2;
-                    _container = null;
-                    return;
-                }
-                else
-                {
-                    _container = container;
-                    _height = EditorGUIUtility.singleLineHeight * 2;
-                }
+                string entitiesCount = _container.EntriesCount.ToStringFast();
+                _infoLabel = new GUIContent(entitiesCount, $"Entities: {entitiesCount}, size: {ContainerEditorView.Size(_container.Size)} bytes");
             }
         }
 
@@ -54,6 +53,7 @@ namespace DaSerialization.Editor
             var idProp = property.FindPropertyRelative(nameof(ContainerRefWithId.Id));
 
             var position = EditorGUI.PrefixLabel(pos, GUIUtility.GetControlID(FocusType.Passive), label);
+            var infoRect = position.SliceRight(30f);
 
             var oldIndent = EditorGUI.indentLevel;
             EditorGUI.indentLevel = 0;
@@ -63,52 +63,28 @@ namespace DaSerialization.Editor
             EditorGUI.indentLevel = oldIndent;
 
             UpdateContainer(containerProp);
-            DrawContainerContent(pos, position, _container, containerProp,
-                out int idToDelete, out Type typeToDelete);
 
-            if (idToDelete != 0)
+            GUIContent infoLabel = _infoLabel;
+            Color color = _color;
+            if (_container != null && _container.IsValid
+                && idProp != null && !_container.ContainsObjectWithId(idProp.intValue))
             {
-                var textAsset = property.FindPropertyRelative(ContainerRef.TextAssetFieldName).objectReferenceValue as TextAsset;
-                var cRef = ContainerRef.FromTextAsset(textAsset);
-                cRef.Remove(idToDelete, typeToDelete, true);
+                color = Color.yellow;
+                infoLabel = noIdLabel;
             }
-
-            EditorGUI.EndProperty();
-        }
-
-        public static void DrawContainerContent(Rect pos, Rect containerRect,
-            ContainerEditorInfo container, SerializedProperty containerProp,
-            out int entryToDelete, out Type typeToDelete)
-        {
-            var rect = new Rect(pos);
-            rect.yMin += containerRect.height;
-            rect.height = EditorGUIUtility.singleLineHeight;
-            EditorGUI.indentLevel++;
-            rect = EditorGUI.IndentedRect(rect);
-            EditorGUI.indentLevel--;
-            var oldIndent = EditorGUI.indentLevel;
-            EditorGUI.indentLevel = 0;
-            entryToDelete = 0;
-            typeToDelete = null;
-            if (container != null)
+            GUI.backgroundColor = color;
+            if (GUI.Button(infoRect, infoLabel))
             {
-                EditorGUI.LabelField(rect, container.EntriesCount + " entries, " + container.Size / 1024 + " KB");
-            }
-            else
-            {
-                if (containerProp.objectReferenceValue != null)
+                ForceUpdateContainer(containerProp);
+                if (_container != null && _container.IsValid)
                 {
-                    GUI.contentColor = Color.red;
-                    EditorGUI.LabelField(rect, "It's not a container!");
-                    GUI.contentColor = Color.white;
+                    var view = new ContainerEditorView(_container);
+                    PopupWindow.Show(infoRect, new ContainerInspectorPopup(view));
                 }
             }
-            EditorGUI.indentLevel = oldIndent;
-        }
+            GUI.backgroundColor = Color.white;
 
-        public override float GetPropertyHeight(SerializedProperty property, GUIContent label)
-        {
-            return EditorGuiUtils.GetLinesHeight(1);
+            EditorGUI.EndProperty();
         }
     }
 }
