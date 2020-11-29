@@ -41,12 +41,12 @@
 +				use UInt32 for length in content table
 +				use packed uint values in content table
 +				change table header and info tokens
++	Othr	add licence (non-commertial use)
 	Othr	add readme
 				motivation
 				concepts
 				API
 				Unity integration
-	Othr	add licence (non-commertial use)
 
 0.1
 
