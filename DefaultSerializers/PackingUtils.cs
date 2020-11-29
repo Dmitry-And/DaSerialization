@@ -2,7 +2,7 @@
 
 namespace DaSerialization
 {
-    public static class PackingSerializationExtensions
+    public static class PackingUtils
     {
         #region bool packing
 
@@ -219,6 +219,14 @@ namespace DaSerialization
             if (maxValue <= 0x1fffff_ffffffffUL)
                 return 6;
             return 7;
+        }
+
+        public static int GetPackedSize(long value)
+            => GetPackedSize(IntToUInt(value));
+        public static int GetPackedSize(ulong value)
+        {
+            var format = GetPackedFormat(value);
+            return format == 7 ? 9 : format + 1;
         }
 
         public static long ReadIntPacked(this BinaryReader reader)
