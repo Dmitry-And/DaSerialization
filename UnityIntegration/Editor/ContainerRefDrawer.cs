@@ -40,7 +40,7 @@ namespace DaSerialization.Editor
             }
             else
             {
-                string entitiesCount = _container.EntriesCount.ToStringFast();
+                string entitiesCount = _container.EntriesCount.ToString();
                 _infoLabel = new GUIContent(entitiesCount, $"Entities: {entitiesCount}, size: {ContainerEditorView.Size(_container.Size)} bytes");
             }
         }

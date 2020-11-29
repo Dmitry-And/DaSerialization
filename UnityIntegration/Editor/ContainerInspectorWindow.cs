@@ -42,7 +42,7 @@ namespace DaSerialization.Editor
         void OnGUI()
         {
             var pos = new Rect(new Vector2(), position.size);
-            pos = pos.Shrink(2f); // 2-pixel margins
+            pos = pos.Expand(-2f); // 2-pixel margins
             var line = pos.SliceTop();
             EditorGUI.BeginDisabledGroup(Target == null);
             if (GUI.Button(line.SliceRight(60f), RefreshButton))

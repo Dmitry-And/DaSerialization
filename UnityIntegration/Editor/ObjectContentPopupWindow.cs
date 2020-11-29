@@ -51,9 +51,9 @@ namespace DaSerialization.Editor
                 _textSize.x = MinWidth;
             _textSize.y = TextStyle.CalcHeight(textContent, _textSize.x);
             float visibleHeight = _textSize.y;
-            EditorGuiUtils.AddLineHeight(ref visibleHeight);
+            EditorHelpers.AddLineHeight(ref visibleHeight);
             if (_objectInfo.JsonHasErrors)
-                EditorGuiUtils.AddLineHeight(ref visibleHeight, 20f);
+                EditorHelpers.AddLineHeight(ref visibleHeight, 20f);
             _windowSize.x = _textSize.x + 6f;
             if (visibleHeight > MaxHeight)
             {
@@ -70,7 +70,7 @@ namespace DaSerialization.Editor
             if (_objectInfo.JsonData == null)
             {
                 EditorGUILayout.BeginHorizontal();
-                EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorGuiUtils.GetLinesHeight(1)));
+                EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorHelpers.GetLinesHeight(1)));
                 if (GUILayout.Button("X", GUILayout.Width(20f)))
                     editorWindow.Close();
                 EditorGUILayout.EndHorizontal();
@@ -84,7 +84,7 @@ namespace DaSerialization.Editor
             }
 
             EditorGUILayout.BeginHorizontal();
-            EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorGuiUtils.GetLinesHeight(1)));
+            EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorHelpers.GetLinesHeight(1)));
             if (GUILayout.Button("Copy", GUILayout.Width(42f)))
                 GUIUtility.systemCopyBuffer = _objectInfo.JsonData;
             if (GUILayout.Button("X", GUILayout.Width(20f)))

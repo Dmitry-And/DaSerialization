@@ -15,13 +15,13 @@ namespace DaSerialization.Editor
         {
             if (view == null)
             {
-                var boxRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(2));
+                var boxRect = position.SliceTop(EditorHelpers.GetLinesHeight(2));
                 EditorGUI.HelpBox(boxRect, "Select a container asset", MessageType.Info);
                 return null;
             }
             if (!view.Info.IsValid)
             {
-                var boxRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(2));
+                var boxRect = position.SliceTop(EditorHelpers.GetLinesHeight(2));
                 EditorGUI.HelpBox(boxRect, "This is not a valid container", MessageType.Error);
                 return null;
             }
@@ -40,7 +40,7 @@ namespace DaSerialization.Editor
         private static GUIContent SelfSizeHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
-        private static GUIContent JsonLabel = new GUIContent("D ", "Show object data as JSON representation...");
+        private static GUIContent JsonLabel = new GUIContent("D ", "Show object data in JSON-like format...");
         private static GUIContent UpdateSerializersButton = new GUIContent("Update\nSerializers", "Deserializer container and serialize it again with newest available serializers");
         private static float _lineHeight;
 
@@ -70,13 +70,14 @@ namespace DaSerialization.Editor
         {
             if (Bold != null)
                 return;
-            Bold = EditorGuiUtils.whiteBoldLabel;
+            Bold = new GUIStyle(EditorStyles.whiteBoldLabel);
+            Bold.normal.textColor = Color.white;
             Normal = EditorStyles.whiteLabel;
             BoldRight = new GUIStyle(Bold);
             BoldRight.alignment = TextAnchor.LowerRight;
             NormalRight = new GUIStyle(Normal);
             NormalRight.alignment = TextAnchor.LowerRight;
-            _lineHeight = EditorGuiUtils.GetLinesHeight(1);
+            _lineHeight = EditorHelpers.GetLinesHeight(1);
         }
 
         // returns updated container if it was changed, null otherwise
@@ -92,7 +93,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.grey;
             EditorGUI.LabelField(pos.SliceRight(36f), "Size:", NormalRight);
             GUI.contentColor = Color.white;
-            EditorGUI.LabelField(pos.SliceRight(46f), Info.EntriesCount.ToStringFast(), Bold);
+            EditorGUI.LabelField(pos.SliceRight(46f), Info.EntriesCount.ToString(), Bold);
             GUI.contentColor = Color.grey;
             EditorGUI.LabelField(pos.SliceRight(52f), "Objects:", NormalRight);
             EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
@@ -100,7 +101,7 @@ namespace DaSerialization.Editor
 
             if (Info.HasOldVersions)
             {
-                var warnRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(Editable ? 2 : 1));
+                var warnRect = position.SliceTop(EditorHelpers.GetLinesHeight(Editable ? 2 : 1));
                 if (Editable
                     && GUI.Button(warnRect.SliceRight(75f), UpdateSerializersButton))
                 {
@@ -213,7 +214,7 @@ namespace DaSerialization.Editor
                 }
 
                 // json
-                var jsonRect = pos.SliceRight(20f);
+                var jsonRect = pos.SliceRight(19f);
                 if (e.IsRealObject & !e.IsNull & e.IsSupported)
                 {
                     bool requiresJsonUpdate = e.JsonData == null;
@@ -314,7 +315,7 @@ namespace DaSerialization.Editor
         public static string Size(long size)
         {
             if (size < 1024)
-                return size.ToStringFast();
+                return size.ToString();
 
             char suffix = 'k';
             float value = size / 1024f;
@@ -336,11 +337,11 @@ namespace DaSerialization.Editor
 
             _sb.Length = 0;
             if (value < 10f)
-                _sb.AppendFast(value, 2, false);
+                _sb.AppendFormat("{0:0.00}", value);
             else if (value < 100f)
-                _sb.AppendFast(value, 1, false);
+                _sb.AppendFormat("{0:0.0}", value);
             else
-                _sb.AppendFast(value, 0, false);
+                _sb.AppendFormat("{0:0}", value);
 
             _sb.Append(' ');
             _sb.Append(suffix);

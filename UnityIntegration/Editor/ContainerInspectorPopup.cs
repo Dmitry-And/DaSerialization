@@ -29,7 +29,7 @@ namespace DaSerialization.Editor
         public override void OnGUI(Rect rect)
         {
             var pos = new Rect(new Vector2(), GetWindowSize());
-            pos = pos.Shrink(2f); // 2-pixel margins
+            pos = pos.Expand(-2f); // 2-pixel margins
             var updatedContainer = _view.Draw(pos);
             if (updatedContainer != null && _asset != null)
             {

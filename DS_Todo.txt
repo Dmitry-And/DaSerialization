@@ -34,7 +34,7 @@
 +				button to update serializers for the container
 +				expand all 'has' sub-objects on id click
 +	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
-	Hlpr 	get rid of external dependencies after refactoring
++	Hlpr 	get rid of external dependencies after refactoring
 	Othr	add readme
 				motivation
 				concepts
