@@ -3,49 +3,6 @@
 	PLAN
 ===================================================================================
 
-+	Edtr 	fix table column headers offset
-+	Edtr 	show human-friendly object size labels
-+	Edtr	fix SerializeList/Array entries in editor window
-+				show correct entry ref types
-+				show the list/array entries in normal font
-+	Edtr 	add even/odd line background
-+	Edtr 	make 'Self' column optional
-+	Edtr	add Json view of the objects in popup window
-+	Edtr 	improve Json popup window
-+	Core 	fix erroneous meta size for root objects and table
-+	Edtr 	make Json preview pretty
-+				add info about object types
-+				show warning for Json-izing large objects
--				monospace font (not so necessary, but hard to implement robustly)
-+				4 characters indent
-+				hide quotes around the property/field names
-+				get rid of top level curved brackets and indent
-+	Edtr 	improve size modes in the table
-+				right column modes: total/effective(non-meta)
-+				left column modes: none/self
-+	Edtr 	improve editor UX
-+				set window name and min size
-+				move context menu options to the top
--				hide context menu options for non-container text assets (seems impossible)
-+				support multiple container view windows
-+	Edtr 	update ContainerRef(WithId) property renderers
-+				add popup window with container content
-+	Edtr 	show is/has old version markers
-+				button to update serializers for the container
-+				expand all 'has' sub-objects on id click
-+	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
-+	Hlpr 	get rid of external dependencies after refactoring
-+	Core 	add signed packed operation
-+	Edtr 	bug: not all container serializers updated if any of them has errors
-+	Core 	update binary container format
-+				use UInt32 for length in content table
-+				use packed uint values in content table
-+				change table header and info tokens
-+	Othr	add licence (non-commertial use)
-+	Othr	add readme
-
-0.1
-
 	Othr	extend readme
 				motivation
 				concepts
@@ -106,10 +63,51 @@
 
 
 ===================================================================================
-	DONE/RELEASES
+	DONE/CHANGELOG
 ===================================================================================
 
+0.1
 
++	Edtr 	fix table column headers offset
++	Edtr 	show human-friendly object size labels
++	Edtr	fix SerializeList/Array entries in editor window
++				show correct entry ref types
++				show the list/array entries in normal font
++	Edtr 	add even/odd line background
++	Edtr 	make 'Self' column optional
++	Edtr	add Json view of the objects in popup window
++	Edtr 	improve Json popup window
++	Core 	fix erroneous meta size for root objects and table
++	Edtr 	make Json preview pretty
++				add info about object types
++				show warning for Json-izing large objects
+-				monospace font (not so necessary, but hard to implement robustly)
++				4 characters indent
++				hide quotes around the property/field names
++				get rid of top level curved brackets and indent
++	Edtr 	improve size modes in the table
++				right column modes: total/effective(non-meta)
++				left column modes: none/self
++	Edtr 	improve editor UX
++				set window name and min size
++				move context menu options to the top
+-				hide context menu options for non-container text assets (seems impossible)
++				support multiple container view windows
++	Edtr 	update ContainerRef(WithId) property renderers
++				add popup window with container content
++	Edtr 	show is/has old version markers
++				button to update serializers for the container
++				expand all 'has' sub-objects on id click
++	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
++	Hlpr 	get rid of external dependencies after refactoring
++	Core 	add signed packed operation
++	Edtr 	bug: not all container serializers updated if any of them has errors
++	Core 	update binary container format
++				use UInt32 for length in content table
++				use packed uint values in content table
++				change table header and info tokens
++	Othr	add licence (non-commertial use)
++	Othr	add readme
 
 
 

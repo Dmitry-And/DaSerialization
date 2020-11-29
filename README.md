@@ -1,5 +1,5 @@
 # DaSerialization v0.1
-Fast, compact, binary, manual de/serialization framework for C#.
+Fast, compact, binary, manual de/serialization framework for C# with optional Unity3d integration
 
 # Main Features
 - Runtime in-memory or file-based binary serialization and deserialization
