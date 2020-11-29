@@ -2,7 +2,7 @@
 
 namespace DaSerialization
 {
-    public static class PackingSerializationExtensions
+    public static class PackingUtils
     {
         #region bool packing
 
@@ -105,13 +105,18 @@ namespace DaSerialization
 
         #region 3-byte
 
+        public static int Read3ByteInt32(this BinaryReader reader)
+            => UIntToInt(Read3ByteUInt32(reader)).ToInt32();
         public static uint Read3ByteUInt32(this BinaryReader reader)
         {
             uint head = reader.ReadByte();
             uint tail = reader.ReadUInt16();
             return (head << 16) + tail;
         }
-        public static void Write3Byte(this BinaryWriter writer, uint u)
+
+        public static void Write3ByteInt32(this BinaryWriter writer, int u)
+            => Write3ByteUInt32(writer, IntToUInt(u).ToUInt32());
+        public static void Write3ByteUInt32(this BinaryWriter writer, uint u)
         {
             const uint largest = 0xffffff;
             if (u > largest)
@@ -126,11 +131,22 @@ namespace DaSerialization
 
         #region packed uint
 
-        public static int CountBytes(this BinaryReader reader, ulong maxValue)
-        { return CountBytes(maxValue); }
-        public static int CountBytes(this BinaryWriter writer, ulong maxValue)
-        { return CountBytes(maxValue); }
+        private static ulong IntToUInt(long i)
+            => i >= 0 ? 2UL * ((ulong)i) : ((ulong)(-1L - i) * 2UL + 1UL);
+        private static long UIntToInt(ulong i)
+            => (i & 1UL) == 0UL ? (long)(i >> 1) : -1L - (long)(i >> 1);
 
+        public static int CountBytes(this BinaryReader reader, ulong maxValue)
+            => CountBytes(maxValue);
+        public static int CountBytes(this BinaryWriter writer, ulong maxValue)
+            => CountBytes(maxValue);
+        public static int CountBytes(this BinaryReader reader, long maxValue)
+            => CountBytes(maxValue);
+        public static int CountBytes(this BinaryWriter writer, long maxValue)
+            => CountBytes(maxValue);
+
+        public static int CountBytes(long maxValue)
+            => CountBytes(IntToUInt(maxValue));
         public static int CountBytes(ulong maxValue)
         {
             if (maxValue <= 0xffUL)
@@ -150,9 +166,11 @@ namespace DaSerialization
             return 8;
         }
 
-        public static ulong ReadUIntPacked(this BinaryReader reader, int bytes)
+        public static long ReadIntPacked(this BinaryReader reader, int bytesCount)
+            => UIntToInt(ReadUIntPacked(reader, bytesCount));
+        public static ulong ReadUIntPacked(this BinaryReader reader, int bytesCount)
         {
-            switch (bytes)
+            switch (bytesCount)
             {
                 case 1: return reader.ReadByte();
                 case 2: return reader.ReadUInt16();
@@ -162,13 +180,15 @@ namespace DaSerialization
                 case 6: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32);
                 case 7: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32) + ((ulong)reader.ReadByte() << 48);
                 case 8: return reader.ReadUInt64();
-                default: throw new System.Exception($"Unsupported bytes count {bytes} in {nameof(ReadUIntPacked)}");
+                default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(ReadUIntPacked)}");
             }
         }
 
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value, int bytes)
+        public static void WriteIntPacked(this BinaryWriter writer, long value, int bytesCount)
+            => WriteUIntPacked(writer, IntToUInt(value), bytesCount);
+        public static void WriteUIntPacked(this BinaryWriter writer, ulong value, int bytesCount)
         {
-            switch (bytes)
+            switch (bytesCount)
             {
                 case 1: writer.Write((byte)value); return;
                 case 2: writer.Write((ushort)value); return;
@@ -178,23 +198,9 @@ namespace DaSerialization
                 case 6: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); return;
                 case 7: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); writer.Write((byte)(value >> 48)); return;
                 case 8: writer.Write((ulong)value); return;
-                default: throw new System.Exception($"Unsupported bytes count {bytes} in {nameof(WriteUIntPacked)}");
+                default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(WriteUIntPacked)}");
             }
         }
-
-        public static ulong ReadUIntPacked(this BinaryReader reader)
-        {
-            int bytes = reader.ReadByte();
-            return reader.ReadUIntPacked(bytes);
-        }
-
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value)
-        {
-            var bytes = CountBytes(value);
-            writer.Write((byte)bytes);
-            writer.WriteUIntPacked(value, bytes);
-        }
-
 
         private static int GetPackedFormat(ulong maxValue)
         {
@@ -215,7 +221,17 @@ namespace DaSerialization
             return 7;
         }
 
-        public static ulong ReadUIntPacked_2(this BinaryReader reader)
+        public static int GetPackedIntSize(long value)
+            => GetPackedUIntSize(IntToUInt(value));
+        public static int GetPackedUIntSize(ulong value)
+        {
+            var format = GetPackedFormat(value);
+            return format == 7 ? 9 : format + 1;
+        }
+
+        public static long ReadIntPacked(this BinaryReader reader)
+            => UIntToInt(ReadUIntPacked(reader));
+        public static ulong ReadUIntPacked(this BinaryReader reader)
         {
             int formatAndHighBits = reader.ReadByte();
             int format = formatAndHighBits >> 5;
@@ -228,7 +244,9 @@ namespace DaSerialization
             return value;
         }
 
-        public static void WriteUIntPacked_2(this BinaryWriter writer, ulong value)
+        public static void WriteIntPacked(this BinaryWriter writer, long value)
+            => WriteUIntPacked(writer, IntToUInt(value));
+        public static void WriteUIntPacked(this BinaryWriter writer, ulong value)
         {
             var format = GetPackedFormat(value);
             int bytes = format == 7 ? 8 : format;

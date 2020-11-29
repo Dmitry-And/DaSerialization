@@ -29,6 +29,15 @@ namespace DaSerialization
             LatestSerializerWritesContainer = false;
             IsContainer = typeof(IContainer).IsAssignableFrom(Type);
         }
+        public SerializationTypeInfo(Type type)
+        {
+            Id = -1;
+            Type = type;
+            SerializerIndex = NO_SERIALIZER;
+            DeserializerIndex = NO_SERIALIZER;
+            LatestSerializerWritesContainer = false;
+            IsContainer = typeof(IContainer).IsAssignableFrom(Type);
+        }
 
         public void InitSerializers(int index, ISerializer serializerHighestVersion)
         {

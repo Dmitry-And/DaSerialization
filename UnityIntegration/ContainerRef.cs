@@ -28,9 +28,11 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
             _textAsset = value;
             _initialized = false;
             _container = null;
+            MuteInvalidAssetErrors = false; // conservative strategy
         }
     }
     public int Id;
+    public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
     private bool _initialized;
     private IContainer _container;
@@ -40,7 +42,7 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
     public bool Equals(ContainerRefWithId other) => other.Id == Id && other._textAsset == _textAsset;
 
     public bool Init()
-        => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container);
+        => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container, !MuteInvalidAssetErrors);
 
 #if UNITY_EDITOR
     public bool UpdateSerializers()
@@ -99,23 +101,23 @@ public struct ContainerRef : IEquatable<ContainerRef>
             _textAsset = value;
             _initialized = false;
             _container = null;
+            MuteInvalidAssetErrors = false; // conservative strategy
         }
     }
+    public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
     private bool _initialized;
     private IContainer _container;
     public IContainer Container { get { Init(); return _container; } }
     public bool IsValid => Init();
 
-    public static ContainerRef FromTextAsset(TextAsset textAsset)
-        => new ContainerRef() { _textAsset = textAsset };
-    //public static ContainerRef FromResourcesAsset(string path)
-    //public static ContainerRef FromPersistentAsset(string path)
+    public static ContainerRef FromTextAsset(TextAsset textAsset, bool verbose = true)
+        => new ContainerRef() { _textAsset = textAsset, MuteInvalidAssetErrors = !verbose };
 
     public bool Equals(ContainerRef other) => other._textAsset == _textAsset;
 
     public bool Init()
-        => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container);
+        => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container, !MuteInvalidAssetErrors);
 
 #if UNITY_EDITOR
     public bool UpdateSerializers()
@@ -123,8 +125,7 @@ public struct ContainerRef : IEquatable<ContainerRef>
         if (!IsValid)
             return false;
 
-        var container = Container;
-        if (container.UpdateSerializers())
+        if (Container.UpdateSerializers())
         {
             WriteToTextAsset();
             return true;
@@ -160,7 +161,7 @@ namespace DaSerialization.Internal
     public static class ContainerAssetUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Init(ref bool initialized, TextAsset textAsset, ref IContainer container)
+        public static bool Init(ref bool initialized, TextAsset textAsset, ref IContainer container, bool verbose)
         {
             if (!initialized)
             {
@@ -169,7 +170,7 @@ namespace DaSerialization.Internal
                     return false;
                 var data = textAsset.bytes;
                 container = UnityStorage.Instance.GetContainerFromData(data, !Application.isPlaying);
-                if (container == null)
+                if (container == null & verbose)
                     Debug.LogError($"Asset {textAsset.name} contains data which is not a valid {nameof(BinaryContainer)}", textAsset);
             }
             return container != null;
