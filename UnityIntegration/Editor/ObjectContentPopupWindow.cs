@@ -7,12 +7,20 @@ namespace DaSerialization.Editor
 {
     public class ObjectContentPopupWindow : PopupWindowContent
     {
+        // smaller objects will be represented as json w/o confirmation
+        private static int AutoCreateJsonSize = 1024;
         private static GUIStyle TextStyle;
+        private readonly ContainerEditorInfo _containerInfo;
         private readonly ContainerEditorInfo.InnerObjectInfo _objectInfo;
 
-        public ObjectContentPopupWindow(ContainerEditorInfo.InnerObjectInfo objInfo)
+        public ObjectContentPopupWindow(ContainerEditorInfo containerInfo, ContainerEditorInfo.InnerObjectInfo objInfo)
         {
+            _containerInfo = containerInfo;
             _objectInfo = objInfo;
+            if (_objectInfo.JsonData == null
+                & _objectInfo.TotalSize <= AutoCreateJsonSize)
+                _containerInfo.UpdateJsonData(_objectInfo);
+
             if (TextStyle == null)
             {
                 TextStyle = new GUIStyle(EditorStyles.textArea);
@@ -28,6 +36,9 @@ namespace DaSerialization.Editor
             const float MinWidth = 120f;
             const float MaxWidth = 300f;
             const float MaxHeight = 400f;
+
+            if (_objectInfo.JsonData == null)
+                return new Vector2(230f, 102f);
 
             if (_textSize.x > 0f)
                 return _windowSize;
@@ -56,10 +67,26 @@ namespace DaSerialization.Editor
         private Vector2 _scrollPos;
         public override void OnGUI(Rect rect)
         {
+            if (_objectInfo.JsonData == null)
+            {
+                EditorGUILayout.BeginHorizontal();
+                EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorGuiUtils.GetLinesHeight(1)));
+                if (GUILayout.Button("X", GUILayout.Width(20f)))
+                    editorWindow.Close();
+                EditorGUILayout.EndHorizontal();
+
+                EditorGUILayout.HelpBox("The object seems to be rather large. It may take a while to create JSON representation of it. Do you want to continue?", MessageType.Warning);
+                GUI.backgroundColor = Color.yellow;
+                if (GUILayout.Button("Show Object Data as JSON"))
+                    _containerInfo.UpdateJsonData(_objectInfo);
+                GUI.backgroundColor = Color.white;
+                return;
+            }
+
             EditorGUILayout.BeginHorizontal();
             EditorGUILayout.SelectableLabel(_objectInfo.Caption, GUILayout.MinWidth(50f), GUILayout.MaxHeight(EditorGuiUtils.GetLinesHeight(1)));
             if (GUILayout.Button("Copy", GUILayout.Width(42f)))
-                UniClipboard.SetText(_objectInfo.JsonData);
+                GUIUtility.systemCopyBuffer = _objectInfo.JsonData;
             if (GUILayout.Button("X", GUILayout.Width(20f)))
                 editorWindow.Close();
             EditorGUILayout.EndHorizontal();
