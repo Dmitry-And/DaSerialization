@@ -136,18 +136,18 @@ namespace DaSerialization
         private static long UIntToInt(ulong i)
             => (i & 1UL) == 0UL ? (long)(i >> 1) : -1L - (long)(i >> 1);
 
-        public static int CountBytes(this BinaryReader reader, ulong maxValue)
-            => CountBytes(maxValue);
-        public static int CountBytes(this BinaryWriter writer, ulong maxValue)
-            => CountBytes(maxValue);
-        public static int CountBytes(this BinaryReader reader, long maxValue)
-            => CountBytes(maxValue);
-        public static int CountBytes(this BinaryWriter writer, long maxValue)
-            => CountBytes(maxValue);
+        public static int CountUIntBytes(this BinaryReader reader, ulong maxValue)
+            => CountUIntBytes(maxValue);
+        public static int CountUIntBytes(this BinaryWriter writer, ulong maxValue)
+            => CountUIntBytes(maxValue);
+        public static int CountIntBytes(this BinaryReader reader, long maxValue)
+            => CountIntBytes(maxValue);
+        public static int CountIntBytes(this BinaryWriter writer, long maxValue)
+            => CountIntBytes(maxValue);
 
-        public static int CountBytes(long maxValue)
-            => CountBytes(IntToUInt(maxValue));
-        public static int CountBytes(ulong maxValue)
+        public static int CountIntBytes(long maxValue)
+            => CountUIntBytes(IntToUInt(maxValue));
+        public static int CountUIntBytes(ulong maxValue)
         {
             if (maxValue <= 0xffUL)
                 return 1;
