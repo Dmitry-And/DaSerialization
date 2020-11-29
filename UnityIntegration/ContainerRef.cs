@@ -169,7 +169,16 @@ namespace DaSerialization.Internal
                 if (textAsset == null)
                     return false;
                 var data = textAsset.bytes;
-                container = UnityStorage.Instance.GetContainerFromData(data, !Application.isPlaying);
+                try
+                {
+                    container = UnityStorage.Instance.GetContainerFromData(data, !Application.isPlaying);
+                }
+                catch (Exception e)
+                {
+                    if (verbose)
+                        Debug.LogException(e, textAsset);
+                    container = null;
+                }
                 if (container == null & verbose)
                     Debug.LogError($"Asset {textAsset.name} contains data which is not a valid {nameof(BinaryContainer)}", textAsset);
             }

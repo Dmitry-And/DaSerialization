@@ -28,7 +28,7 @@ namespace DaSerialization.Editor
         {
             var text = property.objectReferenceValue as TextAsset;
             _text = text;
-            _container = text == null ? null : new ContainerEditorInfo(text);
+            _container = text == null ? null : new ContainerEditorInfo(text, Event.current.alt);
 
             _color = Color.white;
             if (_container == null)

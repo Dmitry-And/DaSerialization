@@ -18,9 +18,9 @@ namespace DaSerialization.Editor
         private BinaryContainer _container;
         public BinaryContainer GetContainer() => _container;
 
-        public ContainerEditorInfo(TextAsset textAsset)
+        public ContainerEditorInfo(TextAsset textAsset, bool verbose = false)
         {
-            var containerRef = ContainerRef.FromTextAsset(textAsset, false);
+            var containerRef = ContainerRef.FromTextAsset(textAsset, verbose);
             _container = containerRef.Container as BinaryContainer;
         }
         public ContainerEditorInfo(BinaryContainer container)

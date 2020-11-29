@@ -50,8 +50,9 @@ namespace DaSerialization.Editor
                     totalCount++;
                     lastUpdated = text;
                 }
-                catch (Exception)
+                catch (Exception e)
                 {
+                    Debug.LogError($"Error updating serializers for {text.name}:\n{e.GetType().PrettyName()}: {e.Message}\n\n{e.StackTrace}", text);
                     errorsCount++;
                 }
             }

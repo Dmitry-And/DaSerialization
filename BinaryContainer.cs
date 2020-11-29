@@ -48,13 +48,13 @@ namespace DaSerialization
                 stream.Seek(infoSectionPosition);
                 int infoToken = reader.ReadInt32();
                 if (infoToken != TABLE_INFO_TOKEN)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid table info section, token {nameof(infoToken)} read, {TABLE_INFO_TOKEN} expected");
+                    throw new Exception($"{typeof(BinaryStream).PrettyName()} doesn't have a valid table info section, token {infoToken} read, {TABLE_INFO_TOKEN} expected");
                 int tablePosition = reader.ReadInt32();
                 entriesCount = reader.ReadInt32();
                 stream.Seek(tablePosition);
                 int headerToken = reader.ReadInt32();
                 if (headerToken != TABLE_HEADER_TOKEN)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN} expected");
+                    throw new Exception($"{typeof(BinaryStream).PrettyName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN} expected");
             }
             var contentTable = new List<SerializedObjectInfo>(entriesCount);
             for (int i = 0; i < entriesCount; i++)
@@ -72,7 +72,7 @@ namespace DaSerialization
 
             // the entire table should be read now and we should end up in info section
             if (entriesCount > 0 && stream.Position != infoSectionPosition)
-                throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, table size differs from expected by {stream.Position - infoSectionPosition}");
+                throw new Exception($"{typeof(BinaryStream).PrettyName()} doesn't have a valid content table, table size differs from expected by {stream.Position - infoSectionPosition}");
 
             return contentTable;
         }
