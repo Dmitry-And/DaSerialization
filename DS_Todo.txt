@@ -42,14 +42,15 @@
 +				use packed uint values in content table
 +				change table header and info tokens
 +	Othr	add licence (non-commertial use)
-	Othr	add readme
++	Othr	add readme
+
+0.1
+
+	Othr	extend readme
 				motivation
 				concepts
 				API
 				Unity integration
-
-0.1
-
 	Edtr 	add object-view wrapper class for ContainerEditorView
 				move all strings from InnerObjectInfo to view wrapper
 				cache all ContentGUI values in view wrapper
@@ -95,7 +96,6 @@
 	Edtr 	correctly handle rare errors when creating ContainerEditorInfo
 				content table reading (ivalid size, position)
 				some entries (partially) outside the stream data
-	Edtr 	add 'remove entry from container' button
 	Edtr 	add 'collapse similar inner entries' display option
 	Srlz 	add serializers for common Unity types
 				Mesh
