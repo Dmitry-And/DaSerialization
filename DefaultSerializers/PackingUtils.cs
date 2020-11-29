@@ -221,9 +221,9 @@ namespace DaSerialization
             return 7;
         }
 
-        public static int GetPackedSize(long value)
-            => GetPackedSize(IntToUInt(value));
-        public static int GetPackedSize(ulong value)
+        public static int GetPackedIntSize(long value)
+            => GetPackedUIntSize(IntToUInt(value));
+        public static int GetPackedUIntSize(ulong value)
         {
             var format = GetPackedFormat(value);
             return format == 7 ? 9 : format + 1;

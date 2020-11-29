@@ -8,21 +8,16 @@ namespace DaSerialization
     [TypeId(2004)]
     public class BinaryContainer : AContainer<BinaryStream>
     {
-        private const int TABLE_INFO_TOKEN = 80028104;
-        private const int TABLE_HEADER_TOKEN = -114819714;
+        private const int TABLE_INFO_TOKEN_OLD = 80028104;
+        private const int TABLE_INFO_TOKEN = 549437841;
+        private const int TABLE_HEADER_TOKEN_OLD = -114819714;
+        private const int TABLE_HEADER_TOKEN = -886121582;
 
         // int (4 bytes) - table info token (to ensure the table info section is correct)
         // int (4 bytes) - table start position
         // int (4 bytes) - entries count
         // int (4 bytes) - header token (to ensure content table section is correct)
         private const int TABLE_INFO_SIZE = 16; // in bytes
-
-        // int (4 bytes) - objectId
-        // int (4 bytes) - typeId
-        // int (4 bytes) - position
-        // int (4 bytes) - length
-        private const int ENTRY_SIZE = 16;
-
 
         public BinaryContainer(int size, SerializerStorage<BinaryStream> storage)
             : base(new BinaryStream(size == 0 ? new MemoryStream() : new MemoryStream(size), true), storage)
@@ -34,31 +29,34 @@ namespace DaSerialization
 
         public override long GetContentTableSize(List<SerializedObjectInfo> contentTable)
         {
-            return contentTable.Count * ENTRY_SIZE + TABLE_INFO_SIZE;
+            long size = TABLE_INFO_SIZE + 4 * contentTable.Count; // 4 bytes for each entry from typeId int
+            foreach (var e in contentTable)
+            {
+                size += PackingUtils.GetPackedIntSize(e.ObjectId.EnsureInt32());
+                // int (4 bytes) - typeId already counted in the first line
+                size += PackingUtils.GetPackedUIntSize(e.Position.ToUInt64());
+                size += PackingUtils.GetPackedUIntSize(e.Length.EnsureUInt32());
+            }
+            return size;
         }
 
         protected override List<SerializedObjectInfo> ReadContentTable(BinaryStream stream)
         {
             int entriesCount = 0;
             var reader = stream.GetReader();
+            long infoSectionPosition = stream.Length - 12;
             if (stream.Length >= TABLE_INFO_SIZE)
             {
-                long infoSectionPosition = stream.Length - 12;
                 stream.Seek(infoSectionPosition);
                 int infoToken = reader.ReadInt32();
-                if (infoToken != TABLE_INFO_TOKEN)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid table info section, token {nameof(infoToken)} read, {TABLE_INFO_TOKEN} expected");
+                if (infoToken != TABLE_INFO_TOKEN_OLD)
+                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid table info section, token {nameof(infoToken)} read, {TABLE_INFO_TOKEN_OLD} expected");
                 int tablePosition = reader.ReadInt32();
                 entriesCount = reader.ReadInt32();
                 stream.Seek(tablePosition);
                 int headerToken = reader.ReadInt32();
-                if (headerToken != TABLE_HEADER_TOKEN)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN} expected");
-
-                int expectedSize = entriesCount * ENTRY_SIZE;
-                var entriesSectionSize = infoSectionPosition - stream.Position;
-                if (entriesSectionSize != expectedSize)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, table size is {entriesSectionSize}, expected {expectedSize}");
+                if (headerToken != TABLE_HEADER_TOKEN_OLD)
+                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN_OLD} expected");
             }
             var contentTable = new List<SerializedObjectInfo>(entriesCount);
             for (int i = 0; i < entriesCount; i++)
@@ -73,6 +71,11 @@ namespace DaSerialization
                 };
                 contentTable.Add(entry);
             }
+
+            // the entire table should be read now and we should end up in info section
+            if (entriesCount > 0 && stream.Position != infoSectionPosition)
+                throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, table size differs from expected by {stream.Position - infoSectionPosition}");
+
             return contentTable;
         }
 
@@ -85,10 +88,10 @@ namespace DaSerialization
             for (int i = 0; i < contentTable.Count; i++)
             {
                 var entry = contentTable[i];
-                writer.Write(entry.ObjectId.EnsureInt32());
+                writer.WriteIntPacked(entry.ObjectId.EnsureInt32());
                 writer.Write(entry.TypeId.EnsureInt32());
-                writer.Write(entry.Position.ToInt32());
-                writer.Write(entry.Length.ToInt32());
+                writer.WriteUIntPacked(entry.Position.ToUInt64());
+                writer.WriteUIntPacked(entry.Length.EnsureUInt32());
             }
 
             writer.Write(TABLE_INFO_TOKEN);
