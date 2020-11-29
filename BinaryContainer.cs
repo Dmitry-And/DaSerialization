@@ -68,7 +68,7 @@ namespace DaSerialization
                     ObjectId = reader.ReadInt32(),
                     TypeId = reader.ReadInt32(),
                     Position = reader.ReadInt32(),
-                    Length = reader.ReadInt32(),
+                    Length = reader.ReadInt32().ToUInt32(),
                     LocalVersion = 0
                 };
                 contentTable.Add(entry);
@@ -88,7 +88,7 @@ namespace DaSerialization
                 writer.Write(entry.ObjectId.EnsureInt32());
                 writer.Write(entry.TypeId.EnsureInt32());
                 writer.Write(entry.Position.ToInt32());
-                writer.Write(entry.Length.EnsureInt32());
+                writer.Write(entry.Length.ToInt32());
             }
 
             writer.Write(TABLE_INFO_TOKEN);

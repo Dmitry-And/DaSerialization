@@ -51,7 +51,7 @@ namespace DaSerialization.Editor
                 Data = data;
                 Data.Id = id;
             }
-            public RootObjectInfo(Type refType, long streamPos, int totalSize, string error)
+            public RootObjectInfo(Type refType, long streamPos, uint totalSize, string error)
             {
                 Data = new InnerObjectInfo(refType, streamPos, totalSize);
                 Error = error;
@@ -59,14 +59,14 @@ namespace DaSerialization.Editor
         }
         public class InnerObjectInfo
         {
-            public bool IsSupported => SelfSize >= 0;
             public bool IsExpandable => InnerObjects != null;
             public bool OldVersion => LatestVersion > Version;
             public bool IsNull => TypeInfo.Type == null;
             public bool IsRealObject => TypeInfo.IsValid;
 
             public int Id; // for inner object it's an index inside the parent one
-            public bool HasOldVersions;
+            public bool IsSupported { get; private set; }
+            public bool HasOldVersions { get; private set; }
             public bool JsonHasErrors;
             public bool JsonCreated;
             public Type RefType;
@@ -74,27 +74,28 @@ namespace DaSerialization.Editor
             public int Version; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>
             public int LatestVersion;
             public long StreamPosition;
-            public int MetaSize;
-            public int DataSize;
-            public int TotalSize => MetaSize + DataSize;
-            public int SelfSize; // DataSize excluding all inner objects' total size
+            public uint MetaSize;
+            public uint DataSize;
+            public uint TotalSize => MetaSize + DataSize;
+            public uint SelfSize; // DataSize excluding all inner objects' total size
             public string Caption;
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
-            public InnerObjectInfo(Type refType, long streamPos, int totalSize)
+            public InnerObjectInfo(Type refType, long streamPos, uint totalSize)
             {
                 RefType = refType;
                 StreamPosition = streamPos;
                 MetaSize = 0;
                 DataSize = totalSize;
-                SelfSize = -1;
+                SelfSize = 0;
+                IsSupported = false;
                 Caption = refType != null
                     ? $"{RefType.PrettyName()} : [Error]"
                     : "[Error]";
                 HasOldVersions = false;
             }
-            public InnerObjectInfo(Type refType, SerializationTypeInfo typeInfo, long streamPos, int metaSize, int version, int latestVersion)
+            public InnerObjectInfo(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaSize, int version, int latestVersion)
             {
                 RefType = refType;
                 TypeInfo = typeInfo;
@@ -108,8 +109,9 @@ namespace DaSerialization.Editor
             }
             public void EndInit(long endStreamPos)
             {
-                DataSize = (endStreamPos - StreamPosition).ToInt32();
+                DataSize = (endStreamPos - StreamPosition).ToUInt32();
                 SelfSize = DataSize;
+                IsSupported = true;
                 HasOldVersions = false;
                 if (InnerObjects != null)
                     foreach (var io in InnerObjects)
@@ -275,7 +277,7 @@ namespace DaSerialization.Editor
 
         private InnerObjectInfo _rootInfo;
         private Stack<InnerObjectInfo> _activeEntries = new Stack<InnerObjectInfo>();
-        private void OnObjectDeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, int metaInfoLen, int version)
+        private void OnObjectDeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version)
         {
             var lastVersion = typeInfo.IsValid ? _container.SerializerStorage.GetSerializer(typeInfo).Version : -1;
             var info = new InnerObjectInfo(refType, typeInfo, streamPos, metaInfoLen, version, lastVersion);

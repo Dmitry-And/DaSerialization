@@ -37,7 +37,7 @@
 +	Hlpr 	get rid of external dependencies after refactoring
 +	Core 	add signed packed operation
 	Core 	update binary container format
-				use UInt32 for position/length in content table
++				use UInt32 for length in content table
 				use packed uint values in content table
 				change table header and info tokens
 	Othr	add readme

@@ -26,7 +26,7 @@ namespace DaSerialization
         public int ObjectId;
         public int TypeId;
         public int LocalVersion;
-        public int Length;
+        public uint Length;
         public long Position;
 
         public bool Fits(int objectId, int typeId) { return TypeId == typeId & ObjectId == objectId; }
@@ -63,10 +63,10 @@ namespace DaSerialization
         public bool Has<T>(int objectId)
             => FindContentEntry(objectId, typeof(T)) >= 0;
 
-        public int GetSize<T>(int objectId)
+        public long GetSize<T>(int objectId)
         {
             var entryIndex = FindContentEntry(objectId, typeof(T));
-            return entryIndex >= 0 ? _contentTable[entryIndex].Length : -1;
+            return entryIndex >= 0 ? _contentTable[entryIndex].Length : -1L;
         }
 
         #region root deserialization
@@ -252,7 +252,7 @@ namespace DaSerialization
             _stream.WriteInt(Metadata.TypeID, objTypeInfo.Id);
             bool result = objTypeInfo.Id == -1
                 || SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
-            int length = (int)(_stream.Position - position);
+            uint length = (_stream.Position - position).ToUInt32();
             ClearStreamPosition();
             if (!result)
             {
@@ -836,7 +836,7 @@ namespace DaSerialization
             }
             other.ValidateAndClearStreamPosition(otherEntryIndex, otherEndPos);
 
-            int length = (int)(_stream.Position - position);
+            uint length = (_stream.Position - position).ToUInt32();
             ClearStreamPosition();
 
             _contentTable.Add(new SerializedObjectInfo()
@@ -1028,7 +1028,7 @@ namespace DaSerialization
         #region state validations
 
         public bool EnableDeserializationInspection;
-        public delegate void DeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, int metaInfoLen, int version);
+        public delegate void DeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version);
         public event DeserializationStarted ObjectDeserializationStarted;
         public delegate void DeserializationFinished(long streamPos);
         public event DeserializationFinished ObjectDeserializationFinished;
@@ -1069,7 +1069,7 @@ namespace DaSerialization
             if (!EnableDeserializationInspection)
                 return;
             var pos = _stream.Position;
-            int metaLen = _lastMetaInfoStreamPosition < 0 ? 0 : (pos - _lastMetaInfoStreamPosition).ToInt32();
+            uint metaLen = _lastMetaInfoStreamPosition < 0 ? 0 : (pos - _lastMetaInfoStreamPosition).ToUInt32();
             ObjectDeserializationStarted?.Invoke(_lastRefType, typeInfo, pos, metaLen, deserializer == null ? -1 : deserializer.Version);
             _lastMetaInfoStreamPosition = -1;
 #endif
