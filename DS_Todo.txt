@@ -35,20 +35,20 @@
 +				expand all 'has' sub-objects on id click
 +	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
 +	Hlpr 	get rid of external dependencies after refactoring
++	Core 	add signed packed operation
+	Core 	update binary container format
+				use UInt32 for position/length in content table
+				use packed uint values in content table
+				change table header and info tokens
 	Othr	add readme
 				motivation
 				concepts
 				API
 				Unity integration
-	Othr	add licence
-	Core 	update binary container format
-				use UInt32 for position/length in content table
-				use packed uint values in content table
-				change table header and info tokens
+	Othr	add licence (non-commertial use)
 
 0.1
 
-	Core 	add packed signed long write operation
 	Edtr 	add object-view wrapper class for ContainerEditorView
 				move all strings from InnerObjectInfo to view wrapper
 				cache all ContentGUI values in view wrapper
