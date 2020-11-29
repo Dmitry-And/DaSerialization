@@ -195,6 +195,8 @@ namespace DaSerialization.Editor
                     GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
                     EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
                 }
+                if (e.HasOldVersions && GUI.Button(idRect, GUIContent.none, GUIStyle.none))
+                    ExpandOldWarnings(e);
 
                 var collapseRect = pos.SliceLeft(indent);
                 if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
@@ -278,6 +280,15 @@ namespace DaSerialization.Editor
                 foreach (var inner in e.InnerObjects)
                     if (inner.IsExpandable)
                         SetExpanded(inner, value, true);
+        }
+        private void ExpandOldWarnings(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            if (!e.HasOldVersions | !e.IsExpandable)
+                return;
+            SetExpanded(e, true);
+            foreach (var inner in e.InnerObjects)
+                if (inner.IsExpandable)
+                    ExpandOldWarnings(inner);
         }
 
         private static float GetMaxIdWidth(ContainerEditorInfo info, float minValue = 0f)
