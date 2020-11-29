@@ -1,6 +1,7 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
 using System;
+using DaSerialization.Internal;
 using UnityEditor;
 using UnityEngine;
 
@@ -32,6 +33,12 @@ namespace DaSerialization.Editor
             return window;
         }
 
+        private void Refresh()
+        {
+            _containerView = null;
+            _displayedAsset = null;
+        }
+
         void OnGUI()
         {
             var pos = new Rect(new Vector2(), position.size);
@@ -39,10 +46,7 @@ namespace DaSerialization.Editor
             var line = pos.SliceTop();
             EditorGUI.BeginDisabledGroup(Target == null);
             if (GUI.Button(line.SliceRight(60f), RefreshButton))
-            {
-                _containerView = null;
-                _displayedAsset = null;
-            }
+                Refresh();
             EditorGUI.EndDisabledGroup();
             EditorGUI.LabelField(line.SliceLeft(38f), "Asset");
             Target = (TextAsset)EditorGUI.ObjectField(line, Target, typeof(TextAsset), false);
@@ -51,14 +55,16 @@ namespace DaSerialization.Editor
             {
                 var info = new ContainerEditorInfo(Target);
                 _displayedAsset = Target;
-                _containerView = new ContainerEditorView(info);
+                _containerView = new ContainerEditorView(info, true);
             }
             if (Target == null)
+                Refresh();
+            var updatedContainer = _containerView.Draw(pos);
+            if (updatedContainer != null)
             {
-                _containerView = null;
-                _displayedAsset = null;
+                ContainerAssetUtils.WriteToTextAsset(updatedContainer, _displayedAsset);
+                Refresh();
             }
-            _containerView.Draw(pos);
         }
     }
 

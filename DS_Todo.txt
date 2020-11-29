@@ -30,7 +30,8 @@
 +				support multiple container view windows
 +	Edtr 	update ContainerRef(WithId) property renderers
 +				add popup window with container content
-	Edtr 	show is/has old version markers
++	Edtr 	show is/has old version markers
++				button to update serializers for the container
 				expand all 'has' sub-objects on click
 	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
 	Hlpr 	get rid of external dependencies after refactoring
@@ -47,12 +48,39 @@
 
 0.1
 
+	Core 	add packed signed long write operation
+	Edtr 	add object-view wrapper class for ContainerEditorView
+				move all strings from InnerObjectInfo to view wrapper
+				cache all ContentGUI values in view wrapper
 	Edtr 	allow to remove objects from container in the inspector
 				support inner container object removal
 	Edtr 	show content of internal containers
+				propagate 'old serializers' warning from inner to root container
 	Core 	unify 'size to string' method and move to common tools
 	Core 	move non-root Container.(De)Serialize API to stream
 				and don't pass container as an argument for (de)serialization
+	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
+				inspect deserialization for simple types
+	Core 	add meta-info to deserialization methods as optional parameter
+				display this meta-info in container inspector
+	Edtr 	allow to see raw byte data of an object/value
+				hex format
+				allow to select 1-9 bytes and show content of those bytes as possible primitive type
+					binary representation for all selected bytes
+					1: byte, sbyte, packed bools, packed long, packed ulong, char (ASCII)
+					2: short, ushort, packed long, packed ulong, char (UTF8)
+					3: packed long, packed ulong
+					4: int, uint, packed long, packed ulong, float, char (UTF16), TypeID
+					5: packed long, packed ulong
+					6: packed long, packed ulong
+					7: packed long, packed ulong
+					8: long, ulong, packed long, packed ulong, double
+					9: packed long, packed ulong
+	Edtr 	allow to see content of primitive types in the container inspector
+				integer types
+				string type (take encoding into account)
+				packed data types: packed bools, packed ulongs, packed longs
+				TypeID values (with corresponding type name)
 	Edtr 	color scheme should support dark mode
 ?	Edtr 	replace Json.Net dll by source code
 				move to internal namespace

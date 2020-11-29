@@ -16,6 +16,7 @@ namespace DaSerialization.Editor
         public long Size => _container == null ? 0 : _container.Size;
         public int EntriesCount => _container == null ? 0 : _container.GetContentTable().Count;
         private BinaryContainer _container;
+        public BinaryContainer GetContainer() => _container;
 
         public ContainerEditorInfo(TextAsset textAsset)
         {
@@ -128,6 +129,7 @@ namespace DaSerialization.Editor
         }
 
         public int MetaInfoSize { get; private set; } = -1;
+        public bool HasOldVersions { get; private set; }
         public List<RootObjectInfo> RootObjects { get; private set; }
 
         public void UpdateDetailedInfo(bool force = false)
@@ -137,6 +139,7 @@ namespace DaSerialization.Editor
             var contentTable = _container.GetContentTable();
             MetaInfoSize = _container.GetMetaDataSize(contentTable).ToInt32();
             RootObjects = new List<RootObjectInfo>(EntriesCount);
+            HasOldVersions = false;
             _container.EnableDeserializationInspection = true;
             _container.ObjectDeserializationStarted += OnObjectDeserializationStarted;
             _container.ObjectDeserializationFinished += OnObjectDeserializationFinished;
@@ -157,6 +160,7 @@ namespace DaSerialization.Editor
                 if (_activeEntries.Count != 0)
                     throw new Exception("Deserialization start calls count != end calls count");
                 var root = new RootObjectInfo(_rootInfo, e.ObjectId);
+                HasOldVersions |= root.Data.HasOldVersions | root.Data.OldVersion;
                 RootObjects.Add(root);
             }
             _container.ObjectDeserializationStarted -= OnObjectDeserializationStarted;

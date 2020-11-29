@@ -2,17 +2,20 @@
 
 using UnityEditor;
 using UnityEngine;
+using DaSerialization.Internal;
 
 namespace DaSerialization.Editor
 {
     public class ContainerInspectorPopup : PopupWindowContent
     {
         private static GUIStyle TextStyle;
-        private readonly ContainerEditorView _view;
+        private ContainerEditorView _view;
+        private TextAsset _asset;
 
-        public ContainerInspectorPopup(ContainerEditorView containerView)
+        public ContainerInspectorPopup(ContainerEditorInfo containerInfo, TextAsset asset)
         {
-            _view = containerView;
+            _view = new ContainerEditorView(containerInfo, asset != null);
+            _asset = asset;
             if (TextStyle == null)
             {
                 TextStyle = new GUIStyle(EditorStyles.textArea);
@@ -27,7 +30,13 @@ namespace DaSerialization.Editor
         {
             var pos = new Rect(new Vector2(), GetWindowSize());
             pos = pos.Shrink(2f); // 2-pixel margins
-            _view.Draw(pos);
+            var updatedContainer = _view.Draw(pos);
+            if (updatedContainer != null && _asset != null)
+            {
+                ContainerAssetUtils.WriteToTextAsset(updatedContainer, _asset);
+                var container = ContainerRef.FromTextAsset(_asset).Container as BinaryContainer;
+                _view = new ContainerEditorView(new ContainerEditorInfo(container), _asset);
+            }
         }
     }
 }

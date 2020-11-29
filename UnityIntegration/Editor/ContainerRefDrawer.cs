@@ -78,8 +78,8 @@ namespace DaSerialization.Editor
                 ForceUpdateContainer(containerProp);
                 if (_container != null && _container.IsValid)
                 {
-                    var view = new ContainerEditorView(_container);
-                    PopupWindow.Show(infoRect, new ContainerInspectorPopup(view));
+                    var textAsset = containerProp.objectReferenceValue as TextAsset;
+                    PopupWindow.Show(infoRect, new ContainerInspectorPopup(_container, textAsset));
                 }
             }
             GUI.backgroundColor = Color.white;

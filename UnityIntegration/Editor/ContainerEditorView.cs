@@ -10,21 +10,22 @@ namespace DaSerialization.Editor
 {
     public static class ContainerEditorViewDrawExtension
     {
-        public static void Draw(this ContainerEditorView view, Rect position)
+        // returns updated container if it was changed, null otherwise
+        public static BinaryContainer Draw(this ContainerEditorView view, Rect position)
         {
             if (view == null)
             {
                 var boxRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(2));
                 EditorGUI.HelpBox(boxRect, "Select a container asset", MessageType.Info);
-                return;
+                return null;
             }
             if (!view.Info.IsValid)
             {
                 var boxRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(2));
                 EditorGUI.HelpBox(boxRect, "This is not a valid container", MessageType.Error);
-                return;
+                return null;
             }
-            view.DrawContainerContent(position);
+            return view.DrawContainerContent(position);
         }
     }
     public class ContainerEditorView
@@ -39,18 +40,20 @@ namespace DaSerialization.Editor
         private static GUIContent SelfSizeHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
-        private static GUIContent JsonLabel = new GUIContent("J ", "Show JSON representation of the object...");
+        private static GUIContent JsonLabel = new GUIContent("D ", "Show object data as JSON representation...");
+        private static GUIContent UpdateSerializersButton = new GUIContent("Update\nSerializers", "Deserializer container and serialize it again with newest available serializers");
         private static float _lineHeight;
 
         public ContainerEditorInfo Info { get; private set; }
         public bool RenderSelfSize = true;
         public bool RenderTotalSize = true; // if not - effective size will be rendered
         public bool RenderRefType = true; // if not - only object type will be rendered
+        public bool Editable { get; private set; }
 
         private GUIContent _sizeText;
         private float _idWidth;
 
-        public ContainerEditorView(ContainerEditorInfo info)
+        public ContainerEditorView(ContainerEditorInfo info, bool editable)
         {
             InitStatic();
 
@@ -60,6 +63,7 @@ namespace DaSerialization.Editor
             _sizeText = new GUIContent(Size(Info.Size), $"Total size: {Info.Size}\nMeta data: {Info.MetaInfoSize}\nUseful: {Info.Size - Info.MetaInfoSize}");
             _expandedObjects.Clear();
             _idWidth = GetMaxIdWidth(Info, _idWidth);
+            Editable = editable;
         }
 
         private static void InitStatic()
@@ -75,10 +79,12 @@ namespace DaSerialization.Editor
             _lineHeight = EditorGuiUtils.GetLinesHeight(1);
         }
 
-
+        // returns updated container if it was changed, null otherwise
         private Vector2 _scrollPos;
-        public void DrawContainerContent(Rect position)
+        public BinaryContainer DrawContainerContent(Rect position)
         {
+            BinaryContainer updatedContainer = null;
+
             _nextLineIsEven = false;
             var pos = position.SliceTop();
             GUI.contentColor = Color.white;
@@ -90,6 +96,19 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.grey;
             EditorGUI.LabelField(pos.SliceRight(52f), "Objects:", NormalRight);
             EditorGUI.LabelField(pos.SliceLeft(60f), "Container", EditorStyles.boldLabel);
+            GUI.contentColor = Color.white;
+
+            if (Info.HasOldVersions)
+            {
+                var warnRect = position.SliceTop(EditorGuiUtils.GetLinesHeight(Editable ? 2 : 1));
+                if (Editable
+                    && GUI.Button(warnRect.SliceRight(75f), UpdateSerializersButton))
+                {
+                    updatedContainer = Info.GetContainer();
+                    updatedContainer.UpdateSerializers();
+                }
+                EditorGUI.HelpBox(warnRect, "Has old serializers (newer version exists). Marked with yellow", MessageType.Warning);
+            }
 
             var colHeaderRect = position.SliceTop(); // reserve a line for columns rendering (later)
 
@@ -121,6 +140,13 @@ namespace DaSerialization.Editor
             GUI.contentColor = Color.gray;
             if (GUI.Button(colHeaderRect, RenderRefType ? "Ref : Object" : "Object", Normal))
                 RenderRefType = !RenderRefType;
+
+            if (!Editable & updatedContainer != null)
+            {
+                Debug.LogError("Trying to modify uneditable container!\n");
+                updatedContainer = null;
+            }
+            return updatedContainer;
         }
 
         private float _scrollViewHeight;
@@ -152,11 +178,18 @@ namespace DaSerialization.Editor
             var lineRect = pos;
             if (isVisible)
             {
-                if (isRoot)
-                    EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
-
                 // id
                 var idRect = pos.SliceLeft(_idWidth);
+                if (isRoot)
+                {
+                    EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
+                    if (!e.HasOldVersions & !e.OldVersion)
+                        EditorGUI.DrawRect(idRect, new Color(0.3f, 0.3f, 1f, 0.2f));
+                }
+                if (e.OldVersion)
+                    EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.8f));
+                else if (e.HasOldVersions)
+                    EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.4f));
                 if (e.Id != -1)
                 {
                     GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
@@ -178,7 +211,7 @@ namespace DaSerialization.Editor
                 }
 
                 // json
-                var jsonRect = pos.SliceRight(18f);
+                var jsonRect = pos.SliceRight(20f);
                 if (e.IsRealObject & !e.IsNull & e.IsSupported)
                 {
                     bool requiresJsonUpdate = e.JsonData == null;
@@ -186,7 +219,7 @@ namespace DaSerialization.Editor
                     GUI.backgroundColor = requiresJsonUpdate ? Color.clear
                         : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
                         : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
-                    if (GUI.Button(jsonRect, "J")
+                    if (GUI.Button(jsonRect, "D")
                         && (!requiresJsonUpdate | e.TotalSize < 1024
                             || EditorUtility.DisplayDialog("Large object", $"Object \"{e.Caption}\" seems to be large and it may take a while to convert it to Json string.\nAre you sure you want to continue?", "Continue", "Cancel")))
                     {
