@@ -114,7 +114,7 @@ namespace DaSerialization.Serialization
         public override void ReadDataToObject(ref BinaryContainer c, BinaryStream stream, AContainer<BinaryStream> container)
         {
             var reader = stream.GetReader();
-            int len = reader.ReadUIntPacked_2().ToInt32();
+            int len = reader.ReadUIntPacked().ToInt32();
             bool writable = reader.ReadBoolean();
 
             var memStream = c?.GetUnderlyingStream() as MemoryStream;
@@ -135,7 +135,7 @@ namespace DaSerialization.Serialization
             c.CleanUp();
             var memStream = c.GetUnderlyingStream() as MemoryStream;
             var writer = stream.GetWriter();
-            writer.WriteUIntPacked_2(memStream.Length.ToUInt32());
+            writer.WriteUIntPacked(memStream.Length.ToUInt32());
             writer.Write(c.Writable);
             var oldPos = memStream.Position;
             memStream.Seek(0, SeekOrigin.Begin);

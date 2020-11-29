@@ -123,11 +123,11 @@ namespace DaSerialization
             {
                 case Metadata.Version:
                 case Metadata.CollectionSize:
-                    return (int)((long)_reader.ReadUIntPacked_2() - 1);
+                    return (int)((long)_reader.ReadUIntPacked() - 1);
                 case Metadata.TypeID:
                     return _reader.ReadInt32();
                 case Metadata.ObjectID:
-                    return (int)_reader.ReadUIntPacked_2();
+                    return (int)_reader.ReadUIntPacked();
                 default: throw new Exception(meta.ToString());
             }
         }
@@ -144,13 +144,13 @@ namespace DaSerialization
             {
                 case Metadata.Version:
                 case Metadata.CollectionSize:
-                    _writer.WriteUIntPacked_2((value + 1).ToUInt64());
+                    _writer.WriteUIntPacked((value + 1).ToUInt64());
                     return;
                 case Metadata.TypeID:
                     _writer.Write(value);
                     return;
                 case Metadata.ObjectID:
-                    _writer.WriteUIntPacked_2((ulong)value);
+                    _writer.WriteUIntPacked((ulong)value);
                     return;
                 default: throw new Exception(meta.ToString());
             }

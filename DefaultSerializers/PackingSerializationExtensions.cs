@@ -150,9 +150,9 @@ namespace DaSerialization
             return 8;
         }
 
-        public static ulong ReadUIntPacked(this BinaryReader reader, int bytes)
+        public static ulong ReadUIntPacked(this BinaryReader reader, int bytesCount)
         {
-            switch (bytes)
+            switch (bytesCount)
             {
                 case 1: return reader.ReadByte();
                 case 2: return reader.ReadUInt16();
@@ -162,13 +162,13 @@ namespace DaSerialization
                 case 6: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32);
                 case 7: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32) + ((ulong)reader.ReadByte() << 48);
                 case 8: return reader.ReadUInt64();
-                default: throw new System.Exception($"Unsupported bytes count {bytes} in {nameof(ReadUIntPacked)}");
+                default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(ReadUIntPacked)}");
             }
         }
 
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value, int bytes)
+        public static void WriteUIntPacked(this BinaryWriter writer, ulong value, int bytesCount)
         {
-            switch (bytes)
+            switch (bytesCount)
             {
                 case 1: writer.Write((byte)value); return;
                 case 2: writer.Write((ushort)value); return;
@@ -178,23 +178,9 @@ namespace DaSerialization
                 case 6: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); return;
                 case 7: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); writer.Write((byte)(value >> 48)); return;
                 case 8: writer.Write((ulong)value); return;
-                default: throw new System.Exception($"Unsupported bytes count {bytes} in {nameof(WriteUIntPacked)}");
+                default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(WriteUIntPacked)}");
             }
         }
-
-        public static ulong ReadUIntPacked(this BinaryReader reader)
-        {
-            int bytes = reader.ReadByte();
-            return reader.ReadUIntPacked(bytes);
-        }
-
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value)
-        {
-            var bytes = CountBytes(value);
-            writer.Write((byte)bytes);
-            writer.WriteUIntPacked(value, bytes);
-        }
-
 
         private static int GetPackedFormat(ulong maxValue)
         {
@@ -215,7 +201,7 @@ namespace DaSerialization
             return 7;
         }
 
-        public static ulong ReadUIntPacked_2(this BinaryReader reader)
+        public static ulong ReadUIntPacked(this BinaryReader reader)
         {
             int formatAndHighBits = reader.ReadByte();
             int format = formatAndHighBits >> 5;
@@ -228,7 +214,7 @@ namespace DaSerialization
             return value;
         }
 
-        public static void WriteUIntPacked_2(this BinaryWriter writer, ulong value)
+        public static void WriteUIntPacked(this BinaryWriter writer, ulong value)
         {
             var format = GetPackedFormat(value);
             int bytes = format == 7 ? 8 : format;
