@@ -125,8 +125,7 @@ public struct ContainerRef : IEquatable<ContainerRef>
         if (!IsValid)
             return false;
 
-        var container = Container;
-        if (container.UpdateSerializers())
+        if (Container.UpdateSerializers())
         {
             WriteToTextAsset();
             return true;

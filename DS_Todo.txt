@@ -36,6 +36,7 @@
 +	Edtr 	replace ShowMessage Json size warning with in-popup warning prompt
 +	Hlpr 	get rid of external dependencies after refactoring
 +	Core 	add signed packed operation
++	Edtr 	bug: not all container serializers updated if any of them has errors
 	Core 	update binary container format
 +				use UInt32 for length in content table
 				use packed uint values in content table

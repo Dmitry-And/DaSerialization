@@ -1,5 +1,6 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
+using System;
 using UnityEditor;
 using UnityEngine;
 
@@ -35,16 +36,31 @@ namespace DaSerialization.Editor
         {
             int totalCount = 0;
             int changedCount = 0;
+            int errorsCount = 0;
             TextAsset lastUpdated = null;
             foreach (var text in Selection.GetFiltered<TextAsset>(SelectionMode.DeepAssets))
             {
-                if (ContainerRef.FromTextAsset(text, false).UpdateSerializers())
-                    changedCount++;
-                totalCount++;
-                lastUpdated = text;
+                try
+                {
+                    var containerRef = ContainerRef.FromTextAsset(text, false);
+                    if (!containerRef.IsValid)
+                        continue;
+                    if (containerRef.UpdateSerializers())
+                        changedCount++;
+                    totalCount++;
+                    lastUpdated = text;
+                }
+                catch (Exception)
+                {
+                    errorsCount++;
+                }
             }
-            Debug.Log($"Serializers updated for {totalCount} containers. {changedCount} changed.\n",
-                totalCount == 1 ? lastUpdated : null);
+            if (errorsCount > 0)
+                Debug.LogWarning($"(Errors) Serializers updated for {totalCount} containers. {changedCount} changed. {errorsCount} errors (cannot update)\n",
+                    totalCount == 1 ? lastUpdated : null);
+            else
+                Debug.Log($"Serializers updated for {totalCount} containers. {changedCount} changed.\n",
+                    totalCount == 1 ? lastUpdated : null);
         }
         [MenuItem("Assets/Container/Update Serializers", true)]
         public static bool SelectionHaveContainers()
