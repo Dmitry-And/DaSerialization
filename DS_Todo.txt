@@ -37,10 +37,10 @@
 +	Hlpr 	get rid of external dependencies after refactoring
 +	Core 	add signed packed operation
 +	Edtr 	bug: not all container serializers updated if any of them has errors
-	Core 	update binary container format
++	Core 	update binary container format
 +				use UInt32 for length in content table
-				use packed uint values in content table
-				change table header and info tokens
++				use packed uint values in content table
++				change table header and info tokens
 	Othr	add readme
 				motivation
 				concepts

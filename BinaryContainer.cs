@@ -8,9 +8,7 @@ namespace DaSerialization
     [TypeId(2004)]
     public class BinaryContainer : AContainer<BinaryStream>
     {
-        private const int TABLE_INFO_TOKEN_OLD = 80028104;
         private const int TABLE_INFO_TOKEN = 549437841;
-        private const int TABLE_HEADER_TOKEN_OLD = -114819714;
         private const int TABLE_HEADER_TOKEN = -886121582;
 
         // int (4 bytes) - table info token (to ensure the table info section is correct)
@@ -49,24 +47,24 @@ namespace DaSerialization
             {
                 stream.Seek(infoSectionPosition);
                 int infoToken = reader.ReadInt32();
-                if (infoToken != TABLE_INFO_TOKEN_OLD)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid table info section, token {nameof(infoToken)} read, {TABLE_INFO_TOKEN_OLD} expected");
+                if (infoToken != TABLE_INFO_TOKEN)
+                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid table info section, token {nameof(infoToken)} read, {TABLE_INFO_TOKEN} expected");
                 int tablePosition = reader.ReadInt32();
                 entriesCount = reader.ReadInt32();
                 stream.Seek(tablePosition);
                 int headerToken = reader.ReadInt32();
-                if (headerToken != TABLE_HEADER_TOKEN_OLD)
-                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN_OLD} expected");
+                if (headerToken != TABLE_HEADER_TOKEN)
+                    throw new Exception($"{typeof(BinaryStream).PrettyTypeName()} doesn't have a valid content table, token {headerToken} read, {TABLE_HEADER_TOKEN} expected");
             }
             var contentTable = new List<SerializedObjectInfo>(entriesCount);
             for (int i = 0; i < entriesCount; i++)
             {
                 var entry = new SerializedObjectInfo
                 {
-                    ObjectId = reader.ReadInt32(),
+                    ObjectId = reader.ReadIntPacked().ToInt32(),
                     TypeId = reader.ReadInt32(),
-                    Position = reader.ReadInt32(),
-                    Length = reader.ReadInt32().ToUInt32(),
+                    Position = reader.ReadUIntPacked().ToInt64(),
+                    Length = reader.ReadUIntPacked().ToUInt32(),
                     LocalVersion = 0
                 };
                 contentTable.Add(entry);
