@@ -103,7 +103,7 @@ namespace DaSerialization
                 throw new ArgumentException("Other stream is null");
             if (!destination.Writable)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} which is not writable");
-            if (_locked)
+            if (destination._locked)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} w/o setting position");
             if (Position + length > Length)
                 throw new IndexOutOfRangeException($"Trying to {nameof(CopyTo)} from {this.PrettyTypeName()} more bytes than it has: position {Position}, length {Length}, copying {length}");
