@@ -62,8 +62,6 @@ namespace DaSerialization
         protected abstract List<SerializedObjectInfo> ReadContentTable(TStream stream);
         protected abstract void WriteContentTable(TStream stream, List<SerializedObjectInfo> contentTable);
         public abstract long GetContentTableSize(List<SerializedObjectInfo> contentTable);
-        public virtual long GetMetaDataSize(List<SerializedObjectInfo> contentTable)
-            => GetContentTableSize(contentTable) + _stream.GetMetaDataSize();
 
         public bool Has<T>(int objectId)
             => FindContentEntry(objectId, typeof(T)) >= 0;
