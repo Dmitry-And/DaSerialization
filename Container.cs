@@ -1,4 +1,4 @@
-﻿#if UNITY_EDITOR && !DISABLE_DEBUG
+﻿#if DEBUG
 #define STATE_CHECK // additional validation that container do not serialize during deserialization process and vice versa
 #define INSPECT_DESERIALIZATION // deserialization callback will be fired
 #define SERIALIZE_POLYMORPHIC_CHECK
