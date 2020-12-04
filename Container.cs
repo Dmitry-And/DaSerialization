@@ -681,34 +681,38 @@ namespace DaSerialization
         }
 
         /// <summary>
-        /// Create new stream instead of existing one, copy only latest versions of all objects into
-        /// the stream, serialize seek table into the stream and mark the container as not dirty.
-        /// Only CleanUp-ed containers can be saved (the seek table serialized only here
+        /// Removes all not-latest versions of all objects and cleans up stream memory from them
+        /// performing defragmentation. After that writes content table to the stream.
+        /// This operation preserves stream capacity and does NOT deallocate any memory.
+        /// Only CleanUp-ed containers can be saved (the content table serialized only here)
         /// </summary>
         public void CleanUp(bool preserveCapacity = false)
         {
-            // TODO: performance
             if (!IsDirty)
                 return;
             RemoveOldVersions();
-            long capacity = preserveCapacity ? _stream.Capacity
-                : CountTotalDataLength() + GetContentTableSize(_contentTable);
-            var newStream = new TStream();
-            newStream.Allocate(capacity);
-            newStream.Seek(newStream.Length);
+
+            long writePos = _stream.ZeroPosition;
             for (int i = 0; i < _contentTable.Count; i++)
             {
                 var entry = _contentTable[i];
-                _stream.Seek(entry.Position);
-                entry.Position = newStream.Position;
+                if (entry.Position != writePos)
+                {
+                    _stream.Seek(entry.Position);
+                    _stream.CopyTo(_stream, writePos, entry.Length);
+                    entry.Position = writePos;
+                }
                 entry.LocalVersion = 0;
-                _stream.CopyTo(newStream, entry.Length);
                 _contentTable[i] = entry;
+
+                writePos += entry.Length;
             }
-            WriteContentTable(newStream, _contentTable);
-            _stream = newStream;
+            _stream.Seek(writePos);
+            WriteContentTable(_stream, _contentTable);
+            _stream.SetLength(_stream.Position);
             Size = _stream.Length;
             IsDirty = false;
+            ClearStreamPosition();
         }
 
         public bool Remove<T>(int objectId)

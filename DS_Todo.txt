@@ -5,7 +5,7 @@
 
 +	Core 	improve performance of Container.GetLastWrittenVersion
 +				add content table integrity check
-	Core 	avoid allocations/copies in Container.CleanUp
++	Core 	avoid allocations/copies in Container.CleanUp
 	Core 	move non-root Container.(De)Serialize API to stream
 				don't pass container as an argument for (de)serialization
 				add more strict constrains to IStream/I(De)serializer type arguments
@@ -55,6 +55,7 @@
 	BACKLOG
 ===================================================================================
 
+	Core 	improve performance of BinaryStream.CopyTo by avoiding frequent Seek operations
 	Othr 	compare performance, memory and garbage with
 				ProtoBuf
 				CBOR
