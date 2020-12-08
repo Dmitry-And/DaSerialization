@@ -1,4 +1,4 @@
-# DaSerialization v0.1
+# DaSerialization v0.2
 Fast, compact, binary, manual de/serialization framework for C# with optional Unity3d integration
 
 # Main Features
@@ -24,8 +24,8 @@ Fast, compact, binary, manual de/serialization framework for C# with optional Un
   - easy API to update file serializers
 
 # More Features
-- Almost no type/meta information get serialized
-- Minimal Reflection usage during (de)serialization
+- No type/meta information get serialized (instead of type IDs)
+- Almost no Reflection usage during (de)serialization
 - Pure C#, no external dependencies (including Unity API or ecosystem)
 - No code generation
   - but is possible to add default (de)serializers generation

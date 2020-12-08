@@ -3,9 +3,6 @@
 	PLAN
 ===================================================================================
 
-+	Core 	improve performance of Container.GetLastWrittenVersion
-+				add content table integrity check
-+	Core 	avoid allocations/copies in Container.CleanUp
 	Core 	move non-root Container.(De)Serialize API to stream
 				don't pass container as an argument for (de)serialization
 				add more strict constrains to IStream/I(De)serializer type arguments
@@ -76,6 +73,12 @@
 ===================================================================================
 	DONE/CHANGELOG
 ===================================================================================
+
+0.2
+
++	Core 	improve performance of Container.GetLastWrittenVersion
++				add content table integrity check
++	Core 	avoid allocations/copies in Container.CleanUp
 
 0.1
 
