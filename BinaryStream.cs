@@ -34,6 +34,7 @@ namespace DaSerialization
         public long Length => _stream == null ? -1 : _stream.Length;
         public long Capacity => _stream.Capacity;
         public bool Writable { get; private set; }
+        public long ZeroPosition => MetaDataSize;
 
         public BinaryStream()
         {
@@ -54,9 +55,14 @@ namespace DaSerialization
                 throw new InvalidOperationException($"Trying to {nameof(Allocate)} non-writable {this.PrettyTypeName()}");
             if (_stream != null)
                 throw new InvalidOperationException($"Trying to {nameof(Allocate)} a {this.PrettyTypeName()} which is already initialized");
-            _stream = new MemoryStream((int)length + System.Runtime.InteropServices.Marshal.SizeOf(MagicNumber));
+            _stream = new MemoryStream((int)length + MetaDataSize);
             CreateReaderAndWriter();
             WriteMagicNumber();
+        }
+
+        public void SetLength(long length)
+        {
+            _stream.SetLength(length);
         }
 
         private void CreateReaderAndWriter()
@@ -95,6 +101,12 @@ namespace DaSerialization
 
         public void CopyTo(BinaryStream destination, long length)
         {
+            if (this == destination)
+                throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to the {this.PrettyTypeName()} itself");
+            CopyTo(destination, destination.Position, length);
+        }
+        public void CopyTo(BinaryStream destination, long position, long length)
+        {
             if (_stream == null)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} from empty {this.PrettyTypeName()}");
             if (_locked)
@@ -103,14 +115,33 @@ namespace DaSerialization
                 throw new ArgumentException("Other stream is null");
             if (!destination.Writable)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} which is not writable");
-            if (_locked)
+            if (destination._locked)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} w/o setting position");
             if (Position + length > Length)
                 throw new IndexOutOfRangeException($"Trying to {nameof(CopyTo)} from {this.PrettyTypeName()} more bytes than it has: position {Position}, length {Length}, copying {length}");
 
             var writer = destination._writer;
-            for (long i = 0; i < length; i++)
-                writer.Write(_reader.ReadByte());
+            var reader = _reader;
+            if (this != destination)
+            {
+                destination.Seek(position);
+                for (long i = 0; i < length; i++)
+                    writer.Write(reader.ReadByte());
+            }
+            else
+            {
+                var readPos = Position;
+                var writePos = position;
+                for (long i = 0; i < length; i++)
+                {
+                    // TODO: performance
+                    Seek(readPos++);
+                    var data = reader.ReadByte();
+                    Seek(writePos++);
+                    writer.Write(data);
+                }
+                Seek(readPos); // convention: this stream is 'read' stream in the first place
+            }
         }
 
         public int ReadInt(Metadata meta)

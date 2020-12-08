@@ -139,7 +139,7 @@ namespace DaSerialization.Editor
             if (!force & RootObjects != null)
                 return;
             var contentTable = _container.GetContentTable();
-            MetaInfoSize = _container.GetMetaDataSize(contentTable).ToInt32();
+            var metaSize = _container.Size;
             RootObjects = new List<RootObjectInfo>(EntriesCount);
             HasOldVersions = false;
             _container.EnableDeserializationInspection = true;
@@ -163,12 +163,14 @@ namespace DaSerialization.Editor
                     throw new Exception("Deserialization start calls count != end calls count");
                 var root = new RootObjectInfo(_rootInfo, e.ObjectId);
                 HasOldVersions |= root.Data.HasOldVersions | root.Data.OldVersion;
+                metaSize -= root.Data.TotalSize;
                 RootObjects.Add(root);
             }
             _container.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
             _container.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
             _container.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
+            MetaInfoSize = metaSize.ToInt32();
         }
 
         private class SerializationTypeBinder : Newtonsoft.Json.Serialization.ISerializationBinder

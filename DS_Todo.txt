@@ -3,6 +3,14 @@
 	PLAN
 ===================================================================================
 
+	Core 	move non-root Container.(De)Serialize API to stream
+				don't pass container as an argument for (de)serialization
+				add more strict constrains to IStream/I(De)serializer type arguments
+	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
+				inspect deserialization for simple types
+	Core 	add meta-info to deserialization methods as optional parameter
+				display this meta-info in container inspector
+	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
 	Othr	extend readme
 				motivation
 				concepts
@@ -16,12 +24,6 @@
 	Edtr 	show content of internal containers
 				propagate 'old serializers' warning from inner to root container
 	Core 	unify 'size to string' method and move to common tools
-	Core 	move non-root Container.(De)Serialize API to stream
-				and don't pass container as an argument for (de)serialization
-	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
-				inspect deserialization for simple types
-	Core 	add meta-info to deserialization methods as optional parameter
-				display this meta-info in container inspector
 	Edtr 	allow to see raw byte data of an object/value
 				hex format
 				allow to select 1-9 bytes and show content of those bytes as possible primitive type
@@ -50,6 +52,13 @@
 	BACKLOG
 ===================================================================================
 
+	Core 	improve performance of BinaryStream.CopyTo by avoiding frequent Seek operations
+	Othr 	compare performance, memory and garbage with
+				ProtoBuf
+				CBOR
+				XML serialization in C#
+				NewtonSoft Json.Net
+				Unity Json serialization
 	Edtr 	correctly handle rare errors when creating ContainerEditorInfo
 				content table reading (ivalid size, position)
 				some entries (partially) outside the stream data
@@ -59,12 +68,17 @@
 				Material
 				Renderer
 	Core 	use C#5 Dictionary class to improve performance
-	Core 	avoid allocations/copies in Container.CleanUp
 
 
 ===================================================================================
 	DONE/CHANGELOG
 ===================================================================================
+
+0.2
+
++	Core 	improve performance of Container.GetLastWrittenVersion
++				add content table integrity check
++	Core 	avoid allocations/copies in Container.CleanUp
 
 0.1
 

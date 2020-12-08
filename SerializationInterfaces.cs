@@ -7,13 +7,16 @@ namespace DaSerialization
     {
         int ReadInt(Metadata meta);
         void WriteInt(Metadata meta, int value);
+        long ZeroPosition { get; }
         long Position { get; }
         long Length { get; }
         long Capacity { get; }
         void Seek(long position);
-        void CopyTo(TStream stream, long length);
+        void CopyTo(TStream stream, long length); // CopyTo itself illegal
+        void CopyTo(TStream stream, long position, long length); // CopyTo itself allowed
         bool Writable { get; }
         void Allocate(long length);
+        void SetLength(long length);
         Stream GetUnderlyingStream();
         void Clear();
         int GetMetaDataSize();

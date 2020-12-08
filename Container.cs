@@ -1,7 +1,8 @@
-﻿#if UNITY_EDITOR && !DISABLE_DEBUG
+﻿#if DEBUG
 #define STATE_CHECK // additional validation that container do not serialize during deserialization process and vice versa
 #define INSPECT_DESERIALIZATION // deserialization callback will be fired
 #define SERIALIZE_POLYMORPHIC_CHECK
+// #define CONTENT_TABLE_INTEGRITY_CHECK // very slow, only for development reasons
 #endif
 
 using System;
@@ -31,6 +32,9 @@ namespace DaSerialization
 
         public bool Fits(int objectId, int typeId) { return TypeId == typeId & ObjectId == objectId; }
         public bool Fits(int objectId, int typeId, int version) { return TypeId == typeId & ObjectId == objectId & LocalVersion == version; }
+
+        public override string ToString()
+            => $"Type {TypeId} Obj {ObjectId} v{LocalVersion} Pos {Position}-{Position + Length}";
     }
 
     public abstract class AContainer<TStream> : IContainer, IContainerInternals
@@ -52,13 +56,12 @@ namespace DaSerialization
             _contentTable = ReadContentTable(_stream);
             Size = _stream.Length;
             ClearStreamPosition();
+            CheckContentTableIntegrity();
         }
 
         protected abstract List<SerializedObjectInfo> ReadContentTable(TStream stream);
         protected abstract void WriteContentTable(TStream stream, List<SerializedObjectInfo> contentTable);
         public abstract long GetContentTableSize(List<SerializedObjectInfo> contentTable);
-        public virtual long GetMetaDataSize(List<SerializedObjectInfo> contentTable)
-            => GetContentTableSize(contentTable) + _stream.GetMetaDataSize();
 
         public bool Has<T>(int objectId)
             => FindContentEntry(objectId, typeof(T)) >= 0;
@@ -268,6 +271,7 @@ namespace DaSerialization
                 Length = length,
                 LocalVersion = localVersion
             });
+            CheckContentTableIntegrity();
             IsDirty = true;
             Size = _stream.Length;
             return true;
@@ -677,34 +681,38 @@ namespace DaSerialization
         }
 
         /// <summary>
-        /// Create new stream instead of existing one, copy only latest versions of all objects into
-        /// the stream, serialize seek table into the stream and mark the container as not dirty.
-        /// Only CleanUp-ed containers can be saved (the seek table serialized only here
+        /// Removes all not-latest versions of all objects and cleans up stream memory from them
+        /// performing defragmentation. After that writes content table to the stream.
+        /// This operation preserves stream capacity and does NOT deallocate any memory.
+        /// Only CleanUp-ed containers can be saved (the content table serialized only here)
         /// </summary>
         public void CleanUp(bool preserveCapacity = false)
         {
-            // TODO: performance
             if (!IsDirty)
                 return;
             RemoveOldVersions();
-            long capacity = preserveCapacity ? _stream.Capacity
-                : CountTotalDataLength() + GetContentTableSize(_contentTable);
-            var newStream = new TStream();
-            newStream.Allocate(capacity);
-            newStream.Seek(newStream.Length);
+
+            long writePos = _stream.ZeroPosition;
             for (int i = 0; i < _contentTable.Count; i++)
             {
                 var entry = _contentTable[i];
-                _stream.Seek(entry.Position);
-                entry.Position = newStream.Position;
+                if (entry.Position != writePos)
+                {
+                    _stream.Seek(entry.Position);
+                    _stream.CopyTo(_stream, writePos, entry.Length);
+                    entry.Position = writePos;
+                }
                 entry.LocalVersion = 0;
-                _stream.CopyTo(newStream, entry.Length);
                 _contentTable[i] = entry;
+
+                writePos += entry.Length;
             }
-            WriteContentTable(newStream, _contentTable);
-            _stream = newStream;
+            _stream.Seek(writePos);
+            WriteContentTable(_stream, _contentTable);
+            _stream.SetLength(_stream.Position);
             Size = _stream.Length;
             IsDirty = false;
+            ClearStreamPosition();
         }
 
         public bool Remove<T>(int objectId)
@@ -849,6 +857,7 @@ namespace DaSerialization
             });
             IsDirty = true;
             Size = _stream.Length;
+            CheckContentTableIntegrity();
             return true;
         }
 
@@ -915,6 +924,7 @@ namespace DaSerialization
                 return 0;
             _contentTable.RemoveRange(lastIndex, toRemove);
             IsDirty = true;
+            CheckContentTableIntegrity();
             return toRemove;
         }
 
@@ -942,6 +952,7 @@ namespace DaSerialization
                     _contentTable[lastIndex++] = _contentTable[j];
             }
             _contentTable.RemoveRange(lastIndex, _contentTable.Count - lastIndex);
+            CheckContentTableIntegrity();
         }
 
         private long CountTotalDataLength()
@@ -954,16 +965,15 @@ namespace DaSerialization
 
         private int GetLastWrittenVersion(int objectId, int typeId, out int index)
         {
-            int maxVersion = -1;
             index = -1;
+            // it's guarateed the local versions are written in ascending order
             for (int i = _contentTable.Count - 1; i >= 0; i--)
-                if (_contentTable[i].Fits(objectId, typeId)
-                    && _contentTable[i].LocalVersion > maxVersion)
+                if (_contentTable[i].Fits(objectId, typeId))
                 {
-                    maxVersion = _contentTable[i].LocalVersion;
                     index = i;
+                    return _contentTable[i].LocalVersion;
                 }
-            return maxVersion;
+            return -1;
         }
 
         public IEnumerable<int> GetObjectIds<T>()
@@ -1043,6 +1053,26 @@ namespace DaSerialization
             if (throwIfInvalid)
                 throw new Exception("Invalid object id " + id);
             return false;
+        }
+
+        [Conditional("CONTENT_TABLE_INTEGRITY_CHECK")]
+        private void CheckContentTableIntegrity()
+        {
+            // all operations with content table should guarantee
+            // the latest versions are written closer to the table end
+
+            for (int i = _contentTable.Count - 1; i > 0; i--)
+                for (int j = i - 1; j >= 0; j--)
+                {
+                    var next = _contentTable[i];
+                    var previous = _contentTable[j];
+                    if (!next.Fits(previous.ObjectId, previous.TypeId))
+                        continue;
+                    if (next.LocalVersion <= previous.LocalVersion)
+                        throw new Exception($"Content table entry #{i} ({next}) has smaller VERSION than #{j} ({previous})");
+                    if (next.Position <= previous.Position)
+                        throw new Exception($"Content table entry #{i} ({next}) has earlier POSITION than #{j} ({previous})");
+                }
         }
 
         [Conditional("INSPECT_DESERIALIZATION")]
