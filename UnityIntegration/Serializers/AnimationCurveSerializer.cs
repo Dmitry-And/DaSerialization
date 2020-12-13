@@ -2,10 +2,12 @@
 
 using DaSerialization;
 using UnityEngine;
+using UnityEngine.Scripting;
 
 namespace Common.Serialization
 {
     [TypeId(-541940, typeof(AnimationCurve))]
+    [Preserve]
     public class AnimationCurveSerializer_v1 : AFullSerializer<AnimationCurve, BinaryStream>
     {
         public override int Version => 1;

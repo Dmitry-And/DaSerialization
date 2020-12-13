@@ -2,6 +2,7 @@
 using System.IO;
 using System;
 using DaSerialization.Internal;
+using UnityEngine.Scripting;
 
 namespace DaSerialization
 {
@@ -108,6 +109,7 @@ namespace DaSerialization
 
 namespace DaSerialization.Serialization
 {
+    [Preserve]
     public class BinaryContainerSerializer_v1 : AFullSerializer<BinaryContainer, BinaryStream>
     {
         public override int Version => 1;
