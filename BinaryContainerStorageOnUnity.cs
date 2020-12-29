@@ -1,4 +1,5 @@
 ﻿#if UNITY_2018_1_OR_NEWER
+using System;
 using System.IO;
 using UnityEngine;
 
@@ -46,7 +47,15 @@ namespace DaSerialization
                 }
                 data = File.ReadAllBytes(filePath);
             }
-            return GetContainerFromData(data, writable);
+            try
+            {
+                return GetContainerFromData(data, writable);
+            }
+            catch(Exception e)
+            {
+                Debug.LogException(e, textAsset);
+                return null;
+            }
         }
 
         public BinaryContainer GetContainerFromData(byte[] data, bool writable)
