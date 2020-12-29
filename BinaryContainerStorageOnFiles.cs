@@ -3,26 +3,26 @@ using DaSerialization.Internal;
 
 namespace DaSerialization
 {
-    public class BinaryContainerStorageOnFiles : AContainerStorage<BinaryStream>
+    public class BinaryContainerStorageOnFiles : AContainerStorage
     {
         public string StoragePathPrefix;
         public string StorageFileExtension = ".bytes";
 
-        public BinaryContainerStorageOnFiles(SerializerStorage<BinaryStream> serializers = null, string prefix = "../")
+        public BinaryContainerStorageOnFiles(SerializerStorage serializers = null, string prefix = "../")
             : base(serializers)
         {
             StoragePathPrefix = prefix;
         }
 
-        public override AContainer<BinaryStream> CreateContainer(int size = 0)
+        public override BinaryContainer CreateContainer(int size = 0)
         {
             var memStream = new MemoryStream(size);
-            var binStream = new BinaryStream(memStream, true);
-            var container = new BinaryContainer(binStream, _serializers);
+            var binStream = new BinaryStream(memStream, _serializers, true);
+            var container = new BinaryContainer(binStream);
             return container;
         }
 
-        public override AContainer<BinaryStream> LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
+        public override BinaryContainer LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
         {
             // all files are considered as writable
             string filePath = GetFilePath(name);
@@ -34,12 +34,12 @@ namespace DaSerialization
             }
             var data = File.ReadAllBytes(filePath);
             var memStream = CreateMemoryStream(data, writable);
-            var binStream = new BinaryStream(memStream, writable);
-            var container = new BinaryContainer(binStream, _serializers);
+            var binStream = new BinaryStream(memStream, _serializers, writable);
+            var container = new BinaryContainer(binStream);
             return container;
         }
 
-        public override bool SaveContainer(AContainer<BinaryStream> container, string name)
+        public override bool SaveContainer(BinaryContainer container, string name)
         {
             string filePath = GetFilePath(name);
             bool fileExists = File.Exists(filePath);

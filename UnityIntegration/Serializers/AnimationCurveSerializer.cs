@@ -6,11 +6,11 @@ using UnityEngine;
 namespace Common.Serialization
 {
     [TypeId(-541940, typeof(AnimationCurve))]
-    public class AnimationCurveSerializer_v1 : AFullSerializer<AnimationCurve, BinaryStream>
+    public class AnimationCurveSerializer_v1 : AFullSerializer<AnimationCurve>
     {
         public override int Version => 1;
 
-        public override void ReadDataToObject(ref AnimationCurve ac, BinaryStream stream, AContainer<BinaryStream> container)
+        public override void ReadDataToObject(ref AnimationCurve ac, BinaryStream stream)
         {
             if (ac == null)
                 ac = new AnimationCurve();
@@ -24,7 +24,7 @@ namespace Common.Serialization
             ac.postWrapMode = (WrapMode)reader.ReadByte();
         }
 
-        public override void WriteObject(AnimationCurve ac, BinaryStream stream, AContainer<BinaryStream> container)
+        public override void WriteObject(AnimationCurve ac, BinaryStream stream)
         {
             var writer = stream.GetWriter();
             int len = ac.length;

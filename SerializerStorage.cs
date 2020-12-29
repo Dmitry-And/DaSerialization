@@ -27,7 +27,7 @@ namespace DaSerialization
             SerializerIndex = shouldHaveSerializer ? NO_SERIALIZER : ABSTRACT;
             DeserializerIndex = SerializerIndex;
             LatestSerializerWritesContainer = false;
-            IsContainer = typeof(IContainer).IsAssignableFrom(Type);
+            IsContainer = typeof(BinaryContainer).IsAssignableFrom(Type);
         }
         public SerializationTypeInfo(Type type)
         {
@@ -36,7 +36,7 @@ namespace DaSerialization
             SerializerIndex = NO_SERIALIZER;
             DeserializerIndex = NO_SERIALIZER;
             LatestSerializerWritesContainer = false;
-            IsContainer = typeof(IContainer).IsAssignableFrom(Type);
+            IsContainer = typeof(BinaryContainer).IsAssignableFrom(Type);
         }
 
         public void InitSerializers(int index, ISerializer serializerHighestVersion)
@@ -59,7 +59,7 @@ namespace DaSerialization
             => $"{Type.PrettyName()} (id={Id})";
     }
 
-    public class SerializerStorage<TStream> where TStream : class, IStream<TStream>, new()
+    public class SerializerStorage
     {
         private const int MAX_VERSION = int.MaxValue >> 1;
 
@@ -67,13 +67,13 @@ namespace DaSerialization
         {
             public int TypeId;
             public int Version;
-            public ISerializer<TStream> Serializer;
+            public ISerializer Serializer;
         }
         private struct DeserializerInfo
         {
             public int TypeId;
             public int Version;
-            public IDeserializer<TStream> Deserializer;
+            public IDeserializer Deserializer;
         }
 
         private Dictionary<Type, ushort> _typeToIndex;
@@ -82,9 +82,9 @@ namespace DaSerialization
         private List<SerializerInfo> _serializerInfos;
         private List<DeserializerInfo> _deserializerInfos;
 
-        private static SerializerStorage<TStream> _default;
-        public static SerializerStorage<TStream> Default
-            => _default ?? (_default = new SerializerStorage<TStream>());
+        private static SerializerStorage _default;
+        public static SerializerStorage Default
+            => _default ?? (_default = new SerializerStorage());
 
         public SerializerStorage(Assembly assemblyToSearch = null)
         {
@@ -219,16 +219,13 @@ namespace DaSerialization
             _serializerInfos = new List<SerializerInfo>(serializers.Count + 1);
             foreach (var s in serializers)
             {
-                var sGenericDefinition = typeof(ISerializer<,>);
+                var sGenericDefinition = typeof(ISerializer<>);
                 var sInterface = s.GetType().ImplementsGenericInterfaceDefinition(sGenericDefinition);
                 if (sInterface == null)
                     throw new Exception($"Serializer {s.GetType().PrettyName()} does not implement interface {sGenericDefinition.PrettyName()}");
-                var arguments = sInterface.GetGenericArguments();
-                Type oType = arguments[0];
+                Type oType = sInterface.GetGenericArguments()[0];
 
                 if (oType.IsAbstract | oType.IsInterface)
-                    continue;
-                if (!typeof(TStream).IsAssignableFrom(arguments[1]))
                     continue;
 
                 if (!_typeToIndex.TryGetValue(oType, out var sTypeIndex))
@@ -240,7 +237,7 @@ namespace DaSerialization
                 {
                     TypeId = _typeInfos[sTypeIndex].Id,
                     Version = s.Version,
-                    Serializer = s as ISerializer<TStream>
+                    Serializer = s as ISerializer
                 });
             }
             _serializerInfos.Sort((x, y) =>
@@ -273,16 +270,13 @@ namespace DaSerialization
             _deserializerInfos = new List<DeserializerInfo>(deserializers.Count + 1);
             foreach (var d in deserializers)
             {
-                var dGenericDefinition = typeof(IDeserializer<,>);
+                var dGenericDefinition = typeof(IDeserializer<>);
                 var dInterface = d.GetType().ImplementsGenericInterfaceDefinition(dGenericDefinition);
                 if (dInterface == null)
                     throw new Exception($"Deserializer {d.PrettyTypeName()} does not implement interface {dGenericDefinition.PrettyName()}");
-                var arguments = dInterface.GetGenericArguments();
-                Type oType = arguments[0];
+                Type oType = dInterface.GetGenericArguments()[0];
 
                 if (oType.IsAbstract | oType.IsInterface)
-                    continue;
-                if (!typeof(TStream).IsAssignableFrom(arguments[1]))
                     continue;
 
                 if (!_typeToIndex.TryGetValue(oType, out var dTypeIndex))
@@ -294,7 +288,7 @@ namespace DaSerialization
                 {
                     TypeId = _typeInfos[dTypeIndex].Id,
                     Version = d.Version,
-                    Deserializer = d as IDeserializer<TStream>
+                    Deserializer = d as IDeserializer
                 });
             }
             _deserializerInfos.Sort((x, y) =>
@@ -338,7 +332,7 @@ namespace DaSerialization
             if (throwIfNotFound)
             {
                 if (t.IsAbstract | t.IsInterface)
-                    throw new ArgumentException($"Type {t.PrettyName()} is not marked with {typeof(TypeIdAttribute).PrettyName()}. It doesn't have to have a (de)serializer but it has to be marked with {typeof(TypeIdAttribute).PrettyName()} to be used in {nameof(IContainer.Serialize)} method");
+                    throw new ArgumentException($"Type {t.PrettyName()} is not marked with {typeof(TypeIdAttribute).PrettyName()}. It doesn't have to have a (de)serializer but it has to be marked with {typeof(TypeIdAttribute).PrettyName()} to be used in {nameof(BinaryContainer.Serialize)} method");
                 else
                     throw new ArgumentException($"Type {t.PrettyName()} is not marked with {typeof(TypeIdAttribute).PrettyName()}");
             }
@@ -363,7 +357,7 @@ namespace DaSerialization
             return serializer.UpdateSerializersInInnerContainers(ref obj);
         }
 
-        public IDeserializer<TStream> GetDeserializer(SerializationTypeInfo typeInfo, int version)
+        public IDeserializer GetDeserializer(SerializationTypeInfo typeInfo, int version)
         {
             int index = typeInfo.DeserializerIndex;
             var typeId = typeInfo.Id;
@@ -377,7 +371,7 @@ namespace DaSerialization
             return null;
         }
 
-        public ISerializer<TStream> GetSerializer(SerializationTypeInfo typeInfo, int version = -1)
+        public ISerializer GetSerializer(SerializationTypeInfo typeInfo, int version = -1)
         {
             // if version specified - search for the exact version match
             // else - take max version

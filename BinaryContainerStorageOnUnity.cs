@@ -4,7 +4,7 @@ using UnityEngine;
 
 namespace DaSerialization
 {
-    public class BinaryContainerStorageOnUnity : AContainerStorage<BinaryStream>
+    public class BinaryContainerStorageOnUnity : AContainerStorage
     {
         public static string ResourcesPathPrefix = "Storage/";
         public static string PersistentEditorPathPrefix = "Assets/EditorStorage/";
@@ -15,15 +15,15 @@ namespace DaSerialization
             : _persistentRuntimePathPrefix;
         public static string PersistentFileExtension = ".bytes";
 
-        public BinaryContainerStorageOnUnity(SerializerStorage<BinaryStream> serializers = null)
+        public BinaryContainerStorageOnUnity(SerializerStorage serializers = null)
             : base(serializers) { }
 
         public BinaryContainer CreateBinaryContainer(int size = 0)
             => new BinaryContainer(size, _serializers);
-        public override AContainer<BinaryStream> CreateContainer(int size = 0)
+        public override BinaryContainer CreateContainer(int size = 0)
             => CreateBinaryContainer(size);
 
-        public override AContainer<BinaryStream> LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
+        public override BinaryContainer LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
         {
             var assetName = GetResourcesAssetPath(name);
             var textAsset = Resources.Load<TextAsset>(assetName);
@@ -54,20 +54,20 @@ namespace DaSerialization
             if (!BinaryStream.IsValidData(data))
                 return null;
             var memStream = CreateMemoryStream(data, writable);
-            var binStream = new BinaryStream(memStream, writable);
+            var binStream = new BinaryStream(memStream, _serializers, writable);
             if (!binStream.CheckIsValidStream()) // just in case but can be removed
                 return null;
-            var container = new BinaryContainer(binStream, _serializers);
+            var container = new BinaryContainer(binStream);
             return container;
         }
 
-        public override bool SaveContainer(AContainer<BinaryStream> container, string name)
+        public override bool SaveContainer(BinaryContainer container, string name)
         {
             string filePath = GetPersistentFilePath(name);
             return SaveContainerAtPath(container, filePath);
         }
 
-        public bool SaveContainerAtPath(IContainer container, string filePath)
+        public bool SaveContainerAtPath(BinaryContainer container, string filePath)
         {
             bool fileExists = File.Exists(filePath);
             if (!fileExists)

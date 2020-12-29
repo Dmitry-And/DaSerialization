@@ -4,11 +4,11 @@ using System.IO;
 
 namespace DaSerialization
 {
-    public abstract class ABatchListSerializer<T> : AFullSerializer<List<T>, BinaryStream>
+    public abstract class ABatchListSerializer<T> : AFullSerializer<List<T>>
         where T : struct, IEquatable<T>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
         {
             int len = stream.ReadInt(Metadata.CollectionSize);
             if (len < 0)
@@ -29,7 +29,7 @@ namespace DaSerialization
             T curr = default;
             while (len > 0)
             {
-                ReadElement(ref curr, reader, container);
+                ReadElement(ref curr, reader);
                 int similar = reader.ReadByte() + 1;
                 for (int i = 0; i < similar; i++)
                     list.Add(curr);
@@ -38,7 +38,7 @@ namespace DaSerialization
             EndReading();
         }
 
-        public sealed override void WriteObject(List<T> list, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void WriteObject(List<T> list, BinaryStream stream)
         {
             if (list == null)
             {
@@ -49,7 +49,7 @@ namespace DaSerialization
             var writer = stream.GetWriter();
             int similar = 0;
             var last = list[0];
-            WriteElement(last, writer, container);
+            WriteElement(last, writer);
             for (int i = 1, max = list.Count; i < max; i++)
             {
                 var curr = list[i];
@@ -57,7 +57,7 @@ namespace DaSerialization
                 {
                     writer.Write(similar.ToByte());
                     last = curr;
-                    WriteElement(last, writer, container);
+                    WriteElement(last, writer);
                     similar = 0;
                 }
                 else
@@ -67,17 +67,17 @@ namespace DaSerialization
             EndWriting(writer);
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader, AContainer<BinaryStream> container);
-        protected abstract void WriteElement(T e, BinaryWriter writer, AContainer<BinaryStream> container);
+        protected abstract void ReadElement(ref T e, BinaryReader reader);
+        protected abstract void WriteElement(T e, BinaryWriter writer);
         protected virtual void EndReading() { }
         protected virtual void EndWriting(BinaryWriter writer) { }
     }
 
-    public abstract class ABatchListDeserializer<T> : ADeserializer<List<T>, BinaryStream>
+    public abstract class ABatchListDeserializer<T> : ADeserializer<List<T>>
         where T : struct, IEquatable<T>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
         {
             int len = stream.ReadInt(Metadata.CollectionSize);
             if (len < 0)
@@ -98,7 +98,7 @@ namespace DaSerialization
             T curr = default;
             while (len > 0)
             {
-                ReadElement(ref curr, reader, container);
+                ReadElement(ref curr, reader);
                 int similar = reader.ReadByte() + 1;
                 for (int i = 0; i < similar; i++)
                     list.Add(curr);
@@ -107,7 +107,7 @@ namespace DaSerialization
             EndReading();
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader, AContainer<BinaryStream> container);
+        protected abstract void ReadElement(ref T e, BinaryReader reader);
         protected virtual void EndReading() { }
     }
 

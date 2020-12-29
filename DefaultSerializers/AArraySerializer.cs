@@ -2,10 +2,10 @@
 
 namespace DaSerialization
 {
-    public abstract class AArraySerializer<T> : AFullSerializer<T[], BinaryStream>
+    public abstract class AArraySerializer<T> : AFullSerializer<T[]>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref T[] arr, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void ReadDataToObject(ref T[] arr, BinaryStream stream)
         {
             var reader = stream.GetReader();
             int length = reader.ReadInt32();
@@ -17,10 +17,10 @@ namespace DaSerialization
             if (arr == null || arr.Length != length)
                 arr = new T[length];
             for (int i = 0; i < length; i++)
-                ReadElement(ref arr[i], reader, container);
+                ReadElement(ref arr[i], stream);
         }
 
-        public sealed override void WriteObject(T[] arr, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void WriteObject(T[] arr, BinaryStream stream)
         {
             var writer = stream.GetWriter();
             if (arr == null)
@@ -31,17 +31,17 @@ namespace DaSerialization
             int length = arr.Length;
             writer.Write(length);
             for (int i = 0; i < length; i++)
-                WriteElement(arr[i], writer, container);
+                WriteElement(arr[i], stream);
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader, AContainer<BinaryStream> container);
-        protected abstract void WriteElement(T e, BinaryWriter writer, AContainer<BinaryStream> container);
+        protected abstract void ReadElement(ref T e, BinaryStream stream);
+        protected abstract void WriteElement(T e, BinaryStream stream);
     }
 
-    public abstract class AArrayDeserializer<T> : ADeserializer<T[], BinaryStream>
+    public abstract class AArrayDeserializer<T> : ADeserializer<T[]>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref T[] arr, BinaryStream stream, AContainer<BinaryStream> container)
+        public sealed override void ReadDataToObject(ref T[] arr, BinaryStream stream)
         {
             var reader = stream.GetReader();
             int length = reader.ReadInt32();
@@ -53,10 +53,10 @@ namespace DaSerialization
             if (arr == null || arr.Length != length)
                 arr = new T[length];
             for (int i = 0; i < length; i++)
-                ReadElement(ref arr[i], reader, container);
+                ReadElement(ref arr[i], stream);
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader, AContainer<BinaryStream> container);
+        protected abstract void ReadElement(ref T e, BinaryStream stream);
     }
 
 }

@@ -35,8 +35,8 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
     public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
     private bool _initialized;
-    private IContainer _container;
-    public IContainer Container { get { Init(); return _container; } }
+    private BinaryContainer _container;
+    public BinaryContainer Container { get { Init(); return _container; } }
     public bool IsValid => Init();
 
     public bool Equals(ContainerRefWithId other) => other.Id == Id && other._textAsset == _textAsset;
@@ -107,8 +107,8 @@ public struct ContainerRef : IEquatable<ContainerRef>
     public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
     private bool _initialized;
-    private IContainer _container;
-    public IContainer Container { get { Init(); return _container; } }
+    private BinaryContainer _container;
+    public BinaryContainer Container { get { Init(); return _container; } }
     public bool IsValid => Init();
 
     public static ContainerRef FromTextAsset(TextAsset textAsset, bool verbose = true)
@@ -161,7 +161,7 @@ namespace DaSerialization.Internal
     public static class ContainerAssetUtils
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Init(ref bool initialized, TextAsset textAsset, ref IContainer container, bool verbose)
+        public static bool Init(ref bool initialized, TextAsset textAsset, ref BinaryContainer container, bool verbose)
         {
             if (!initialized)
             {
@@ -186,7 +186,7 @@ namespace DaSerialization.Internal
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static bool Load<T>(TextAsset textAsset, IContainer container, ref T obj, int id, bool objectExpected)
+        public static bool Load<T>(TextAsset textAsset, BinaryContainer container, ref T obj, int id, bool objectExpected)
         {
             BinaryContainer.IsValidObjectId(id, true);
             if (container == null)
@@ -209,7 +209,7 @@ namespace DaSerialization.Internal
 
 #if UNITY_EDITOR
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static void Save<T>(TextAsset textAsset, ref IContainer container, T obj, int id, bool andWriteToAsset)
+        public static void Save<T>(TextAsset textAsset, ref BinaryContainer container, T obj, int id, bool andWriteToAsset)
         {
             BinaryContainer.IsValidObjectId(id, true);
             if (textAsset == null)
@@ -221,7 +221,7 @@ namespace DaSerialization.Internal
                 WriteToTextAsset(container, textAsset);
         }
 
-        public static void Remove(TextAsset textAsset, IContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
+        public static void Remove(TextAsset textAsset, BinaryContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
         {
             BinaryContainer.IsValidObjectId(idToDelete, true);
             if (textAsset == null)
@@ -234,7 +234,7 @@ namespace DaSerialization.Internal
                 WriteToTextAsset(container, textAsset);
         }
 
-        public static void WriteToTextAsset(IContainer container, TextAsset textAsset)
+        public static void WriteToTextAsset(BinaryContainer container, TextAsset textAsset)
         {
             if (container == null) // same as !IsValid
             {

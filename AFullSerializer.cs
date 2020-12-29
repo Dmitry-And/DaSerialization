@@ -1,34 +1,31 @@
 ﻿namespace DaSerialization
 {
-    public abstract class AFullSerializer<T, TStream>
-        : ADeserializer<T, TStream>, ISerializer<T, TStream>
-        where TStream : class, IStream<TStream>, new()
+    public abstract class AFullSerializer<T> : ADeserializer<T>, ISerializer<T>
     {
-        public abstract void WriteObject(T obj, TStream stream, AContainer<TStream> container);
-        public void WriteObjectTypeless(object obj, TStream stream, AContainer<TStream> container)
+        public abstract void WriteObject(T obj, BinaryStream stream);
+        public void WriteObjectTypeless(object obj, BinaryStream stream)
         {
             T typedObj;
             if (obj is T typed)
                 typedObj = typed;
             else
                 typedObj = default;
-            WriteObject(typedObj, stream, container);
+            WriteObject(typedObj, stream);
         }
     }
 
-    public abstract class ADeserializer<T, TStream> : IDeserializer<T, TStream>
-        where TStream : class, IStream<TStream>, new()
+    public abstract class ADeserializer<T> : IDeserializer<T>
     {
         public abstract int Version { get; }
-        public abstract void ReadDataToObject(ref T obj, TStream stream, AContainer<TStream> container);
-        public void ReadDataToTypelessObject(ref object obj, TStream stream, AContainer<TStream> container)
+        public abstract void ReadDataToObject(ref T obj, BinaryStream stream);
+        public void ReadDataToTypelessObject(ref object obj, BinaryStream stream)
         {
             T typedObj;
             if (obj is T typed)
                 typedObj = typed;
             else
                 typedObj = default;
-            ReadDataToObject(ref typedObj, stream, container);
+            ReadDataToObject(ref typedObj, stream);
             obj = typedObj;
         }
     }

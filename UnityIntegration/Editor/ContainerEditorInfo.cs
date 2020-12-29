@@ -142,9 +142,10 @@ namespace DaSerialization.Editor
             var metaSize = _container.Size;
             RootObjects = new List<RootObjectInfo>(EntriesCount);
             HasOldVersions = false;
-            _container.EnableDeserializationInspection = true;
-            _container.ObjectDeserializationStarted += OnObjectDeserializationStarted;
-            _container.ObjectDeserializationFinished += OnObjectDeserializationFinished;
+            var stream = _container.GetBinaryStream();
+            stream.EnableDeserializationInspection = true;
+            stream.ObjectDeserializationStarted += OnObjectDeserializationStarted;
+            stream.ObjectDeserializationFinished += OnObjectDeserializationFinished;
             foreach (var e in contentTable)
             {
                 object o = null;
@@ -166,9 +167,9 @@ namespace DaSerialization.Editor
                 metaSize -= root.Data.TotalSize;
                 RootObjects.Add(root);
             }
-            _container.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
-            _container.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
-            _container.EnableDeserializationInspection = false;
+            stream.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
+            stream.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
+            stream.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
             MetaInfoSize = metaSize.ToInt32();
         }
@@ -216,7 +217,7 @@ namespace DaSerialization.Editor
                     const bool showTypes = true;
 
                     object obj = null;
-                    var container = _container as IContainerInternals;
+                    var container = _container as IStreamInternals;
                     container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
 
                     var stringWriter = new System.IO.StringWriter();

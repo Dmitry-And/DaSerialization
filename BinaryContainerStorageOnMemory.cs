@@ -4,39 +4,39 @@ using DaSerialization.Internal;
 
 namespace DaSerialization
 {
-    public class BinaryContainerStorageOnMemory : AContainerStorage<BinaryStream>
+    public class BinaryContainerStorageOnMemory : AContainerStorage
     {
         private MemoryStream _storage = new MemoryStream();
         private struct PosLen { public long Position; public long Length; }
         private Dictionary<string, PosLen> _containerPositions = new Dictionary<string, PosLen>(20);
 
-        public BinaryContainerStorageOnMemory(SerializerStorage<BinaryStream> serializers = null)
+        public BinaryContainerStorageOnMemory(SerializerStorage serializers = null)
             : base(serializers) { }
 
         public BinaryContainer CreateBinaryContainer(int size = 0)
             => new BinaryContainer(size, _serializers);
-        public override AContainer<BinaryStream> CreateContainer(int size = 0)
+        public override BinaryContainer CreateContainer(int size = 0)
             => CreateBinaryContainer(size);
 
-        public override AContainer<BinaryStream> LoadContainer(string name, bool writable, bool errorIfNotExist = true)
+        public override BinaryContainer LoadContainer(string name, bool writable, bool errorIfNotExist = true)
         {
             // all saved in memory containers are considered as writable
-            AContainer<BinaryStream> container = null;
+            BinaryContainer container = null;
             if (_containerPositions.TryGetValue(name, out PosLen containerPosLen))
             {
                 _storage.Seek(containerPosLen.Position, SeekOrigin.Begin);
                 var data = new byte[containerPosLen.Length];
                 _storage.Read(data, 0, data.Length);
                 var memStream = CreateMemoryStream(data, writable);
-                var binStream = new BinaryStream(memStream, writable);
-                container = new BinaryContainer(binStream, _serializers);
+                var binStream = new BinaryStream(memStream, _serializers, writable);
+                container = new BinaryContainer(binStream);
             }
             else if (errorIfNotExist)
                 SerializationLogger.LogError($"Container '{name}' does not exist in {this.PrettyTypeName()}");
             return container;
         }
 
-        public override bool SaveContainer(AContainer<BinaryStream> container, string name)
+        public override bool SaveContainer(BinaryContainer container, string name)
         {
             _storage.Seek(0, SeekOrigin.End);
             PosLen containerPosLen = new PosLen()

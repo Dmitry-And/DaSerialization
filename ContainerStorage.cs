@@ -2,31 +2,16 @@
 
 namespace DaSerialization
 {
-    public abstract class AContainerStorage<TStream>
-        : IContainerStorage where TStream : class, IStream<TStream>, new()
+    public abstract class AContainerStorage : IContainerStorage
     {
-        protected SerializerStorage<TStream> _serializers;
+        protected SerializerStorage _serializers;
 
-        public AContainerStorage(SerializerStorage<TStream> serializers)
-        { _serializers = serializers ?? SerializerStorage<TStream>.Default; }
+        public AContainerStorage(SerializerStorage serializers)
+        { _serializers = serializers ?? SerializerStorage.Default; }
 
-        IContainer IContainerStorage.CreateContainer(int size)
-        { return CreateContainer(size); }
-
-        IContainer IContainerStorage.LoadContainer(string name, bool writable, bool errorIfNotExist)
-        { return LoadContainer(name, writable, errorIfNotExist); }
-
-        bool IContainerStorage.SaveContainer(IContainer container, string name)
-        {
-            var typedContainer = container as AContainer<TStream>;
-            if (typedContainer == null)
-                throw new System.ArgumentException($"{nameof(SaveContainer)} called with argument {container.PrettyTypeName()} but {typeof(AContainer<TStream>).PrettyName()} expected", nameof(container));
-            return SaveContainer(typedContainer, name);
-        }
-
-        public abstract AContainer<TStream> CreateContainer(int size = 0);
-        public abstract AContainer<TStream> LoadContainer(string name, bool writable, bool errorIfNotExist);
-        public abstract bool SaveContainer(AContainer<TStream> container, string name);
+        public abstract BinaryContainer CreateContainer(int size = 0);
+        public abstract BinaryContainer LoadContainer(string name, bool writable, bool errorIfNotExist);
+        public abstract bool SaveContainer(BinaryContainer container, string name);
         public abstract bool DeleteContainer(string name);
 
         protected static MemoryStream CreateMemoryStream(byte[] data, bool writable)
