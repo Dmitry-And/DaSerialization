@@ -13,6 +13,14 @@ using DaSerialization.Internal;
 
 namespace DaSerialization
 {
+    public enum Metadata
+    {
+        ObjectID,
+        TypeID, // 0 if object is null
+        Version, // 0 if object is null
+        CollectionSize,
+    }
+
     public class BinaryStream : IStreamInternals
     {
         // first 4 bytes written to the stream to identify it as a valid BinaryStream

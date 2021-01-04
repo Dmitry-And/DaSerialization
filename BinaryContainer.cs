@@ -9,6 +9,21 @@ using System.Diagnostics;
 
 namespace DaSerialization
 {
+    public struct SerializedObjectInfo
+    {
+        public int ObjectId;
+        public int TypeId;
+        public int LocalVersion;
+        public uint Length;
+        public long Position;
+
+        public bool Fits(int objectId, int typeId) { return TypeId == typeId & ObjectId == objectId; }
+        public bool Fits(int objectId, int typeId, int version) { return TypeId == typeId & ObjectId == objectId & LocalVersion == version; }
+
+        public override string ToString()
+            => $"Type {TypeId} Obj {ObjectId} v{LocalVersion} Pos {Position}-{Position + Length}";
+    }
+
     [TypeId(2004)]
     public class BinaryContainer : IDisposable
     {
