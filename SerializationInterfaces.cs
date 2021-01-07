@@ -24,12 +24,6 @@
         void WriteObject(T obj, BinaryStream stream);
     }
 
-    public interface IStreamInternals
-    {
-        bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance);
-        void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion);
-    }
-
     public interface IContainerStorage
     {
         BinaryContainer CreateContainer(int size = 0);

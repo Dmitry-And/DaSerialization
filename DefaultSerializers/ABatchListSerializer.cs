@@ -67,7 +67,7 @@ namespace DaSerialization
             EndWriting(writer);
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader);
+        protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
         protected abstract void WriteElement(T e, BinaryWriter writer);
         protected virtual void EndReading() { }
         protected virtual void EndWriting(BinaryWriter writer) { }
@@ -107,7 +107,7 @@ namespace DaSerialization
             EndReading();
         }
 
-        protected abstract void ReadElement(ref T e, BinaryReader reader);
+        protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
         protected virtual void EndReading() { }
     }
 

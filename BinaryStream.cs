@@ -1,6 +1,5 @@
 ﻿#if DEBUG && !DISABLE_DEBUG
 #define STATE_CHECK // additional validation that container do not serialize during deserialization process and vice versa
-#define INSPECT_DESERIALIZATION // deserialization callback will be fired
 #define SERIALIZE_POLYMORPHIC_CHECK
 #endif
 
@@ -21,19 +20,20 @@ namespace DaSerialization
         CollectionSize,
     }
 
-    public class BinaryStream : IStreamInternals
+    public class BinaryStream
     {
         // first 4 bytes written to the stream to identify it as a valid BinaryStream
         public const int MagicNumber = 0x35_2A_31_BB; // 891957691
         public const int MetaDataSize = sizeof(int);
-        private readonly Encoding DefaultStringEncoding = Encoding.UTF8;
+        public static readonly Encoding DefaultStringEncoding = Encoding.UTF8;
 
         public SerializerStorage SerializerStorage { get; private set; }
 
         private MemoryStream _stream;
-        private BinaryReader _reader;
+        private BinaryStreamReader _reader;
         private BinaryWriter _writer;
         private bool _locked = true;
+        public bool IsLocked => _locked;
 
         public long Position
         {
@@ -66,7 +66,12 @@ namespace DaSerialization
             SerializerStorage = storage;
             Writable = writable;
             CreateReaderAndWriter();
-            if (writable & _stream.Length == 0)
+            if (_stream.Length != 0)
+            {
+                if (!CheckIsValidStream())
+                    throw new InvalidDataException($"Trying to create {nameof(BinaryStream)} with invalid stream data");
+            }
+            else if (writable)
                 WriteMagicNumber();
         }
 
@@ -88,7 +93,7 @@ namespace DaSerialization
 
         private void CreateReaderAndWriter()
         {
-            _reader = new BinaryReader(_stream, DefaultStringEncoding, true);
+            _reader = new BinaryStreamReader(this);
             if (Writable)
                 _writer = new BinaryWriter(_stream, DefaultStringEncoding, true);
         }
@@ -165,25 +170,6 @@ namespace DaSerialization
             }
         }
 
-        public int ReadInt(Metadata meta)
-        {
-            if (_stream == null)
-                throw new InvalidOperationException($"Trying to {nameof(ReadInt)} from empty {this.PrettyTypeName()}");
-            if (_locked)
-                throw new InvalidOperationException($"Trying to {nameof(ReadInt)} from {this.PrettyTypeName()} w/o setting position");
-            switch (meta)
-            {
-                case Metadata.Version:
-                case Metadata.CollectionSize:
-                    return (int)((long)_reader.ReadUIntPacked() - 1);
-                case Metadata.TypeID:
-                    return _reader.ReadInt32();
-                case Metadata.ObjectID:
-                    return (int)_reader.ReadUIntPacked();
-                default: throw new Exception(meta.ToString());
-            }
-        }
-
         public void WriteInt(Metadata meta, int value)
         {
             if (_stream == null)
@@ -235,7 +221,7 @@ namespace DaSerialization
         }
 
         public MemoryStream GetUnderlyingStream() => _stream;
-        public BinaryReader GetReader() => _reader;
+        public BinaryStreamReader GetReader() => _reader;
         public BinaryWriter GetWriter() => Writable ? _writer : null;
         public int GetMetaDataSize() => MetaDataSize;
 
@@ -247,118 +233,42 @@ namespace DaSerialization
             WriteMagicNumber();
         }
 
-        #region inner deserialization
+        #region deserialization
+
+        public int ReadInt(Metadata meta) => _reader.ReadInt(meta);
 
         public void DeserializeStatic<T>(ref T obj)
-        {
-            var typeInfo = SerializerStorage.GetTypeInfo(typeof(T));
-            OnDeserializeMetaBegin(typeof(T));
-            DeserializeStatic(ref obj, typeInfo);
-        }
+            => _reader.DeserializeStatic<T>(ref obj);
         public void DeserializeStatic<T>(ref T obj, int typeId)
-        {
-            var typeInfo = SerializerStorage.GetTypeInfo(typeId);
-            OnDeserializeMetaBegin(typeInfo.Type);
-            DeserializeStatic(ref obj, typeInfo);
-        }
-        private void DeserializeStatic<T>(ref T obj, SerializationTypeInfo typeInfo)
-        {
-            CheckStreamReady();
-            var deserializerTypeless = ReadDeserializer<T>(typeInfo, out bool deserializerIsOfDerivedType);
-            if (deserializerTypeless == null)
-            {
-                obj = default;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-            LockDeserialization();
-            OnDeserializeDataBegin(typeInfo, deserializerTypeless);
-            if (deserializerIsOfDerivedType)
-            {
-                var objTypeless = obj as object;
-                deserializerTypeless.ReadDataToTypelessObject(ref objTypeless, this);
-                obj = (T)objTypeless;
-            }
-            else
-            {
-                var deserializer = deserializerTypeless as IDeserializer<T>;
-                deserializer.ReadDataToObject(ref obj, this);
-            }
-            OnDeserializeEnd();
-            UnlockDeserialization();
-        }
-
+            => _reader.DeserializeStatic<T>(ref obj, typeId);
         public T Deserialize<T>()
-        {
-            T result = default;
-            Deserialize(ref result);
-            return result;
-        }
+            => _reader.Deserialize<T>();
         public void Deserialize<T>(ref T obj)
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T));
-            int readTypeId = ReadInt(Metadata.TypeID);
-            if (readTypeId == -1)
-                obj = default;
-            var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
-            DeserializeStatic(ref obj, readTypeInfo);
-        }
-        void IStreamInternals.Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion)
-        {
-            Seek(streamPos);
-            OnDeserializeMetaBegin(typeInfo.Type);
-            CheckStreamReady();
-            IDeserializer deserializerTypeless = null;
-            if (typeInfo.Id != -1
-                & deserializerVersion != 0)
-            {
-                deserializerTypeless = SerializerStorage.GetDeserializer(typeInfo, deserializerVersion);
-                if (deserializerTypeless == null)
-                    throw new Exception($"Unable to find deserializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}', version {deserializerVersion}");
-            }
-            if (deserializerTypeless == null)
-            {
-                obj = default;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-            LockDeserialization();
-            OnDeserializeDataBegin(typeInfo, deserializerTypeless);
-            deserializerTypeless.ReadDataToTypelessObject(ref obj, this);
-            OnDeserializeEnd();
-            UnlockDeserialization();
-            ClearStreamPosition();
-        }
+            => _reader.Deserialize<T>(ref obj);
+        public void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion)
+            => _reader.Deserialize(streamPos, ref obj, typeInfo, deserializerVersion);
 
-        private IDeserializer<T> ReadDeserializer<T>(SerializationTypeInfo typeInfo)
-        {
-            if (typeInfo.Id == -1)
-                return null;
-            int version = ReadInt(Metadata.Version);
-            var dd = SerializerStorage.GetDeserializer(typeInfo, version) as IDeserializer<T>;
-            if (dd == null)
-                throw new Exception($"Unable to find deserializer for type {SerializerStorage.GetTypeInfo(typeof(T), false)}, stream '{typeof(BinaryStream).PrettyName()}', version {version}, read type is {typeInfo}");
-            return dd;
-        }
-        private IDeserializer ReadDeserializer<T>(SerializationTypeInfo typeInfo, out bool deserializerIsOfDerivedType)
-        {
-            deserializerIsOfDerivedType = false;
-            if (typeInfo.Id == -1)
-                return null;
-            var typeTypeInfo = SerializerStorage.GetTypeInfo(typeof(T), false);
-            if (typeTypeInfo.Id != typeInfo.Id)
-                deserializerIsOfDerivedType = true;
-            int version = ReadInt(Metadata.Version);
-            if (version == 0)
-                return null;
-            var dd = SerializerStorage.GetDeserializer(typeInfo, version);
-            if (dd == null)
-                throw new Exception($"Unable to find deserializer for type {typeTypeInfo}, stream '{typeof(BinaryStream).PrettyName()}', version {version}, read type is {typeInfo}");
-            return dd;
-        }
+        public T[] DeserializeArray<T>()
+            where T : class
+            => _reader.DeserializeArray<T>();
+        public void DeserializeArray<T>(ref T[] arr)
+            where T : class
+            => _reader.DeserializeArray<T>(ref arr);
+        public T[] DeserializeArrayStatic<T>()
+            => _reader.DeserializeArrayStatic<T>();
+        public void DeserializeArrayStatic<T>(ref T[] arr)
+            => _reader.DeserializeArrayStatic<T>(ref arr);
+
+        public List<T> DeserializeList<T>()
+            where T : class
+            => _reader.DeserializeList<T>();
+        public List<T> DeserializeListStatic<T>()
+            => _reader.DeserializeListStatic<T>();
+        public void DeserializeListStatic<T>(ref List<T> list)
+            => _reader.DeserializeListStatic(ref list);
+        public void DeserializeList<T>(ref List<T> list)
+            where T : class
+            => _reader.DeserializeList(ref list);
 
         #endregion
 
@@ -401,13 +311,10 @@ namespace DaSerialization
             return SerializeInner(obj, typeInfo, inherited);
         }
 
-        bool IStreamInternals.SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
-            => SerializeInner(obj, typeInfo, inheritance);
-
         /// <summary>
         /// inheritance is only for performance reasons
         /// </summary>
-        private bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
+        public bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
         {
             CheckWritingAllowed();
             CheckStreamReady();
@@ -471,7 +378,7 @@ namespace DaSerialization
         }
         private void CheckStreamReady()
         {
-            if (Position < 0)
+            if (IsLocked)
                 throw new Exception($"Trying to read/write from/to stream w/o setting position");
         }
         [Conditional("SERIALIZE_POLYMORPHIC_CHECK")]
@@ -530,107 +437,6 @@ namespace DaSerialization
                 Serialize(list[i]);
         }
 
-        public List<T> DeserializeList<T>()
-            where T : class
-        {
-            List<T> list = null;
-            DeserializeList(ref list);
-            return list;
-        }
-
-        public List<T> DeserializeListStatic<T>()
-        {
-            List<T> list = null;
-            DeserializeListStatic(ref list);
-            return list;
-        }
-
-        public void DeserializeListStatic<T>(ref List<T> list)
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(List<T>));
-            int len = ReadInt(Metadata.CollectionSize);
-            if (len < 0)
-            {
-                list = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-
-            if (list == null)
-                list = new List<T>(len > 4 ? len : 4);
-            else
-            {
-                if (list.Capacity < len)
-                    list.Capacity = len;
-            }
-
-            var type = typeof(T);
-            var typeInfo = SerializerStorage.GetTypeInfo(type);
-            var deserializer = ReadDeserializer<T>(typeInfo);
-
-            LockDeserialization();
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
-            for (int i = 0, count = list.Count; i < len & i < count; i++)
-            {
-                var v = list[i];
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
-                list[i] = v;
-            }
-            for (int i = list.Count; i < len; i++)
-            {
-                T v = default;
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
-                list.Add(v);
-            }
-            OnDeserializeEnd();
-            UnlockDeserialization();
-            if (list.Count > len)
-                list.RemoveRange(len, list.Count - len);
-        }
-
-        public void DeserializeList<T>(ref List<T> list)
-            where T : class
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(List<T>));
-            int len = ReadInt(Metadata.CollectionSize);
-            if (len < 0)
-            {
-                list = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-
-            if (list == null)
-                list = new List<T>(len > 4 ? len : 4);
-            else
-            {
-                if (list.Capacity < len)
-                    list.Capacity = len;
-            }
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
-            for (int i = 0, count = list.Count; i < len & i < count; i++)
-            {
-                var v = list[i];
-                Deserialize(ref v);
-                list[i] = v;
-            }
-            for (int i = list.Count; i < len; i++)
-                list.Add(Deserialize<T>());
-            if (list.Count > len)
-                list.RemoveRange(len, list.Count - len);
-            OnDeserializeEnd();
-        }
-
         #endregion
 
         #region arrays
@@ -673,141 +479,20 @@ namespace DaSerialization
                 Serialize(arr[i]);
         }
 
-        public T[] DeserializeArray<T>()
-            where T : class
-        {
-            T[] arr = null;
-            DeserializeArray(ref arr);
-            return arr;
-        }
-
-        public void DeserializeArray<T>(ref T[] arr)
-            where T : class
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T[]));
-            int len = ReadInt(Metadata.CollectionSize);
-            if (len == -1)
-            {
-                arr = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-            if (arr == null || arr.Length != len)
-                arr = new T[len];
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(T[])), null);
-            for (int i = 0; i < len; i++)
-            {
-                var v = arr[i];
-                Deserialize(ref v);
-                arr[i] = v;
-            }
-            OnDeserializeEnd();
-        }
-
-        public T[] DeserializeArrayStatic<T>()
-        {
-            T[] arr = null;
-            DeserializeArrayStatic(ref arr);
-            return arr;
-        }
-
-        public void DeserializeArrayStatic<T>(ref T[] arr)
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T[]));
-            int len = ReadInt(Metadata.CollectionSize);
-            if (len < 0)
-            {
-                arr = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-
-            if (arr == null || arr.Length != len)
-                arr = new T[len];
-
-            var type = typeof(T);
-            var typeInfo = SerializerStorage.GetTypeInfo(type);
-            var deserializer = ReadDeserializer<T>(typeInfo);
-
-            LockDeserialization();
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(T[])), null);
-            for (int i = 0; i < len; i++)
-            {
-                var v = arr[i];
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
-                arr[i] = v;
-            }
-            OnDeserializeEnd();
-            UnlockDeserialization();
-        }
-
         #endregion
 
         #region state validations
 
-        public bool EnableDeserializationInspection;
-        public delegate void DeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version);
-        public event DeserializationStarted ObjectDeserializationStarted;
-        public delegate void DeserializationFinished(long streamPos);
-        public event DeserializationFinished ObjectDeserializationFinished;
-        private long _lastMetaInfoStreamPosition = -1;
-        private Type _lastRefType;
-
-        public void OnDeserializeMetaBegin(Type refType, long startPosition = long.MaxValue)
-        {
-#if INSPECT_DESERIALIZATION
-            if (!EnableDeserializationInspection)
-                return;
-            if (_lastMetaInfoStreamPosition != -1)
-                return;
-            if (startPosition == long.MaxValue)
-                startPosition = Position;
-            _lastRefType = refType;
-            _lastMetaInfoStreamPosition = startPosition;
-#endif
-        }
-        private void OnDeserializeDataBegin()
-            => OnDeserializeDataBegin(SerializationTypeInfo.Invalid, null);
-        private void OnDeserializeDataBegin(SerializationTypeInfo typeInfo, IDeserializer deserializer)
-        {
-#if INSPECT_DESERIALIZATION
-            if (!EnableDeserializationInspection)
-                return;
-            var pos = Position;
-            uint metaLen = _lastMetaInfoStreamPosition < 0 ? 0 : (pos - _lastMetaInfoStreamPosition).ToUInt32();
-            ObjectDeserializationStarted?.Invoke(_lastRefType, typeInfo, pos, metaLen, deserializer == null ? -1 : deserializer.Version);
-            _lastMetaInfoStreamPosition = -1;
-#endif
-        }
-        private void OnDeserializeEnd()
-        {
-#if INSPECT_DESERIALIZATION
-            if (!EnableDeserializationInspection)
-                return;
-            var pos = Position;
-            ObjectDeserializationFinished?.Invoke(pos);
-            _lastMetaInfoStreamPosition = -1;
-#endif
-        }
-
 #if STATE_CHECK
-        private int _serializationLock = 0;
-        private int _deserializationLock = 0;
+        public int SerializationLock { get; private set; } = 0;
 #endif
 
         [Conditional("STATE_CHECK")]
         private void LockSerialization()
         {
 #if STATE_CHECK
-            _serializationLock++;
-            if (_deserializationLock > 0)
+            SerializationLock++;
+            if (_reader.DeserializationLock > 0)
                 throw new InvalidOperationException("Trying to serialize during deserialization");
 #endif
         }
@@ -815,24 +500,7 @@ namespace DaSerialization
         private void UnlockSerialization()
         {
 #if STATE_CHECK
-            _serializationLock--;
-#endif
-        }
-
-        [Conditional("STATE_CHECK")]
-        private void LockDeserialization()
-        {
-#if STATE_CHECK
-            _deserializationLock++;
-            if (_serializationLock > 0)
-                throw new InvalidOperationException("Trying to deserialize during serialization");
-#endif
-        }
-        [Conditional("STATE_CHECK")]
-        private void UnlockDeserialization()
-        {
-#if STATE_CHECK
-            _deserializationLock--;
+            SerializationLock--;
 #endif
         }
 

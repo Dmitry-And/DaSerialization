@@ -171,7 +171,7 @@ namespace DaSerialization
                 obj = default;
                 return false;
             }
-            _stream.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
+            _stream.GetReader().OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
             _stream.Deserialize(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
@@ -214,7 +214,7 @@ namespace DaSerialization
             _stream.WriteInt(Metadata.ObjectID, objectId);
             _stream.WriteInt(Metadata.TypeID, objTypeInfo.Id);
             bool result = objTypeInfo.Id == -1
-                || (_stream as IStreamInternals).SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
+                || _stream.SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
             uint length = (_stream.Position - position).ToUInt32();
             _stream.ClearStreamPosition();
             if (!result)

@@ -143,9 +143,10 @@ namespace DaSerialization.Editor
             RootObjects = new List<RootObjectInfo>(EntriesCount);
             HasOldVersions = false;
             var stream = _container.GetBinaryStream();
-            stream.EnableDeserializationInspection = true;
-            stream.ObjectDeserializationStarted += OnObjectDeserializationStarted;
-            stream.ObjectDeserializationFinished += OnObjectDeserializationFinished;
+            var reader = stream.GetReader();
+            reader.EnableDeserializationInspection = true;
+            reader.ObjectDeserializationStarted += OnObjectDeserializationStarted;
+            reader.ObjectDeserializationFinished += OnObjectDeserializationFinished;
             foreach (var e in contentTable)
             {
                 object o = null;
@@ -167,9 +168,9 @@ namespace DaSerialization.Editor
                 metaSize -= root.Data.TotalSize;
                 RootObjects.Add(root);
             }
-            stream.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
-            stream.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
-            stream.EnableDeserializationInspection = false;
+            reader.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
+            reader.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
+            reader.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
             MetaInfoSize = metaSize.ToInt32();
         }
@@ -217,8 +218,7 @@ namespace DaSerialization.Editor
                     const bool showTypes = true;
 
                     object obj = null;
-                    var container = _container as IStreamInternals;
-                    container.Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
+                    _container.GetBinaryStream().Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
 
                     var stringWriter = new System.IO.StringWriter();
                     using (var writer = new JsonTextWriter(stringWriter))

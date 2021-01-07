@@ -131,9 +131,9 @@ namespace DaSerialization
 
         #region packed uint
 
-        private static ulong IntToUInt(long i)
+        public static ulong IntToUInt(long i)
             => i >= 0 ? 2UL * ((ulong)i) : ((ulong)(-1L - i) * 2UL + 1UL);
-        private static long UIntToInt(ulong i)
+        public static long UIntToInt(ulong i)
             => (i & 1UL) == 0UL ? (long)(i >> 1) : -1L - (long)(i >> 1);
 
         public static int CountUIntBytes(this BinaryReader reader, ulong maxValue)
