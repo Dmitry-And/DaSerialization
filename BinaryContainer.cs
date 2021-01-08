@@ -656,16 +656,15 @@ namespace DaSerialization.Serialization
             c = new BinaryContainer(binStream);
         }
 
-        public override void WriteObject(BinaryContainer c, BinaryStream stream)
+        public override void WriteObject(BinaryContainer c, BinaryStreamWriter writer)
         {
             c.CleanUp();
             var memStream = c.GetUnderlyingStream();
-            var writer = stream.GetWriter();
             writer.WriteUIntPacked(memStream.Length.ToUInt32());
             writer.Write(c.Writable);
             var oldPos = memStream.Position;
             memStream.Seek(0, SeekOrigin.Begin);
-            memStream.CopyTo(stream.GetUnderlyingStream());
+            memStream.CopyTo(writer.GetUnderlyingStream());
             memStream.Seek(oldPos, SeekOrigin.Begin);
         }
     }

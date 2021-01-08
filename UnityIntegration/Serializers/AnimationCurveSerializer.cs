@@ -23,9 +23,8 @@ namespace Common.Serialization
             ac.postWrapMode = (WrapMode)reader.ReadByte();
         }
 
-        public override void WriteObject(AnimationCurve ac, BinaryStream stream)
+        public override void WriteObject(AnimationCurve ac, BinaryStreamWriter writer)
         {
-            var writer = stream.GetWriter();
             int len = ac.length;
             writer.Write(len.ClampToUInt16());
             for (int i = 0; i < len; i++)

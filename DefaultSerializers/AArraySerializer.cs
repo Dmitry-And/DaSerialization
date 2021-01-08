@@ -19,9 +19,8 @@ namespace DaSerialization
                 ReadElement(ref arr[i], reader);
         }
 
-        public sealed override void WriteObject(T[] arr, BinaryStream stream)
+        public sealed override void WriteObject(T[] arr, BinaryStreamWriter writer)
         {
-            var writer = stream.GetWriter();
             if (arr == null)
             {
                 writer.Write((-1).EnsureInt32());
@@ -30,11 +29,11 @@ namespace DaSerialization
             int length = arr.Length;
             writer.Write(length);
             for (int i = 0; i < length; i++)
-                WriteElement(arr[i], stream);
+                WriteElement(arr[i], writer);
         }
 
         protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
-        protected abstract void WriteElement(T e, BinaryStream stream);
+        protected abstract void WriteElement(T e, BinaryStreamWriter writer);
     }
 
     public abstract class AArrayDeserializer<T> : ADeserializer<T[]>

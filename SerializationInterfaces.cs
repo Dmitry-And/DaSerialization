@@ -16,12 +16,12 @@
     {
         int Version { get; }
         // TODO: through interfase it's slow
-        void WriteObjectTypeless(object obj, BinaryStream stream);
+        void WriteObjectTypeless(object obj, BinaryStreamWriter writer);
     }
     public interface ISerializer<T> : ISerializer
     {
         // TODO: through interfase it's slow
-        void WriteObject(T obj, BinaryStream stream);
+        void WriteObject(T obj, BinaryStreamWriter writer);
     }
 
     public interface IContainerStorage

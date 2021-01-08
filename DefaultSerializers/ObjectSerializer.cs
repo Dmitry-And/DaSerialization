@@ -15,7 +15,7 @@
             // no inner fields
         }
 
-        public override void WriteObject(object obj, BinaryStream stream)
+        public override void WriteObject(object obj, BinaryStreamWriter writer)
         {
             // nothing to write
         }

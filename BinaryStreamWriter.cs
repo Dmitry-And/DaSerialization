@@ -24,6 +24,8 @@ namespace DaSerialization
         private BinaryWriter _writer;
         public BinaryWriter GetWriter() => _writer;
 
+        public MemoryStream GetUnderlyingStream() => _stream;
+
         public BinaryStreamWriter(BinaryStream binaryStream)
         {
             SerializerStorage = binaryStream.SerializerStorage;
@@ -147,7 +149,7 @@ namespace DaSerialization
                     ? 0 : serializer.Version;
                 WriteInt(Metadata.Version, version);
                 if (version != 0)
-                    serializer.WriteObject(obj, _binaryStream);
+                    serializer.WriteObject(obj, this);
             }
             else
             {
@@ -159,7 +161,7 @@ namespace DaSerialization
                     ? 0 : serializer.Version;
                 WriteInt(Metadata.Version, version);
                 if (version != 0)
-                    serializer.WriteObjectTypeless(obj, _binaryStream);
+                    serializer.WriteObjectTypeless(obj, this);
             }
             EndWriteCheck(oldValue, oldType);
             UnlockSerialization();
@@ -237,7 +239,7 @@ namespace DaSerialization
                 var e = list[i];
                 if (isRefType && (e == null || e.GetType() != type))
                     throw new ArgumentException($"Trying to {nameof(SerializeListStatic)} a list with polymorphic elements. Element {i} is {e.PrettyTypeName()} in List<{type.PrettyName()}>");
-                serializer.WriteObject(e, _binaryStream);
+                serializer.WriteObject(e, this);
             }
             EndWriteCheck(oldValue, oldType);
             UnlockSerialization();
@@ -281,7 +283,7 @@ namespace DaSerialization
                 var e = arr[i];
                 if (isRefType && (e == null || e.GetType() != type))
                     throw new ArgumentException($"Trying to {nameof(SerializeArrayStatic)} an array with polymorphic elements. Element {i} is {e.PrettyTypeName()} in {type.PrettyName()} array");
-                serializer.WriteObject(e, _binaryStream);
+                serializer.WriteObject(e, this);
             }
             EndWriteCheck(oldValue, oldType);
             UnlockSerialization();

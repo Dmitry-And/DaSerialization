@@ -37,15 +37,15 @@ namespace DaSerialization
             EndReading();
         }
 
-        public sealed override void WriteObject(List<T> list, BinaryStream stream)
+        public sealed override void WriteObject(List<T> list, BinaryStreamWriter bWriter)
         {
             if (list == null)
             {
-                stream.WriteInt(Metadata.CollectionSize, -1);
+                bWriter.WriteInt(Metadata.CollectionSize, -1);
                 return;
             }
-            stream.WriteInt(Metadata.CollectionSize, list.Count);
-            var writer = stream.GetWriter().GetWriter();
+            bWriter.WriteInt(Metadata.CollectionSize, list.Count);
+            var writer = bWriter.GetWriter();
             int similar = 0;
             var last = list[0];
             WriteElement(last, writer);

@@ -2,15 +2,15 @@
 {
     public abstract class AFullSerializer<T> : ADeserializer<T>, ISerializer<T>
     {
-        public abstract void WriteObject(T obj, BinaryStream stream);
-        public void WriteObjectTypeless(object obj, BinaryStream stream)
+        public abstract void WriteObject(T obj, BinaryStreamWriter writer);
+        public void WriteObjectTypeless(object obj, BinaryStreamWriter writer)
         {
             T typedObj;
             if (obj is T typed)
                 typedObj = typed;
             else
                 typedObj = default;
-            WriteObject(typedObj, stream);
+            WriteObject(typedObj, writer);
         }
     }
 

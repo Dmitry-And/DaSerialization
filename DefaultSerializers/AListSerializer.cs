@@ -35,23 +35,23 @@ namespace DaSerialization
             EndReading();
         }
 
-        public sealed override void WriteObject(List<T> list, BinaryStream stream)
+        public sealed override void WriteObject(List<T> list, BinaryStreamWriter writer)
         {
             if (list == null)
             {
-                stream.WriteInt(Metadata.CollectionSize, -1);
+                writer.WriteInt(Metadata.CollectionSize, -1);
                 return;
             }
-            stream.WriteInt(Metadata.CollectionSize, list.Count);
+            writer.WriteInt(Metadata.CollectionSize, list.Count);
             for (int i = 0, max = list.Count; i < max; i++)
-                WriteElement(list[i], stream);
-            EndWriting(stream);
+                WriteElement(list[i], writer);
+            EndWriting(writer);
         }
 
         protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
-        protected abstract void WriteElement(T e, BinaryStream stream);
+        protected abstract void WriteElement(T e, BinaryStreamWriter writer);
         protected virtual void EndReading() { }
-        protected virtual void EndWriting(BinaryStream stream) { }
+        protected virtual void EndWriting(BinaryStreamWriter writer) { }
     }
 
     public abstract class AListDeserializer<T> : ADeserializer<List<T>>
