@@ -218,7 +218,7 @@ namespace DaSerialization.Editor
                     const bool showTypes = true;
 
                     object obj = null;
-                    _container.GetBinaryStream().Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
+                    _container.GetBinaryStream().GetReader().Deserialize(info.StreamPosition, ref obj, info.TypeInfo, info.Version);
 
                     var stringWriter = new System.IO.StringWriter();
                     using (var writer = new JsonTextWriter(stringWriter))

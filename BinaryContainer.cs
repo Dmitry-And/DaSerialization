@@ -171,9 +171,10 @@ namespace DaSerialization
                 obj = default;
                 return false;
             }
-            _stream.GetReader().OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
+            var reader = _stream.GetReader();
+            reader.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
-            _stream.Deserialize(ref obj);
+            reader.Deserialize(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
         }
 
@@ -211,10 +212,11 @@ namespace DaSerialization
             long position = _stream.Length;
             _stream.Seek(position);
 
-            _stream.WriteInt(Metadata.ObjectID, objectId);
-            _stream.WriteInt(Metadata.TypeID, objTypeInfo.Id);
+            var writer = _stream.GetWriter();
+            writer.WriteInt(Metadata.ObjectID, objectId);
+            writer.WriteInt(Metadata.TypeID, objTypeInfo.Id);
             bool result = objTypeInfo.Id == -1
-                || _stream.SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
+                || writer.SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
             uint length = (_stream.Position - position).ToUInt32();
             _stream.ClearStreamPosition();
             if (!result)
@@ -382,7 +384,7 @@ namespace DaSerialization
                 return false;
 
             var otherEndPos = other.SetStreamPositionAndGetEndPosition(otherEntryIndex);
-            var oTypeId = other._stream.ReadInt(Metadata.TypeID);
+            var oTypeId = other._stream.GetReader().ReadInt(Metadata.TypeID);
             if (oTypeId != -1 & updateSerializers)
             {
                 // we need to update serializer, so fallback to regular
@@ -404,8 +406,9 @@ namespace DaSerialization
             long position = _stream.Length;
             _stream.Seek(position);
 
-            _stream.WriteInt(Metadata.ObjectID, myObjectId);
-            _stream.WriteInt(Metadata.TypeID, oTypeId);
+            var writer = _stream.GetWriter();
+            writer.WriteInt(Metadata.ObjectID, myObjectId);
+            writer.WriteInt(Metadata.TypeID, oTypeId);
             if (oTypeId != -1)
             {
                 var contentLength = otherEndPos - other._stream.Position;
@@ -574,7 +577,7 @@ namespace DaSerialization
             long position = entry.Position;
             _stream.Seek(position);
 
-            var readId = _stream.ReadInt(Metadata.ObjectID);
+            var readId = _stream.GetReader().ReadInt(Metadata.ObjectID);
             if (readId != entry.ObjectId)
                 throw new Exception($"Read ObjectID ({readId}) doesn't fit the requested id ({entry.ObjectId}) in stream '{_stream.PrettyTypeName()}'");
             return position + _contentTable[entryIndex].Length;
@@ -589,7 +592,7 @@ namespace DaSerialization
             var entry = _contentTable[entryIndex];
             var refType = SerializerStorage.GetTypeInfo(entry.TypeId);
             SetStreamPositionAndGetEndPosition(entryIndex);
-            var readTypeId = _stream.ReadInt(Metadata.TypeID);
+            var readTypeId = _stream.GetReader().ReadInt(Metadata.TypeID);
             _stream.ClearStreamPosition();
             var readType = SerializerStorage.GetTypeInfo(readTypeId, false);
             throw new Exception($"Stream position after object id={entry.ObjectId} {readType}{(readTypeId == entry.TypeId ? "" : $" ref type {refType}")} differs from expected one: {realPos} != {endPos}");

@@ -4,11 +4,8 @@
 #endif
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics;
 using System.IO;
 using System.Text;
-using DaSerialization.Internal;
 
 namespace DaSerialization
 {
@@ -214,77 +211,12 @@ namespace DaSerialization
             WriteMagicNumber();
         }
 
-        #region deserialization
-
-        public int ReadInt(Metadata meta) => _reader.ReadInt(meta);
-
-        public void DeserializeStatic<T>(ref T obj)
-            => _reader.DeserializeStatic<T>(ref obj);
-        public void DeserializeStatic<T>(ref T obj, int typeId)
-            => _reader.DeserializeStatic<T>(ref obj, typeId);
-        public T Deserialize<T>()
-            => _reader.Deserialize<T>();
-        public void Deserialize<T>(ref T obj)
-            => _reader.Deserialize<T>(ref obj);
-        public void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion)
-            => _reader.Deserialize(streamPos, ref obj, typeInfo, deserializerVersion);
-
-        public T[] DeserializeArray<T>()
-            where T : class
-            => _reader.DeserializeArray<T>();
-        public void DeserializeArray<T>(ref T[] arr)
-            where T : class
-            => _reader.DeserializeArray<T>(ref arr);
-        public T[] DeserializeArrayStatic<T>()
-            => _reader.DeserializeArrayStatic<T>();
-        public void DeserializeArrayStatic<T>(ref T[] arr)
-            => _reader.DeserializeArrayStatic<T>(ref arr);
-
-        public List<T> DeserializeList<T>()
-            where T : class
-            => _reader.DeserializeList<T>();
-        public List<T> DeserializeListStatic<T>()
-            => _reader.DeserializeListStatic<T>();
-        public void DeserializeListStatic<T>(ref List<T> list)
-            => _reader.DeserializeListStatic(ref list);
-        public void DeserializeList<T>(ref List<T> list)
-            where T : class
-            => _reader.DeserializeList(ref list);
-
-        #endregion
-
-        #region serialization
-
-        public void WriteInt(Metadata meta, int value)
-            => _writer.WriteInt(meta, value);
-
-        public bool Serialize<T>(T obj)
-            => _writer.Serialize(obj);
-        public bool SerializeStatic<T>(T obj)
-            => _writer.SerializeStatic(obj);
-        public bool SerializeStatic<T>(T obj, int typeId, bool inherited)
-            => _writer.SerializeStatic(obj, typeId, inherited);
-
-        public bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
-            => _writer.SerializeInner(obj, typeInfo, inheritance);
-
-        public void SerializeListStatic<T>(List<T> list)
-            => _writer.SerializeListStatic(list);
-        public void SerializeList<T>(List<T> list) where T : class
-            => _writer.SerializeList(list);
-        public void SerializeArrayStatic<T>(T[] arr)
-            => _writer.SerializeArrayStatic(arr);
-        public void SerializeArray<T>(T[] arr) where T : class
-            => _writer.SerializeArray(arr);
-
         // TODO: remove?
         public void CheckWritingAllowed()
         {
             if (!Writable)
                 throw new InvalidOperationException($"Trying to write to non-writable stream {this.PrettyTypeName()}");
         }
-
-        #endregion
 
     }
 
