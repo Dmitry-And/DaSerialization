@@ -6,9 +6,9 @@ namespace DaSerialization
     public abstract class AListSerializer<T> : AFullSerializer<List<T>>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = stream.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadInt(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -21,13 +21,13 @@ namespace DaSerialization
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
-                ReadElement(ref v, stream);
+                ReadElement(ref v, reader);
                 list[i] = v;
             }
             for (int i = list.Count; i < len; i++)
             {
                 var v = default(T);
-                ReadElement(ref v, stream);
+                ReadElement(ref v, reader);
                 list.Add(v);
             }
             if (list.Count > len)
@@ -48,7 +48,7 @@ namespace DaSerialization
             EndWriting(stream);
         }
 
-        protected abstract void ReadElement(ref T e, BinaryStream stream);
+        protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
         protected abstract void WriteElement(T e, BinaryStream stream);
         protected virtual void EndReading() { }
         protected virtual void EndWriting(BinaryStream stream) { }
@@ -56,9 +56,9 @@ namespace DaSerialization
 
     public abstract class AListDeserializer<T> : ADeserializer<List<T>>
     {
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = stream.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadInt(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -71,13 +71,13 @@ namespace DaSerialization
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
-                ReadElement(ref v, stream);
+                ReadElement(ref v, reader);
                 list[i] = v;
             }
             for (int i = list.Count; i < len; i++)
             {
                 var v = default(T);
-                ReadElement(ref v, stream);
+                ReadElement(ref v, reader);
                 list.Add(v);
             }
             if (list.Count > len)
@@ -85,7 +85,7 @@ namespace DaSerialization
             EndReading();
         }
 
-        protected abstract void ReadElement(ref T e, BinaryStream stream);
+        protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
         protected virtual void EndReading() { }
     }
 

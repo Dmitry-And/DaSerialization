@@ -17,15 +17,15 @@
     public abstract class ADeserializer<T> : IDeserializer<T>
     {
         public abstract int Version { get; }
-        public abstract void ReadDataToObject(ref T obj, BinaryStream stream);
-        public void ReadDataToTypelessObject(ref object obj, BinaryStream stream)
+        public abstract void ReadDataToObject(ref T obj, BinaryStreamReader reader);
+        public void ReadDataToTypelessObject(ref object obj, BinaryStreamReader reader)
         {
             T typedObj;
             if (obj is T typed)
                 typedObj = typed;
             else
                 typedObj = default;
-            ReadDataToObject(ref typedObj, stream);
+            ReadDataToObject(ref typedObj, reader);
             obj = typedObj;
         }
     }

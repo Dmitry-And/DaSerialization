@@ -4,12 +4,12 @@
     {
         int Version { get; }
         // TODO: through interfase it's slow
-        void ReadDataToTypelessObject(ref object obj, BinaryStream stream);
+        void ReadDataToTypelessObject(ref object obj, BinaryStreamReader reader);
     }
     public interface IDeserializer<T> : IDeserializer
     {
         // TODO: through interfase it's slow
-        void ReadDataToObject(ref T obj, BinaryStream stream);
+        void ReadDataToObject(ref T obj, BinaryStreamReader reader);
     }
 
     public interface ISerializer

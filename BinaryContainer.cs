@@ -638,16 +638,15 @@ namespace DaSerialization.Serialization
     {
         public override int Version => 1;
 
-        public override void ReadDataToObject(ref BinaryContainer c, BinaryStream stream)
+        public override void ReadDataToObject(ref BinaryContainer c, BinaryStreamReader reader)
         {
-            var reader = stream.GetReader();
             int len = reader.ReadUIntPacked().ToInt32();
             bool writable = reader.ReadBoolean();
 
             var memStream = c?.GetUnderlyingStream();
             if (memStream == null || !memStream.CanWrite)
                 memStream = new MemoryStream(len);
-            var copiedLen = stream.GetUnderlyingStream().CopyPartiallyTo(memStream, len);
+            var copiedLen = reader.GetUnderlyingStream().CopyPartiallyTo(memStream, len);
             if (copiedLen != len)
                 throw new Exception($"Failed to read {c.PrettyTypeName()}: {copiedLen} bytes read instead of {len} expected");
             var storage = c?.SerializerStorage ?? SerializerStorage.Default;

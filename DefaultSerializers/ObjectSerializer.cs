@@ -8,7 +8,7 @@
     {
         public override int Version => 1;
 
-        public override void ReadDataToObject(ref object obj, BinaryStream stream)
+        public override void ReadDataToObject(ref object obj, BinaryStreamReader reader)
         {
             if (obj == null)
                 obj = new object();

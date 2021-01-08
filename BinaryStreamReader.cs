@@ -23,6 +23,8 @@ namespace DaSerialization
         private BinaryReader _reader;
         public BinaryReader GetReader() => _reader;
 
+        public MemoryStream GetUnderlyingStream() => _stream;
+
         public BinaryStreamReader(BinaryStream binaryStream)
         {
             SerializerStorage = binaryStream.SerializerStorage;
@@ -111,13 +113,13 @@ namespace DaSerialization
             if (deserializerIsOfDerivedType)
             {
                 var objTypeless = obj as object;
-                deserializerTypeless.ReadDataToTypelessObject(ref objTypeless, _binaryStream);
+                deserializerTypeless.ReadDataToTypelessObject(ref objTypeless, this);
                 obj = (T)objTypeless;
             }
             else
             {
                 var deserializer = deserializerTypeless as IDeserializer<T>;
-                deserializer.ReadDataToObject(ref obj, _binaryStream);
+                deserializer.ReadDataToObject(ref obj, this);
             }
             OnDeserializeEnd();
             UnlockDeserialization();
@@ -161,7 +163,7 @@ namespace DaSerialization
             }
             LockDeserialization();
             OnDeserializeDataBegin(typeInfo, deserializerTypeless);
-            deserializerTypeless.ReadDataToTypelessObject(ref obj, _binaryStream);
+            deserializerTypeless.ReadDataToTypelessObject(ref obj, this);
             OnDeserializeEnd();
             UnlockDeserialization();
             _binaryStream.ClearStreamPosition();
@@ -265,7 +267,7 @@ namespace DaSerialization
                 var v = arr[i];
                 OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, _binaryStream);
+                deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeEnd();
                 arr[i] = v;
             }
@@ -324,7 +326,7 @@ namespace DaSerialization
                 var v = list[i];
                 OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, _binaryStream);
+                deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeEnd();
                 list[i] = v;
             }
@@ -333,7 +335,7 @@ namespace DaSerialization
                 T v = default;
                 OnDeserializeMetaBegin(typeof(T));
                 OnDeserializeDataBegin(typeInfo, deserializer);
-                deserializer.ReadDataToObject(ref v, _binaryStream);
+                deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeEnd();
                 list.Add(v);
             }

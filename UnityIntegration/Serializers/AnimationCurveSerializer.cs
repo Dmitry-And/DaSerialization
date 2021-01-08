@@ -10,11 +10,10 @@ namespace Common.Serialization
     {
         public override int Version => 1;
 
-        public override void ReadDataToObject(ref AnimationCurve ac, BinaryStream stream)
+        public override void ReadDataToObject(ref AnimationCurve ac, BinaryStreamReader reader)
         {
             if (ac == null)
                 ac = new AnimationCurve();
-            var reader = stream.GetReader();
             int length = reader.ReadUInt16();
             var keys = ac.length == length ? ac.keys : new Keyframe[length];
             for (int i = 0; i < length; i++)

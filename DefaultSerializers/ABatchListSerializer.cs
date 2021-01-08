@@ -8,9 +8,9 @@ namespace DaSerialization
         where T : struct, IEquatable<T>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = stream.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadInt(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -25,7 +25,6 @@ namespace DaSerialization
                     list.Capacity = len;
             }
 
-            var reader = stream.GetReader();
             T curr = default;
             while (len > 0)
             {
@@ -77,9 +76,9 @@ namespace DaSerialization
         where T : struct, IEquatable<T>
     {
         public override int Version => 1;
-        public sealed override void ReadDataToObject(ref List<T> list, BinaryStream stream)
+        public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = stream.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadInt(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -94,7 +93,6 @@ namespace DaSerialization
                     list.Capacity = len;
             }
 
-            var reader = stream.GetReader();
             T curr = default;
             while (len > 0)
             {
