@@ -31,9 +31,13 @@ namespace DaSerialization
 
         private MemoryStream _stream;
         private BinaryStreamReader _reader;
-        private BinaryWriter _writer;
+        private BinaryStreamWriter _writer;
         private bool _locked = true;
         public bool IsLocked => _locked;
+        // 0 - nothing is serializing,
+        // positive - something is serializing,
+        // negative - something is deserializing
+        public int SerializationDepth;
 
         public long Position
         {
@@ -88,6 +92,8 @@ namespace DaSerialization
 
         public void SetLength(long length)
         {
+            if (!Writable)
+                throw new InvalidOperationException($"Trying to {nameof(SetLength)} for non-writable {this.PrettyTypeName()}");
             _stream.SetLength(length);
         }
 
@@ -95,7 +101,7 @@ namespace DaSerialization
         {
             _reader = new BinaryStreamReader(this);
             if (Writable)
-                _writer = new BinaryWriter(_stream, DefaultStringEncoding, true);
+                _writer = new BinaryStreamWriter(this);
         }
 
         private void WriteMagicNumber()
@@ -170,29 +176,6 @@ namespace DaSerialization
             }
         }
 
-        public void WriteInt(Metadata meta, int value)
-        {
-            if (_stream == null)
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to empty {this.PrettyTypeName()}");
-            if (_locked)
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to {this.PrettyTypeName()} w/o setting position");
-            if (!Writable)
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to non-writable {this.PrettyTypeName()}");
-            switch (meta)
-            {
-                case Metadata.Version:
-                case Metadata.CollectionSize:
-                    _writer.WriteUIntPacked((value + 1).ToUInt64());
-                    return;
-                case Metadata.TypeID:
-                    _writer.Write(value);
-                    return;
-                case Metadata.ObjectID:
-                    _writer.WriteUIntPacked((ulong)value);
-                    return;
-                default: throw new Exception(meta.ToString());
-            }
-        }
 
         public void Seek(long position)
         {
@@ -204,9 +187,7 @@ namespace DaSerialization
         public void ClearStreamPosition()
         {
             Seek(-1);
-            _parentSerializingType = null;
-            // to allow Containers to be serialized as root objects
-            _allowContainerSerialization = true;
+            _writer?.ResetContainerSerialization();
         }
 
         public void Dispose()
@@ -222,7 +203,7 @@ namespace DaSerialization
 
         public MemoryStream GetUnderlyingStream() => _stream;
         public BinaryStreamReader GetReader() => _reader;
-        public BinaryWriter GetWriter() => Writable ? _writer : null;
+        public BinaryStreamWriter GetWriter() => Writable ? _writer : null;
         public int GetMetaDataSize() => MetaDataSize;
 
         public void Clear()
@@ -272,236 +253,35 @@ namespace DaSerialization
 
         #endregion
 
-        #region inner serialization
+        #region serialization
+
+        public void WriteInt(Metadata meta, int value)
+            => _writer.WriteInt(meta, value);
 
         public bool Serialize<T>(T obj)
-        {
-            CheckStreamReady();
-            var baseType = typeof(T);
-            // value type
-            if (baseType.IsValueType)
-            {
-                var typeInfo = SerializerStorage.GetTypeInfo(baseType);
-                WriteInt(Metadata.TypeID, typeInfo.Id);
-                return SerializeInner(obj, typeInfo, false);
-            }
-            // null
-            bool isDefault = EqualityComparer<T>.Default.Equals(obj, default);
-            if (isDefault)
-            {
-                WriteInt(Metadata.TypeID, -1);
-                return true;
-            }
-            // reference, not-null
-            {
-                var type = obj.GetType();
-                var typeInfo = SerializerStorage.GetTypeInfo(type);
-                WriteInt(Metadata.TypeID, typeInfo.Id);
-                return SerializeInner(obj, typeInfo, type != baseType);
-            }
-        }
+            => _writer.Serialize(obj);
         public bool SerializeStatic<T>(T obj)
-        {
-            var typeInfo = SerializerStorage.GetTypeInfo(typeof(T));
-            return SerializeInner(obj, typeInfo, false);
-        }
+            => _writer.SerializeStatic(obj);
         public bool SerializeStatic<T>(T obj, int typeId, bool inherited)
-        {
-            var typeInfo = SerializerStorage.GetTypeInfo(typeId);
-            return SerializeInner(obj, typeInfo, inherited);
-        }
+            => _writer.SerializeStatic(obj, typeId, inherited);
 
-        /// <summary>
-        /// inheritance is only for performance reasons
-        /// </summary>
         public bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
-        {
-            CheckWritingAllowed();
-            CheckStreamReady();
-            LockSerialization();
-            BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
-            bool isValueType = typeof(T).IsValueType;
-            bool polymorphic = !isValueType & inheritance;
-            if (!polymorphic)
-            {
-                CheckNonPolymorphic(obj);
-                var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
-                if (serializer == null)
-                    throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-                var version = !isValueType && EqualityComparer<T>.Default.Equals(obj, default)
-                    ? 0 : serializer.Version;
-                WriteInt(Metadata.Version, version);
-                if (version != 0)
-                    serializer.WriteObject(obj, this);
-            }
-            else
-            {
-                // inheritance/interfaces takes place!
-                var serializer = SerializerStorage.GetSerializer(typeInfo);
-                if (serializer == null)
-                    throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-                var version = EqualityComparer<T>.Default.Equals(obj, default)
-                    ? 0 : serializer.Version;
-                WriteInt(Metadata.Version, version);
-                if (version != 0)
-                    serializer.WriteObjectTypeless(obj, this);
-            }
-            EndWriteCheck(oldValue, oldType);
-            UnlockSerialization();
-            return true;
-        }
+            => _writer.SerializeInner(obj, typeInfo, inheritance);
 
-        private bool _allowContainerSerialization;
-        private Type _parentSerializingType;
-        private void BeginWriteCheck(SerializationTypeInfo typeInfo, out bool oldValue, out Type oldType)
-        {
-            if (typeInfo.IsContainer & !_allowContainerSerialization)
-            {
-                var parentTypeInfo = SerializerStorage.GetTypeInfo(_parentSerializingType);
-                var serializer = SerializerStorage.GetSerializer(parentTypeInfo);
-                SerializationLogger.LogWarning($"Serializing nested {typeInfo.Type.PrettyName()} within {_parentSerializingType.PrettyName()} type by serializer {serializer.PrettyTypeName()} which doesn't implement {nameof(ISerializerWritesContainer)} interfase.\nThis may lead to incorrect {nameof(BinaryContainer.UpdateSerializers)} effects of not updating serializers within nested containers");
-            }
-            oldValue = _allowContainerSerialization;
-            _allowContainerSerialization = typeInfo.LatestSerializerWritesContainer;
-            oldType = _parentSerializingType;
-            _parentSerializingType = typeInfo.Type;
-        }
-        private void EndWriteCheck(bool oldValue, Type oldType)
-        {
-            _allowContainerSerialization = oldValue;
-            _parentSerializingType = oldType;
-        }
+        public void SerializeListStatic<T>(List<T> list)
+            => _writer.SerializeListStatic(list);
+        public void SerializeList<T>(List<T> list) where T : class
+            => _writer.SerializeList(list);
+        public void SerializeArrayStatic<T>(T[] arr)
+            => _writer.SerializeArrayStatic(arr);
+        public void SerializeArray<T>(T[] arr) where T : class
+            => _writer.SerializeArray(arr);
+
+        // TODO: remove?
         public void CheckWritingAllowed()
         {
             if (!Writable)
                 throw new InvalidOperationException($"Trying to write to non-writable stream {this.PrettyTypeName()}");
-        }
-        private void CheckStreamReady()
-        {
-            if (IsLocked)
-                throw new Exception($"Trying to read/write from/to stream w/o setting position");
-        }
-        [Conditional("SERIALIZE_POLYMORPHIC_CHECK")]
-        private void CheckNonPolymorphic<T>(T obj)
-        {
-            var type = typeof(T);
-            if (type.IsValueType)
-                return;
-            if (EqualityComparer<T>.Default.Equals(obj, default))
-                return;
-            if (type != obj.GetType())
-                throw new Exception($"Object {obj.PrettyTypeName()} is polymorphic but expected of type {type.PrettyName()}");
-        }
-
-        #endregion
-
-        #region lists
-
-        public void SerializeListStatic<T>(List<T> list)
-        {
-            CheckWritingAllowed();
-            CheckStreamReady();
-            int count = list == null ? -1 : list.Count;
-            WriteInt(Metadata.CollectionSize, count);
-            if (count < 0)
-                return;
-            var type = typeof(T);
-            var typeInfo = SerializerStorage.GetTypeInfo(type);
-            var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
-            if (serializer == null)
-                throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-            WriteInt(Metadata.Version, serializer.Version);
-
-            var isRefType = !type.IsValueType;
-            LockSerialization();
-            BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
-            for (int i = 0; i < count; i++)
-            {
-                var e = list[i];
-                if (isRefType && (e == null || e.GetType() != type))
-                    throw new ArgumentException($"Trying to {nameof(SerializeListStatic)} a list with polymorphic elements. Element {i} is {e.PrettyTypeName()} in List<{type.PrettyName()}>");
-                serializer.WriteObject(e, this);
-            }
-            EndWriteCheck(oldValue, oldType);
-            UnlockSerialization();
-        }
-
-        public void SerializeList<T>(List<T> list)
-            where T : class
-        {
-            CheckWritingAllowed();
-            CheckStreamReady();
-            int count = list == null ? -1 : list.Count;
-            WriteInt(Metadata.CollectionSize, count);
-            for (int i = 0; i < count; i++)
-                Serialize(list[i]);
-        }
-
-        #endregion
-
-        #region arrays
-
-        public void SerializeArrayStatic<T>(T[] arr)
-        {
-            CheckWritingAllowed();
-            CheckStreamReady();
-            int count = arr == null ? -1 : arr.Length;
-            WriteInt(Metadata.CollectionSize, count);
-            if (count < 0)
-                return;
-            var type = typeof(T);
-            var typeInfo = SerializerStorage.GetTypeInfo(type);
-            var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
-            if (serializer == null)
-                throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-            WriteInt(Metadata.Version, serializer.Version);
-
-            var isRefType = !type.IsValueType;
-            LockSerialization();
-            BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
-            for (int i = 0; i < count; i++)
-            {
-                var e = arr[i];
-                if (isRefType && (e == null || e.GetType() != type))
-                    throw new ArgumentException($"Trying to {nameof(SerializeArrayStatic)} an array with polymorphic elements. Element {i} is {e.PrettyTypeName()} in {type.PrettyName()} array");
-                serializer.WriteObject(e, this);
-            }
-            EndWriteCheck(oldValue, oldType);
-            UnlockSerialization();
-        }
-
-        public void SerializeArray<T>(T[] arr)
-            where T : class
-        {
-            int len = arr == null ? -1 : arr.Length;
-            WriteInt(Metadata.CollectionSize, len);
-            for (int i = 0; i < len; i++)
-                Serialize(arr[i]);
-        }
-
-        #endregion
-
-        #region state validations
-
-#if STATE_CHECK
-        public int SerializationLock { get; private set; } = 0;
-#endif
-
-        [Conditional("STATE_CHECK")]
-        private void LockSerialization()
-        {
-#if STATE_CHECK
-            SerializationLock++;
-            if (_reader.DeserializationLock > 0)
-                throw new InvalidOperationException("Trying to serialize during deserialization");
-#endif
-        }
-        [Conditional("STATE_CHECK")]
-        private void UnlockSerialization()
-        {
-#if STATE_CHECK
-            SerializationLock--;
-#endif
         }
 
         #endregion

@@ -46,7 +46,7 @@ namespace DaSerialization
                 return;
             }
             stream.WriteInt(Metadata.CollectionSize, list.Count);
-            var writer = stream.GetWriter();
+            var writer = stream.GetWriter().GetWriter();
             int similar = 0;
             var last = list[0];
             WriteElement(last, writer);

@@ -21,6 +21,7 @@ namespace DaSerialization
         private BinaryStream _binaryStream;
         private MemoryStream _stream;
         private BinaryReader _reader;
+        public BinaryReader GetReader() => _reader;
 
         public BinaryStreamReader(BinaryStream binaryStream)
         {
@@ -48,8 +49,6 @@ namespace DaSerialization
                 default: throw new Exception(meta.ToString());
             }
         }
-
-        public BinaryReader GetReader() => _reader;
 
         #region stream read methods
 
@@ -383,10 +382,6 @@ namespace DaSerialization
 
         #region state validation
 
-#if STATE_CHECK
-        public int DeserializationLock { get; private set; } = 0;
-#endif
-
         private void CheckStreamReady()
         {
             if (_binaryStream.IsLocked)
@@ -396,18 +391,14 @@ namespace DaSerialization
         [Conditional("STATE_CHECK")]
         private void LockDeserialization()
         {
-#if STATE_CHECK
-            DeserializationLock++;
-            if (_binaryStream.SerializationLock > 0)
+            if (_binaryStream.SerializationDepth > 0)
                 throw new InvalidOperationException("Trying to deserialize during serialization");
-#endif
+            _binaryStream.SerializationDepth--;
         }
         [Conditional("STATE_CHECK")]
         private void UnlockDeserialization()
         {
-#if STATE_CHECK
-            DeserializationLock--;
-#endif
+            _binaryStream.SerializationDepth++;
         }
 
         #endregion
