@@ -101,19 +101,45 @@ namespace DaSerialization
 
         #region inner deserialization
 
-        public void DeserializeStatic<T>(ref T obj)
+        public T ReadObject<T>()
+        {
+            T result = default;
+            ReadObject(ref result);
+            return result;
+        }
+        public void ReadObject<T>(ref T obj)
+        {
+            CheckStreamReady();
+            OnDeserializeMetaBegin(typeof(T));
+            int readTypeId = ReadMetadata(Metadata.TypeID);
+            if (readTypeId == -1)
+                obj = default;
+            var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
+            ReadObjectExact(ref obj, readTypeInfo);
+        }
+
+        /// <summary>
+        /// Polymorphism was not allowed during serialization
+        /// </summary>
+        public void ReadObjectExact<T>(ref T obj)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeof(T));
             OnDeserializeMetaBegin(typeof(T));
-            DeserializeStatic(ref obj, typeInfo);
+            ReadObjectExact(ref obj, typeInfo);
         }
-        public void DeserializeStatic<T>(ref T obj, int typeId)
+        /// <summary>
+        /// Polymorphism was not allowed during serialization
+        /// </summary>
+        public void ReadObjectExact<T>(ref T obj, int typeId)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeId);
             OnDeserializeMetaBegin(typeInfo.Type);
-            DeserializeStatic(ref obj, typeInfo);
+            ReadObjectExact(ref obj, typeInfo);
         }
-        private void DeserializeStatic<T>(ref T obj, SerializationTypeInfo typeInfo)
+        /// <summary>
+        /// Polymorphism was not allowed during serialization
+        /// </summary>
+        private void ReadObjectExact<T>(ref T obj, SerializationTypeInfo typeInfo)
         {
             CheckStreamReady();
             var deserializerTypeless = ReadDeserializer<T>(typeInfo, out bool deserializerIsOfDerivedType);
@@ -141,22 +167,6 @@ namespace DaSerialization
             UnlockDeserialization();
         }
 
-        public T Deserialize<T>()
-        {
-            T result = default;
-            Deserialize(ref result);
-            return result;
-        }
-        public void Deserialize<T>(ref T obj)
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T));
-            int readTypeId = ReadMetadata(Metadata.TypeID);
-            if (readTypeId == -1)
-                obj = default;
-            var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
-            DeserializeStatic(ref obj, readTypeInfo);
-        }
         public void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion)
         {
             _binaryStream.Seek(streamPos);
@@ -216,15 +226,20 @@ namespace DaSerialization
 
         #region arrays
 
-        public T[] DeserializeArray<T>()
+        /// <summary>
+        /// Use ReadArrayExact for value type arrays to save some space and performance
+        /// </summary>
+        public T[] ReadArray<T>()
             where T : class
         {
             T[] arr = null;
-            DeserializeArray(ref arr);
+            ReadArray(ref arr);
             return arr;
         }
-
-        public void DeserializeArray<T>(ref T[] arr)
+        /// <summary>
+        /// Use ReadArrayExact for value type arrays to save some space and performance
+        /// </summary>
+        public void ReadArray<T>(ref T[] arr)
             where T : class
         {
             CheckStreamReady();
@@ -243,20 +258,25 @@ namespace DaSerialization
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
-                Deserialize(ref v);
+                ReadObject(ref v);
                 arr[i] = v;
             }
             OnDeserializeEnd();
         }
 
-        public T[] DeserializeArrayStatic<T>()
+        /// <summary>
+        /// Polymorphism was not allowed for array elements during serialization
+        /// </summary>
+        public T[] ReadArrayExact<T>()
         {
             T[] arr = null;
-            DeserializeArrayStatic(ref arr);
+            ReadArrayExact(ref arr);
             return arr;
         }
-
-        public void DeserializeArrayStatic<T>(ref T[] arr)
+        /// <summary>
+        /// Polymorphism was not allowed for array elements during serialization
+        /// </summary>
+        public void ReadArrayExact<T>(ref T[] arr)
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(T[]));
@@ -295,22 +315,67 @@ namespace DaSerialization
 
         #region lists
 
-        public List<T> DeserializeList<T>()
+        /// <summary>
+        /// Use ReadListExact for value type lists to save some space and performance
+        /// </summary>
+        public List<T> ReadList<T>()
             where T : class
         {
             List<T> list = null;
-            DeserializeList(ref list);
+            ReadList(ref list);
             return list;
         }
+        /// <summary>
+        /// Use ReadListExact for value type lists to save some space and performance
+        /// </summary>
+        public void ReadList<T>(ref List<T> list)
+            where T : class
+        {
+            CheckStreamReady();
+            OnDeserializeMetaBegin(typeof(List<T>));
+            int len = ReadMetadata(Metadata.CollectionSize);
+            if (len < 0)
+            {
+                list = null;
+                OnDeserializeDataBegin();
+                OnDeserializeEnd();
+                return;
+            }
 
-        public List<T> DeserializeListStatic<T>()
+            if (list == null)
+                list = new List<T>(len > 4 ? len : 4);
+            else
+            {
+                if (list.Capacity < len)
+                    list.Capacity = len;
+            }
+            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
+            for (int i = 0, count = list.Count; i < len & i < count; i++)
+            {
+                var v = list[i];
+                ReadObject(ref v);
+                list[i] = v;
+            }
+            for (int i = list.Count; i < len; i++)
+                list.Add(ReadObject<T>());
+            if (list.Count > len)
+                list.RemoveRange(len, list.Count - len);
+            OnDeserializeEnd();
+        }
+
+        /// <summary>
+        /// Polymorphism was not allowed for list elements during serialization
+        /// </summary>
+        public List<T> ReadListExact<T>()
         {
             List<T> list = null;
-            DeserializeListStatic(ref list);
+            ReadListExact(ref list);
             return list;
         }
-
-        public void DeserializeListStatic<T>(ref List<T> list)
+        /// <summary>
+        /// Polymorphism was not allowed for list elements during serialization
+        /// </summary>
+        public void ReadListExact<T>(ref List<T> list)
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(List<T>));
@@ -359,41 +424,6 @@ namespace DaSerialization
             UnlockDeserialization();
             if (list.Count > len)
                 list.RemoveRange(len, list.Count - len);
-        }
-
-        public void DeserializeList<T>(ref List<T> list)
-            where T : class
-        {
-            CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(List<T>));
-            int len = ReadMetadata(Metadata.CollectionSize);
-            if (len < 0)
-            {
-                list = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
-                return;
-            }
-
-            if (list == null)
-                list = new List<T>(len > 4 ? len : 4);
-            else
-            {
-                if (list.Capacity < len)
-                    list.Capacity = len;
-            }
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
-            for (int i = 0, count = list.Count; i < len & i < count; i++)
-            {
-                var v = list[i];
-                Deserialize(ref v);
-                list[i] = v;
-            }
-            for (int i = list.Count; i < len; i++)
-                list.Add(Deserialize<T>());
-            if (list.Count > len)
-                list.RemoveRange(len, list.Count - len);
-            OnDeserializeEnd();
         }
 
         #endregion

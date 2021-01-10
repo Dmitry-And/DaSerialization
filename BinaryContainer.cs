@@ -174,7 +174,7 @@ namespace DaSerialization
             var reader = _stream.GetReader();
             reader.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
-            reader.Deserialize(ref obj);
+            reader.ReadObject(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
         }
 
@@ -216,7 +216,7 @@ namespace DaSerialization
             writer.WriteMetadata(Metadata.ObjectID, objectId);
             writer.WriteMetadata(Metadata.TypeID, objTypeInfo.Id);
             bool result = objTypeInfo.Id == -1
-                || writer.SerializeInner(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
+                || writer.Serialize(obj, objTypeInfo, objTypeInfo.Id != typeTypeId | forcePolymorphic);
             uint length = (_stream.Position - position).ToUInt32();
             _stream.ClearStreamPosition();
             if (!result)

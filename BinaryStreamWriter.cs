@@ -126,7 +126,7 @@ namespace DaSerialization
 
         #region inner serialization
 
-        public bool Serialize<T>(T obj)
+        public bool WriteObject<T>(T obj)
         {
             CheckStreamReady();
             var baseType = typeof(T);
@@ -135,7 +135,7 @@ namespace DaSerialization
             {
                 var typeInfo = SerializerStorage.GetTypeInfo(baseType);
                 WriteMetadata(Metadata.TypeID, typeInfo.Id);
-                return SerializeInner(obj, typeInfo, false);
+                return Serialize(obj, typeInfo, false);
             }
             // null
             bool isDefault = EqualityComparer<T>.Default.Equals(obj, default);
@@ -149,24 +149,30 @@ namespace DaSerialization
                 var type = obj.GetType();
                 var typeInfo = SerializerStorage.GetTypeInfo(type);
                 WriteMetadata(Metadata.TypeID, typeInfo.Id);
-                return SerializeInner(obj, typeInfo, type != baseType);
+                return Serialize(obj, typeInfo, type != baseType);
             }
         }
-        public bool SerializeStatic<T>(T obj)
+        /// <summary>
+        /// Polymorphism is not allowed. Null is allowed though
+        /// </summary>
+        public bool WriteObjectExact<T>(T obj)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeof(T));
-            return SerializeInner(obj, typeInfo, false);
+            return Serialize(obj, typeInfo, false);
         }
-        public bool SerializeStatic<T>(T obj, int typeId, bool inherited)
+        /// <summary>
+        /// Polymorphism is not allowed. Null is allowed though
+        /// </summary>
+        public bool WriteObjectExact<T>(T obj, int typeId, bool inherited)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeId);
-            return SerializeInner(obj, typeInfo, inherited);
+            return Serialize(obj, typeInfo, inherited);
         }
 
         /// <summary>
         /// inheritance is only for performance reasons
         /// </summary>
-        public bool SerializeInner<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
+        public bool Serialize<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
         {
             _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
@@ -249,53 +255,25 @@ namespace DaSerialization
 
         #endregion
 
-        #region lists
-
-        public void SerializeListStatic<T>(List<T> list)
-        {
-            _binaryStream.CheckWritingAllowed();
-            CheckStreamReady();
-            int count = list == null ? -1 : list.Count;
-            WriteMetadata(Metadata.CollectionSize, count);
-            if (count < 0)
-                return;
-            var type = typeof(T);
-            var typeInfo = SerializerStorage.GetTypeInfo(type);
-            var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
-            if (serializer == null)
-                throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-            WriteMetadata(Metadata.Version, serializer.Version);
-
-            var isRefType = !type.IsValueType;
-            LockSerialization();
-            BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
-            for (int i = 0; i < count; i++)
-            {
-                var e = list[i];
-                if (isRefType && (e == null || e.GetType() != type))
-                    throw new ArgumentException($"Trying to {nameof(SerializeListStatic)} a list with polymorphic elements. Element {i} is {e.PrettyTypeName()} in List<{type.PrettyName()}>");
-                serializer.WriteObject(e, this);
-            }
-            EndWriteCheck(oldValue, oldType);
-            UnlockSerialization();
-        }
-
-        public void SerializeList<T>(List<T> list)
-            where T : class
-        {
-            _binaryStream.CheckWritingAllowed();
-            CheckStreamReady();
-            int count = list == null ? -1 : list.Count;
-            WriteMetadata(Metadata.CollectionSize, count);
-            for (int i = 0; i < count; i++)
-                Serialize(list[i]);
-        }
-
-        #endregion
-
         #region arrays
 
-        public void SerializeArrayStatic<T>(T[] arr)
+        /// <summary>
+        /// Use WriteArrayExact for value type arrays to save some space and performance
+        /// </summary>
+        public void WriteArray<T>(T[] arr)
+            where T : class
+        {
+            int len = arr == null ? -1 : arr.Length;
+            WriteMetadata(Metadata.CollectionSize, len);
+            for (int i = 0; i < len; i++)
+                WriteObject(arr[i]);
+        }
+
+        /// <summary>
+        /// Polymorphism is not allowed for array elements.
+        /// Null references are allowed though both for the array itself and for its elements
+        /// </summary>
+        public void WriteArrayExact<T>(T[] arr)
         {
             _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
@@ -317,20 +295,62 @@ namespace DaSerialization
             {
                 var e = arr[i];
                 if (isRefType && (e == null || e.GetType() != type))
-                    throw new ArgumentException($"Trying to {nameof(SerializeArrayStatic)} an array with polymorphic elements. Element {i} is {e.PrettyTypeName()} in {type.PrettyName()} array");
+                    throw new ArgumentException($"Trying to {nameof(WriteArrayExact)} an array with polymorphic elements. Element {i} is {e.PrettyTypeName()} in {type.PrettyName()} array");
                 serializer.WriteObject(e, this);
             }
             EndWriteCheck(oldValue, oldType);
             UnlockSerialization();
         }
 
-        public void SerializeArray<T>(T[] arr)
+        #endregion
+
+        #region lists
+
+        /// <summary>
+        /// Use WriteListExact for value type lists to save some space and performance
+        /// </summary>
+        public void WriteList<T>(List<T> list)
             where T : class
         {
-            int len = arr == null ? -1 : arr.Length;
-            WriteMetadata(Metadata.CollectionSize, len);
-            for (int i = 0; i < len; i++)
-                Serialize(arr[i]);
+            _binaryStream.CheckWritingAllowed();
+            CheckStreamReady();
+            int count = list == null ? -1 : list.Count;
+            WriteMetadata(Metadata.CollectionSize, count);
+            for (int i = 0; i < count; i++)
+                WriteObject(list[i]);
+        }
+
+        /// <summary>
+        /// Polymorphism is not allowed for list elements.
+        /// Null references are allowed though both for the list itself and for its elements
+        /// </summary>
+        public void WriteListExact<T>(List<T> list)
+        {
+            _binaryStream.CheckWritingAllowed();
+            CheckStreamReady();
+            int count = list == null ? -1 : list.Count;
+            WriteMetadata(Metadata.CollectionSize, count);
+            if (count < 0)
+                return;
+            var type = typeof(T);
+            var typeInfo = SerializerStorage.GetTypeInfo(type);
+            var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
+            if (serializer == null)
+                throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
+            WriteMetadata(Metadata.Version, serializer.Version);
+
+            var isRefType = !type.IsValueType;
+            LockSerialization();
+            BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
+            for (int i = 0; i < count; i++)
+            {
+                var e = list[i];
+                if (isRefType && (e == null || e.GetType() != type))
+                    throw new ArgumentException($"Trying to {nameof(WriteListExact)} a list with polymorphic elements. Element {i} is {e.PrettyTypeName()} in List<{type.PrettyName()}>");
+                serializer.WriteObject(e, this);
+            }
+            EndWriteCheck(oldValue, oldType);
+            UnlockSerialization();
         }
 
         #endregion

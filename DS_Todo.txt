@@ -6,11 +6,13 @@
 +	Core 	move non-root Container.(De)Serialize API to stream
 +				don't pass container as an argument for (de)serialization
 +				add more strict constrains to IStream/I(De)serializer type arguments
+	Core 	in BinaryStream remove CheckWritingAllowed method
 	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
 				inspect deserialization for simple types
 	Core 	add meta-info to deserialization methods as optional parameter
 				display this meta-info in container inspector
 	Core 	use WriteMetadata in AArray(De)serializer
+	Core 	add Read/WriteString overloads with explicit encodings
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
 	Othr	extend readme
 				motivation
