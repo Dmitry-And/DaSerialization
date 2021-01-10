@@ -104,7 +104,7 @@ namespace DaSerialization
         private void WriteMagicNumber()
         {
             _stream.Seek(0, SeekOrigin.Begin);
-            _writer.Write(MagicNumber);
+            _writer.WriteInt32(MagicNumber);
         }
 
         public bool CheckIsValidStream()
@@ -155,7 +155,7 @@ namespace DaSerialization
             {
                 destination.Seek(position);
                 for (long i = 0; i < length; i++)
-                    writer.Write(reader.ReadByte());
+                    writer.WriteByte(reader.ReadByte());
             }
             else
             {
@@ -167,7 +167,7 @@ namespace DaSerialization
                     Seek(readPos++);
                     var data = reader.ReadByte();
                     Seek(writePos++);
-                    writer.Write(data);
+                    writer.WriteByte(data);
                 }
                 Seek(readPos); // convention: this stream is 'read' stream in the first place
             }

@@ -34,14 +34,14 @@ namespace DaSerialization
             _writer = new BinaryWriter(_stream, BinaryStream.DefaultStringEncoding, true);
         }
 
-        public void WriteInt(Metadata meta, int value)
+        public void WriteMetadata(Metadata meta, int value)
         {
             if (_stream == null)
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to empty {this.PrettyTypeName()}");
+                throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to empty {this.PrettyTypeName()}");
             if (_binaryStream.IsLocked)
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to {this.PrettyTypeName()} w/o setting position");
+                throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to {this.PrettyTypeName()} w/o setting position");
             if (!_binaryStream.Writable) // TODO: remove?
-                throw new InvalidOperationException($"Trying to {nameof(WriteInt)} to non-writable {this.PrettyTypeName()}");
+                throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to non-writable {this.PrettyTypeName()}");
             switch (meta)
             {
                 case Metadata.Version:
@@ -58,23 +58,58 @@ namespace DaSerialization
             }
         }
 
-        #region stream read methods
+        #region stream write methods
 
-        public void Write(bool value) => _writer.Write(value);
+        public void WriteBool(bool value) => _writer.Write(value);
 
-        public void Write(byte value)  => _writer.Write(value);
-        public void Write(short value) => _writer.Write(value);
-        public void Write(int value) => _writer.Write(value);
-        public void Write(long value) => _writer.Write(value);
-        public void Write(sbyte value)  => _writer.Write(value);
-        public void Write(ushort value) => _writer.Write(value);
-        public void Write(uint value) => _writer.Write(value);
-        public void Write(ulong value) => _writer.Write(value);
+        public void WriteByte(byte value)  => _writer.Write(value);
+        public void WriteInt16(short value) => _writer.Write(value);
+        public void WriteInt32(int value) => _writer.Write(value);
+        public void WriteInt64(long value) => _writer.Write(value);
+        public void WriteSByte(sbyte value)  => _writer.Write(value);
+        public void WriteUInt16(ushort value) => _writer.Write(value);
+        public void WriteUInt32(uint value) => _writer.Write(value);
+        public void WriteUInt64(ulong value) => _writer.Write(value);
 
-        public void Write(float value) => _writer.Write(value);
-        public void Write(double value) => _writer.Write(value);
+        public void WriteDecimal(decimal value) => _writer.Write(value);
+        public void WriteSingle(float value) => _writer.Write(value);
+        public void WriteDouble(double value) => _writer.Write(value);
 
-        public void Write(string value) => _writer.Write(value);
+        public void WriteChar(char value) => _writer.Write(value);
+        public void WriteString(string value) => _writer.Write(value);
+        public void WriteChars(char[] value, int start = 0, int length = -1)
+        {
+            if (length < 0)
+                length = value.Length - start;
+            _writer.Write(value, start, length);
+        }
+        public void WriteBytes(byte[] value, int start = 0, int length = -1)
+        {
+            if (length < 0)
+                length = value.Length - start;
+            _writer.Write(value, start, length);
+        }
+
+        #endregion
+
+        #region incorrect write methods
+        // marked as depricated to signal about using incorrect method
+        // in case of serializable value was changed w/o method update
+
+        [Obsolete("Trying to write byte data as Int16.\nUse WriteByte method or convert argument with ToInt16()")]
+        public void WriteInt16(byte value) => _writer.Write(value);
+        [Obsolete("Trying to write sbyte data as Int16.\nUse WriteSByte method or convert argument with ToInt16()")]
+        public void WriteInt16(sbyte value) => _writer.Write(value);
+
+        [Obsolete("Trying to write Int16 data as Int32.\nUse WriteInt16 method or convert argument with ToInt32()")]
+        public void WriteInt32(short value) => _writer.Write(value);
+        [Obsolete("Trying to write UInt16 data as Int32.\nUse WriteUInt16 method or convert argument with ToInt32()")]
+        public void WriteInt32(ushort value) => _writer.Write(value);
+
+        [Obsolete("Trying to write Int32 data as Int64.\nUse WriteInt32 method or convert argument with ToInt64()")]
+        public void WriteInt64(int value) => _writer.Write(value);
+        [Obsolete("Trying to write UInt32 data as Int64.\nUse WriteUInt32 method or convert argument with ToInt64()")]
+        public void WriteInt64(uint value) => _writer.Write(value);
 
         #endregion
 
@@ -99,21 +134,21 @@ namespace DaSerialization
             if (baseType.IsValueType)
             {
                 var typeInfo = SerializerStorage.GetTypeInfo(baseType);
-                WriteInt(Metadata.TypeID, typeInfo.Id);
+                WriteMetadata(Metadata.TypeID, typeInfo.Id);
                 return SerializeInner(obj, typeInfo, false);
             }
             // null
             bool isDefault = EqualityComparer<T>.Default.Equals(obj, default);
             if (isDefault)
             {
-                WriteInt(Metadata.TypeID, -1);
+                WriteMetadata(Metadata.TypeID, -1);
                 return true;
             }
             // reference, not-null
             {
                 var type = obj.GetType();
                 var typeInfo = SerializerStorage.GetTypeInfo(type);
-                WriteInt(Metadata.TypeID, typeInfo.Id);
+                WriteMetadata(Metadata.TypeID, typeInfo.Id);
                 return SerializeInner(obj, typeInfo, type != baseType);
             }
         }
@@ -147,7 +182,7 @@ namespace DaSerialization
                     throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
                 var version = !isValueType && EqualityComparer<T>.Default.Equals(obj, default)
                     ? 0 : serializer.Version;
-                WriteInt(Metadata.Version, version);
+                WriteMetadata(Metadata.Version, version);
                 if (version != 0)
                     serializer.WriteObject(obj, this);
             }
@@ -159,7 +194,7 @@ namespace DaSerialization
                     throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
                 var version = EqualityComparer<T>.Default.Equals(obj, default)
                     ? 0 : serializer.Version;
-                WriteInt(Metadata.Version, version);
+                WriteMetadata(Metadata.Version, version);
                 if (version != 0)
                     serializer.WriteObjectTypeless(obj, this);
             }
@@ -221,7 +256,7 @@ namespace DaSerialization
             _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = list == null ? -1 : list.Count;
-            WriteInt(Metadata.CollectionSize, count);
+            WriteMetadata(Metadata.CollectionSize, count);
             if (count < 0)
                 return;
             var type = typeof(T);
@@ -229,7 +264,7 @@ namespace DaSerialization
             var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
             if (serializer == null)
                 throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-            WriteInt(Metadata.Version, serializer.Version);
+            WriteMetadata(Metadata.Version, serializer.Version);
 
             var isRefType = !type.IsValueType;
             LockSerialization();
@@ -251,7 +286,7 @@ namespace DaSerialization
             _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = list == null ? -1 : list.Count;
-            WriteInt(Metadata.CollectionSize, count);
+            WriteMetadata(Metadata.CollectionSize, count);
             for (int i = 0; i < count; i++)
                 Serialize(list[i]);
         }
@@ -265,7 +300,7 @@ namespace DaSerialization
             _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = arr == null ? -1 : arr.Length;
-            WriteInt(Metadata.CollectionSize, count);
+            WriteMetadata(Metadata.CollectionSize, count);
             if (count < 0)
                 return;
             var type = typeof(T);
@@ -273,7 +308,7 @@ namespace DaSerialization
             var serializer = SerializerStorage.GetSerializer(typeInfo) as ISerializer<T>;
             if (serializer == null)
                 throw new Exception($"Unable to find serializer for type {typeInfo}, stream '{typeof(BinaryStream).PrettyName()}'");
-            WriteInt(Metadata.Version, serializer.Version);
+            WriteMetadata(Metadata.Version, serializer.Version);
 
             var isRefType = !type.IsValueType;
             LockSerialization();
@@ -293,7 +328,7 @@ namespace DaSerialization
             where T : class
         {
             int len = arr == null ? -1 : arr.Length;
-            WriteInt(Metadata.CollectionSize, len);
+            WriteMetadata(Metadata.CollectionSize, len);
             for (int i = 0; i < len; i++)
                 Serialize(arr[i]);
         }

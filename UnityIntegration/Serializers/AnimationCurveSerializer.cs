@@ -26,17 +26,17 @@ namespace Common.Serialization
         public override void WriteObject(AnimationCurve ac, BinaryStreamWriter writer)
         {
             int len = ac.length;
-            writer.Write(len.ClampToUInt16());
+            writer.WriteUInt16(len.ClampToUInt16());
             for (int i = 0; i < len; i++)
             {
                 var kf = ac[i];
-                writer.Write(kf.time);
-                writer.Write(kf.value);
-                writer.Write(kf.inTangent);
-                writer.Write(kf.outTangent);
+                writer.WriteSingle(kf.time);
+                writer.WriteSingle(kf.value);
+                writer.WriteSingle(kf.inTangent);
+                writer.WriteSingle(kf.outTangent);
             }
-            writer.Write((byte)ac.preWrapMode);
-            writer.Write((byte)ac.postWrapMode);
+            writer.WriteByte((byte)ac.preWrapMode);
+            writer.WriteByte((byte)ac.postWrapMode);
         }
     }
 }

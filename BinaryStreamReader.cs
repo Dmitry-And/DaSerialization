@@ -33,12 +33,12 @@ namespace DaSerialization
             _reader = new BinaryReader(_stream, BinaryStream.DefaultStringEncoding, true);
         }
 
-        public int ReadInt(Metadata meta)
+        public int ReadMetadata(Metadata meta)
         {
             if (_stream == null)
-                throw new InvalidOperationException($"Trying to {nameof(ReadInt)} from empty {this.PrettyTypeName()}");
+                throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from empty {this.PrettyTypeName()}");
             if (_binaryStream.IsLocked)
-                throw new InvalidOperationException($"Trying to {nameof(ReadInt)} from {this.PrettyTypeName()} w/o setting position");
+                throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from {this.PrettyTypeName()} w/o setting position");
             switch (meta)
             {
                 case Metadata.Version:
@@ -54,7 +54,7 @@ namespace DaSerialization
 
         #region stream read methods
 
-        public bool ReadBoolean() => _reader.ReadBoolean();
+        public bool ReadBool() => _reader.ReadBoolean();
 
         public byte   ReadByte()  => _reader.ReadByte();
         public short  ReadInt16() => _reader.ReadInt16();
@@ -65,10 +65,26 @@ namespace DaSerialization
         public uint   ReadUInt32() => _reader.ReadUInt32();
         public ulong  ReadUInt64() => _reader.ReadUInt64();
 
-        public float  ReadSingle() => _reader.ReadSingle();
-        public double ReadDouble() => _reader.ReadDouble();
+        public decimal ReadDecimal() => _reader.ReadDecimal();
+        public float   ReadSingle() => _reader.ReadSingle();
+        public double  ReadDouble() => _reader.ReadDouble();
 
+        public char   ReadChar() => _reader.ReadChar();
         public string ReadString() => _reader.ReadString();
+        public byte[] ReadBytes(int count) => _reader.ReadBytes(count);
+        public void   ReadBytes(byte[] data, int start = 0, int length = -1)
+        {
+            int end = length < 0 ? end = data.Length : start + length;
+            for (int i = start; i < end; i++)
+                data[i] = _reader.ReadByte();
+        }
+        public char[] ReadChars(int count) => _reader.ReadChars(count);
+        public void   ReadChars(char[] data, int start = 0, int length = -1)
+        {
+            int end = length < 0 ? end = data.Length : start + length;
+            for (int i = start; i < end; i++)
+                data[i] = _reader.ReadChar();
+        }
 
         #endregion
 
@@ -135,7 +151,7 @@ namespace DaSerialization
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(T));
-            int readTypeId = ReadInt(Metadata.TypeID);
+            int readTypeId = ReadMetadata(Metadata.TypeID);
             if (readTypeId == -1)
                 obj = default;
             var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
@@ -173,7 +189,7 @@ namespace DaSerialization
         {
             if (typeInfo.Id == -1)
                 return null;
-            int version = ReadInt(Metadata.Version);
+            int version = ReadMetadata(Metadata.Version);
             var dd = SerializerStorage.GetDeserializer(typeInfo, version) as IDeserializer<T>;
             if (dd == null)
                 throw new Exception($"Unable to find deserializer for type {SerializerStorage.GetTypeInfo(typeof(T), false)}, stream '{typeof(BinaryStream).PrettyName()}', version {version}, read type is {typeInfo}");
@@ -187,7 +203,7 @@ namespace DaSerialization
             var typeTypeInfo = SerializerStorage.GetTypeInfo(typeof(T), false);
             if (typeTypeInfo.Id != typeInfo.Id)
                 deserializerIsOfDerivedType = true;
-            int version = ReadInt(Metadata.Version);
+            int version = ReadMetadata(Metadata.Version);
             if (version == 0)
                 return null;
             var dd = SerializerStorage.GetDeserializer(typeInfo, version);
@@ -213,7 +229,7 @@ namespace DaSerialization
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(T[]));
-            int len = ReadInt(Metadata.CollectionSize);
+            int len = ReadMetadata(Metadata.CollectionSize);
             if (len == -1)
             {
                 arr = null;
@@ -244,7 +260,7 @@ namespace DaSerialization
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(T[]));
-            int len = ReadInt(Metadata.CollectionSize);
+            int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 arr = null;
@@ -298,7 +314,7 @@ namespace DaSerialization
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(List<T>));
-            int len = ReadInt(Metadata.CollectionSize);
+            int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -350,7 +366,7 @@ namespace DaSerialization
         {
             CheckStreamReady();
             OnDeserializeMetaBegin(typeof(List<T>));
-            int len = ReadInt(Metadata.CollectionSize);
+            int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;

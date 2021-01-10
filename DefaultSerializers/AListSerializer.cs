@@ -8,7 +8,7 @@ namespace DaSerialization
         public override int Version => 1;
         public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = reader.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
@@ -39,10 +39,10 @@ namespace DaSerialization
         {
             if (list == null)
             {
-                writer.WriteInt(Metadata.CollectionSize, -1);
+                writer.WriteMetadata(Metadata.CollectionSize, -1);
                 return;
             }
-            writer.WriteInt(Metadata.CollectionSize, list.Count);
+            writer.WriteMetadata(Metadata.CollectionSize, list.Count);
             for (int i = 0, max = list.Count; i < max; i++)
                 WriteElement(list[i], writer);
             EndWriting(writer);
@@ -58,7 +58,7 @@ namespace DaSerialization
     {
         public sealed override void ReadDataToObject(ref List<T> list, BinaryStreamReader reader)
         {
-            int len = reader.ReadInt(Metadata.CollectionSize);
+            int len = reader.ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;

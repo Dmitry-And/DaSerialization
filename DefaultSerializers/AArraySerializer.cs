@@ -1,13 +1,11 @@
-﻿using System.IO;
-
-namespace DaSerialization
+﻿namespace DaSerialization
 {
     public abstract class AArraySerializer<T> : AFullSerializer<T[]>
     {
         public override int Version => 1;
         public sealed override void ReadDataToObject(ref T[] arr, BinaryStreamReader reader)
         {
-            int length = reader.ReadInt32();
+            int length = reader.ReadInt32(); // TODO: use ReadMetadata
             if (length < 0)
             {
                 arr = null;
@@ -23,11 +21,11 @@ namespace DaSerialization
         {
             if (arr == null)
             {
-                writer.Write((-1).EnsureInt32());
+                writer.WriteInt32(-1); // TODO: use WriteMetadata
                 return;
             }
             int length = arr.Length;
-            writer.Write(length);
+            writer.WriteInt32(length); // TODO: use WriteMetadata
             for (int i = 0; i < length; i++)
                 WriteElement(arr[i], writer);
         }
@@ -41,7 +39,7 @@ namespace DaSerialization
         public override int Version => 1;
         public sealed override void ReadDataToObject(ref T[] arr, BinaryStreamReader reader)
         {
-            int length = reader.ReadInt32();
+            int length = reader.ReadInt32(); // TODO: use ReadMetadata
             if (length < 0)
             {
                 arr = null;
