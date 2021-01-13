@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 
 namespace DaSerialization
 {
@@ -21,6 +22,7 @@ namespace DaSerialization
         private BinaryStream _binaryStream;
         private MemoryStream _stream;
         private BinaryReader _reader;
+        private BinaryReader _asciiReader; // workaround, look at BinaryStream.StringEncoding
         public BinaryReader GetReader() => _reader;
 
         public MemoryStream GetUnderlyingStream() => _stream;
@@ -30,7 +32,8 @@ namespace DaSerialization
             SerializerStorage = binaryStream.SerializerStorage;
             _binaryStream = binaryStream;
             _stream = binaryStream.GetUnderlyingStream();
-            _reader = new BinaryReader(_stream, BinaryStream.DefaultStringEncoding, true);
+            _reader = new BinaryReader(_stream, BinaryStream.StringEncoding, true);
+            _asciiReader = new BinaryReader(_stream, Encoding.ASCII, true);
         }
 
         public int ReadMetadata(Metadata meta)
@@ -70,20 +73,29 @@ namespace DaSerialization
         public double  ReadDouble() => _reader.ReadDouble();
 
         public char   ReadChar() => _reader.ReadChar();
+        public char   ReadCharASCII() => _asciiReader.ReadChar();
         public string ReadString() => _reader.ReadString();
-        public byte[] ReadBytes(int count) => _reader.ReadBytes(count);
-        public void   ReadBytes(byte[] data, int start = 0, int length = -1)
-        {
-            int end = length < 0 ? end = data.Length : start + length;
-            for (int i = start; i < end; i++)
-                data[i] = _reader.ReadByte();
-        }
+        public string ReadStringASCII() => _asciiReader.ReadString();
         public char[] ReadChars(int count) => _reader.ReadChars(count);
         public void   ReadChars(char[] data, int start = 0, int length = -1)
         {
             int end = length < 0 ? end = data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _reader.ReadChar();
+        }
+        public char[] ReadCharsASCII(int count) => _asciiReader.ReadChars(count);
+        public void   ReadCharsASCII(char[] data, int start = 0, int length = -1)
+        {
+            int end = length < 0 ? end = data.Length : start + length;
+            for (int i = start; i < end; i++)
+                data[i] = _asciiReader.ReadChar();
+        }
+        public byte[] ReadBytes(int count) => _reader.ReadBytes(count);
+        public void   ReadBytes(byte[] data, int start = 0, int length = -1)
+        {
+            int end = length < 0 ? end = data.Length : start + length;
+            for (int i = start; i < end; i++)
+                data[i] = _reader.ReadByte();
         }
 
         #endregion
@@ -504,6 +516,8 @@ namespace DaSerialization
         {
             _reader?.Dispose();
             _reader = null;
+            _asciiReader?.Dispose();
+            _asciiReader = null;
         }
     }
 }

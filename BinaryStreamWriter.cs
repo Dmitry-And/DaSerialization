@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text;
 using DaSerialization.Internal;
 
 namespace DaSerialization
@@ -22,6 +23,7 @@ namespace DaSerialization
         private BinaryStream _binaryStream;
         private MemoryStream _stream;
         private BinaryWriter _writer;
+        private BinaryWriter _asciiWriter; // workaround, look at BinaryStream.StringEncoding
         public BinaryWriter GetWriter() => _writer;
 
         public MemoryStream GetUnderlyingStream() => _stream;
@@ -31,7 +33,8 @@ namespace DaSerialization
             SerializerStorage = binaryStream.SerializerStorage;
             _binaryStream = binaryStream;
             _stream = binaryStream.GetUnderlyingStream();
-            _writer = new BinaryWriter(_stream, BinaryStream.DefaultStringEncoding, true);
+            _writer = new BinaryWriter(_stream, BinaryStream.StringEncoding, true);
+            _asciiWriter = new BinaryWriter(_stream, Encoding.ASCII, true);
         }
 
         public void WriteMetadata(Metadata meta, int value)
@@ -76,12 +79,20 @@ namespace DaSerialization
         public void WriteDouble(double value) => _writer.Write(value);
 
         public void WriteChar(char value) => _writer.Write(value);
+        public void WriteCharASCII(char value) => _asciiWriter.Write(value);
         public void WriteString(string value) => _writer.Write(value);
+        public void WriteStringASCII(string value) => _asciiWriter.Write(value);
         public void WriteChars(char[] value, int start = 0, int length = -1)
         {
             if (length < 0)
                 length = value.Length - start;
             _writer.Write(value, start, length);
+        }
+        public void WriteCharsASCII(char[] value, int start = 0, int length = -1)
+        {
+            if (length < 0)
+                length = value.Length - start;
+            _asciiWriter.Write(value, start, length);
         }
         public void WriteBytes(byte[] value, int start = 0, int length = -1)
         {
@@ -372,6 +383,8 @@ namespace DaSerialization
         {
             _writer?.Dispose();
             _writer = null;
+            _asciiWriter?.Dispose();
+            _asciiWriter = null;
         }
     }
 }

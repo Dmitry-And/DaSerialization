@@ -22,7 +22,10 @@ namespace DaSerialization
         // first 4 bytes written to the stream to identify it as a valid BinaryStream
         public const int MagicNumber = 0x35_2A_31_BB; // 891957691
         public const int MetaDataSize = sizeof(int);
-        public static readonly Encoding DefaultStringEncoding = Encoding.UTF8;
+        // the only encoding supported for now. a lot of changes required
+        // to provide generic Read/WriteString(Encoding) methods w/o allocations
+        // https://stackoverflow.com/a/29436218
+        public static readonly Encoding StringEncoding = Encoding.UTF8;
 
         public SerializerStorage SerializerStorage { get; private set; }
 
