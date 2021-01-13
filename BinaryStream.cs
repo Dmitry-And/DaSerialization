@@ -173,7 +173,6 @@ namespace DaSerialization
             }
         }
 
-
         public void Seek(long position)
         {
             if (_stream == null)
@@ -210,14 +209,6 @@ namespace DaSerialization
             _stream.SetLength(0);
             WriteMagicNumber();
         }
-
-        // TODO: remove?
-        public void CheckWritingAllowed()
-        {
-            if (!Writable)
-                throw new InvalidOperationException($"Trying to write to non-writable stream {this.PrettyTypeName()}");
-        }
-
     }
 
 }

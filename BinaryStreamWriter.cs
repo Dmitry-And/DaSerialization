@@ -174,7 +174,6 @@ namespace DaSerialization
         /// </summary>
         public bool Serialize<T>(T obj, SerializationTypeInfo typeInfo, bool inheritance)
         {
-            _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             LockSerialization();
             BeginWriteCheck(typeInfo, out var oldValue, out var oldType);
@@ -275,7 +274,6 @@ namespace DaSerialization
         /// </summary>
         public void WriteArrayExact<T>(T[] arr)
         {
-            _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = arr == null ? -1 : arr.Length;
             WriteMetadata(Metadata.CollectionSize, count);
@@ -312,7 +310,6 @@ namespace DaSerialization
         public void WriteList<T>(List<T> list)
             where T : class
         {
-            _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = list == null ? -1 : list.Count;
             WriteMetadata(Metadata.CollectionSize, count);
@@ -326,7 +323,6 @@ namespace DaSerialization
         /// </summary>
         public void WriteListExact<T>(List<T> list)
         {
-            _binaryStream.CheckWritingAllowed();
             CheckStreamReady();
             int count = list == null ? -1 : list.Count;
             WriteMetadata(Metadata.CollectionSize, count);

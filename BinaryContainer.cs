@@ -205,7 +205,8 @@ namespace DaSerialization
         /// </summary>
         private bool Serialize<T>(T obj, int objectId, SerializationTypeInfo objTypeInfo, int typeTypeId, bool forcePolymorphic = false)
         {
-            _stream.CheckWritingAllowed();
+            if (!Writable)
+                throw new InvalidOperationException($"Trying to {nameof(Serialize)}<{typeof(T).PrettyName()}> to non-writable {this.PrettyTypeName()}");
             IsValidObjectId(objectId, true);
             int localVersion = GetLastWrittenVersion(objectId, typeTypeId, out _);
             localVersion = localVersion < 0 ? 1 : localVersion + 1;
@@ -374,7 +375,8 @@ namespace DaSerialization
         // returns false if object was not found in other container
         public bool CopyObjectFrom<T>(BinaryContainer other, int objectIdInOther, int myObjectId = -1, bool updateSerializers = false)
         {
-            _stream.CheckWritingAllowed();
+            if (!Writable)
+                throw new InvalidOperationException($"Trying to {nameof(CopyObjectFrom)}<{typeof(T).PrettyName()}> to non-writable {this.PrettyTypeName()}");
             if (myObjectId == -1)
                 myObjectId = objectIdInOther;
             if (other == null)
