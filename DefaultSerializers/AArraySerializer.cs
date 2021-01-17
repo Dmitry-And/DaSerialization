@@ -5,7 +5,7 @@
         public override int Version => 1;
         public sealed override void ReadDataToObject(ref T[] arr, BinaryStreamReader reader)
         {
-            int length = reader.ReadInt32(); // TODO: use ReadMetadata
+            int length = reader.ReadMetadata(Metadata.CollectionSize);
             if (length < 0)
             {
                 arr = null;
@@ -39,7 +39,7 @@
         public override int Version => 1;
         public sealed override void ReadDataToObject(ref T[] arr, BinaryStreamReader reader)
         {
-            int length = reader.ReadInt32(); // TODO: use ReadMetadata
+            int length = reader.ReadMetadata(Metadata.CollectionSize);
             if (length < 0)
             {
                 arr = null;

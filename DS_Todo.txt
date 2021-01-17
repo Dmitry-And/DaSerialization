@@ -9,11 +9,11 @@
 +	Core 	in BinaryStream remove CheckWritingAllowed method
 -	Core 	add Read/WriteString overloads with explicit encodings - too hard, requires a lot of copy/paste from BinaryReader/Writer classes around Decoder logic
 + 	Core 	add Read/Write ASCII overloads for String/Char in BinaryStreamReader/Writer
++	Core 	use WriteMetadata in AArray(De)serializer
 	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
 				inspect deserialization for simple types
 	Core 	add meta-info to deserialization methods as optional parameter
 				display this meta-info in container inspector
-	Core 	use WriteMetadata in AArray(De)serializer
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
 	Othr	extend readme
 				motivation
@@ -23,10 +23,10 @@
 	Edtr 	add object-view wrapper class for ContainerEditorView
 				move all strings from InnerObjectInfo to view wrapper
 				cache all ContentGUI values in view wrapper
-	Edtr 	allow to remove objects from container in the inspector
-				support inner container object removal
 	Edtr 	show content of internal containers
 				propagate 'old serializers' warning from inner to root container
+	Edtr 	allow to remove objects from container in the inspector
+				support inner container object removal
 	Core 	unify 'size to string' method and move to common tools
 	Edtr 	allow to see raw byte data of an object/value
 				hex format
