@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 
 namespace DaSerialization
 {
@@ -37,15 +36,14 @@ namespace DaSerialization
             EndReading();
         }
 
-        public sealed override void WriteObject(List<T> list, BinaryStreamWriter bWriter)
+        public sealed override void WriteObject(List<T> list, BinaryStreamWriter writer)
         {
             if (list == null)
             {
-                bWriter.WriteMetadata(Metadata.CollectionSize, -1);
+                writer.WriteMetadata(Metadata.CollectionSize, -1);
                 return;
             }
-            bWriter.WriteMetadata(Metadata.CollectionSize, list.Count);
-            var writer = bWriter.GetWriter();
+            writer.WriteMetadata(Metadata.CollectionSize, list.Count);
             int similar = 0;
             var last = list[0];
             WriteElement(last, writer);
@@ -54,7 +52,7 @@ namespace DaSerialization
                 var curr = list[i];
                 if (!curr.Equals(last) | similar == byte.MaxValue)
                 {
-                    writer.Write(similar.ToByte());
+                    writer.WriteByte(similar.ToByte());
                     last = curr;
                     WriteElement(last, writer);
                     similar = 0;
@@ -62,14 +60,14 @@ namespace DaSerialization
                 else
                     similar++;
             }
-            writer.Write(similar.ToByte());
+            writer.WriteByte(similar.ToByte());
             EndWriting(writer);
         }
 
         protected abstract void ReadElement(ref T e, BinaryStreamReader reader);
-        protected abstract void WriteElement(T e, BinaryWriter writer);
+        protected abstract void WriteElement(T e, BinaryStreamWriter writer);
         protected virtual void EndReading() { }
-        protected virtual void EndWriting(BinaryWriter writer) { }
+        protected virtual void EndWriting(BinaryStreamWriter writer) { }
     }
 
     public abstract class ABatchListDeserializer<T> : ADeserializer<List<T>>
