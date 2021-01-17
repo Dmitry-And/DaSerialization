@@ -43,8 +43,6 @@ namespace DaSerialization
                 throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to empty {this.PrettyTypeName()}");
             if (_binaryStream.IsLocked)
                 throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to {this.PrettyTypeName()} w/o setting position");
-            if (!_binaryStream.Writable) // TODO: remove?
-                throw new InvalidOperationException($"Trying to {nameof(WriteMetadata)} to non-writable {this.PrettyTypeName()}");
             switch (meta)
             {
                 case Metadata.Version:
