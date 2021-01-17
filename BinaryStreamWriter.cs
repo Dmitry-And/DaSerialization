@@ -104,23 +104,35 @@ namespace DaSerialization
         #endregion
 
         #region incorrect write methods
-        // marked as depricated to signal about using incorrect method
-        // in case of serializable value was changed w/o method update
+        // cause compilation error to signal about using incorrect method
+        // in case of serializable value type was changed w/o method update
 
-        [Obsolete("Trying to write byte data as Int16.\nUse WriteByte method or convert argument with ToInt16()")]
-        public void WriteInt16(byte value) => _writer.Write(value);
-        [Obsolete("Trying to write sbyte data as Int16.\nUse WriteSByte method or convert argument with ToInt16()")]
-        public void WriteInt16(sbyte value) => _writer.Write(value);
+        [Obsolete("Trying to write byte data as Int16.\nUse WriteByte method or convert argument with ToInt16()", true)]
+        public void WriteInt16(byte value) { }
+        [Obsolete("Trying to write sbyte data as Int16.\nUse WriteSByte method or convert argument with ToInt16()", true)]
+        public void WriteInt16(sbyte value) { }
 
-        [Obsolete("Trying to write Int16 data as Int32.\nUse WriteInt16 method or convert argument with ToInt32()")]
-        public void WriteInt32(short value) => _writer.Write(value);
-        [Obsolete("Trying to write UInt16 data as Int32.\nUse WriteUInt16 method or convert argument with ToInt32()")]
-        public void WriteInt32(ushort value) => _writer.Write(value);
+        [Obsolete("Trying to write Int16 data as Int32.\nUse WriteInt16 method or convert argument with ToInt32()", true)]
+        public void WriteInt32(short value) { }
+        [Obsolete("Trying to write UInt16 data as Int32.\nUse WriteUInt16 method or convert argument with ToInt32()", true)]
+        public void WriteInt32(ushort value) { }
 
-        [Obsolete("Trying to write Int32 data as Int64.\nUse WriteInt32 method or convert argument with ToInt64()")]
-        public void WriteInt64(int value) => _writer.Write(value);
-        [Obsolete("Trying to write UInt32 data as Int64.\nUse WriteUInt32 method or convert argument with ToInt64()")]
-        public void WriteInt64(uint value) => _writer.Write(value);
+        [Obsolete("Trying to write Int32 data as Int64.\nUse WriteInt32 method or convert argument with ToInt64()", true)]
+        public void WriteInt64(int value) { }
+        [Obsolete("Trying to write UInt32 data as Int64.\nUse WriteUInt32 method or convert argument with ToInt64()", true)]
+        public void WriteInt64(uint value) { }
+
+        [Obsolete("Trying to write byte data as UInt16.\nUse WriteByte method or convert argument with ToUInt16()", true)]
+        public void WriteUInt16(byte value) { }
+
+        [Obsolete("Trying to write UInt16 data as UInt32.\nUse WriteUInt16 method or convert argument with ToUInt32()", true)]
+        public void WriteUInt32(ushort value) { }
+
+        [Obsolete("Trying to write UInt32 data as UInt64.\nUse WriteUInt32 method or convert argument with ToUInt64()", true)]
+        public void WriteUInt64(uint value) { }
+
+        [Obsolete("Trying to write float data as double.\nUse WriteSingle method or convert argument with (double))", true)]
+        public void WriteDouble(float value) { }
 
         #endregion
 
