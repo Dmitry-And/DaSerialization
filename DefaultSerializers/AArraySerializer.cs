@@ -21,11 +21,11 @@
         {
             if (arr == null)
             {
-                writer.WriteInt32(-1); // TODO: use WriteMetadata
+                writer.WriteMetadata(Metadata.CollectionSize, -1);
                 return;
             }
             int length = arr.Length;
-            writer.WriteInt32(length); // TODO: use WriteMetadata
+            writer.WriteMetadata(Metadata.CollectionSize, length);
             for (int i = 0; i < length; i++)
                 WriteElement(arr[i], writer);
         }
