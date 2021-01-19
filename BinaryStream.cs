@@ -61,8 +61,11 @@ namespace DaSerialization
 
         public BinaryStream(SerializerStorage storage)
         {
+            _stream = new MemoryStream();
             SerializerStorage = storage;
             Writable = true;
+            CreateReaderAndWriter();
+            WriteMagicNumber();
         }
         public BinaryStream(MemoryStream stream, SerializerStorage storage, bool writable = false)
         {
