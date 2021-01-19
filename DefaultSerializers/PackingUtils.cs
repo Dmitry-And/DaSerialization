@@ -1,12 +1,10 @@
-﻿using System.IO;
-
-namespace DaSerialization
+﻿namespace DaSerialization
 {
     public static class PackingUtils
     {
         #region bool packing
 
-        public static void WritePacked(this BinaryWriter writer, bool b1, bool b2 = false, bool b3 = false,
+        public static void WritePacked(this BinaryStreamWriter writer, bool b1, bool b2 = false, bool b3 = false,
             bool b4 = false, bool b5 = false, bool b6 = false, bool b7 = false, bool b8 = false)
         {
             byte p = (byte)((b1 ? 1 : 0)
@@ -17,23 +15,23 @@ namespace DaSerialization
                 | (b6 ? 32 : 0)
                 | (b7 ? 64 : 0)
                 | (b8 ? 128 : 0));
-            writer.Write(p);
+            writer.WriteByte(p);
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1)
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1)
         {
             int p = reader.ReadByte();
             b1 = (p & 1) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2)
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2)
         {
             int p = reader.ReadByte();
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3)
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3)
         {
             int p = reader.ReadByte();
             b1 = (p & 1) > 0;
@@ -41,7 +39,7 @@ namespace DaSerialization
             b3 = (p & 4) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3,
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4)
         {
             int p = reader.ReadByte();
@@ -51,7 +49,7 @@ namespace DaSerialization
             b4 = (p & 8) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3,
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5)
         {
             int p = reader.ReadByte();
@@ -62,7 +60,7 @@ namespace DaSerialization
             b5 = (p & 16) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3,
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6)
         {
             int p = reader.ReadByte();
@@ -74,7 +72,7 @@ namespace DaSerialization
             b6 = (p & 32) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3,
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6, out bool b7)
         {
             int p = reader.ReadByte();
@@ -87,7 +85,7 @@ namespace DaSerialization
             b7 = (p & 64) > 0;
         }
 
-        public static void ReadPacked(this BinaryReader reader, out bool b1, out bool b2, out bool b3,
+        public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6, out bool b7, out bool b8)
         {
             int p = reader.ReadByte();
@@ -105,26 +103,26 @@ namespace DaSerialization
 
         #region 3-byte
 
-        public static int Read3ByteInt32(this BinaryReader reader)
+        public static int Read3ByteInt32(this BinaryStreamReader reader)
             => UIntToInt(Read3ByteUInt32(reader)).ToInt32();
-        public static uint Read3ByteUInt32(this BinaryReader reader)
+        public static uint Read3ByteUInt32(this BinaryStreamReader reader)
         {
             uint head = reader.ReadByte();
             uint tail = reader.ReadUInt16();
             return (head << 16) + tail;
         }
 
-        public static void Write3ByteInt32(this BinaryWriter writer, int u)
+        public static void Write3ByteInt32(this BinaryStreamWriter writer, int u)
             => Write3ByteUInt32(writer, IntToUInt(u).ToUInt32());
-        public static void Write3ByteUInt32(this BinaryWriter writer, uint u)
+        public static void Write3ByteUInt32(this BinaryStreamWriter writer, uint u)
         {
             const uint largest = 0xffffff;
             if (u > largest)
                 throw new System.ArgumentException($"Trying to write {u} as 3-byte number (largerst is {largest})");
             byte head = (byte)(u >> 16);
             ushort tail = (ushort)u;
-            writer.Write(head);
-            writer.Write(tail);
+            writer.WriteByte(head);
+            writer.WriteUInt16(tail);
         }
 
         #endregion
@@ -136,13 +134,13 @@ namespace DaSerialization
         public static long UIntToInt(ulong i)
             => (i & 1UL) == 0UL ? (long)(i >> 1) : -1L - (long)(i >> 1);
 
-        public static int CountUIntBytes(this BinaryReader reader, ulong maxValue)
+        public static int CountUIntBytes(this BinaryStreamReader reader, ulong maxValue)
             => CountUIntBytes(maxValue);
-        public static int CountUIntBytes(this BinaryWriter writer, ulong maxValue)
+        public static int CountUIntBytes(this BinaryStreamWriter writer, ulong maxValue)
             => CountUIntBytes(maxValue);
-        public static int CountIntBytes(this BinaryReader reader, long maxValue)
+        public static int CountIntBytes(this BinaryStreamReader reader, long maxValue)
             => CountIntBytes(maxValue);
-        public static int CountIntBytes(this BinaryWriter writer, long maxValue)
+        public static int CountIntBytes(this BinaryStreamWriter writer, long maxValue)
             => CountIntBytes(maxValue);
 
         public static int CountIntBytes(long maxValue)
@@ -166,9 +164,9 @@ namespace DaSerialization
             return 8;
         }
 
-        public static long ReadIntPacked(this BinaryReader reader, int bytesCount)
+        public static long ReadIntPacked(this BinaryStreamReader reader, int bytesCount)
             => UIntToInt(ReadUIntPacked(reader, bytesCount));
-        public static ulong ReadUIntPacked(this BinaryReader reader, int bytesCount)
+        public static ulong ReadUIntPacked(this BinaryStreamReader reader, int bytesCount)
         {
             switch (bytesCount)
             {
@@ -184,20 +182,20 @@ namespace DaSerialization
             }
         }
 
-        public static void WriteIntPacked(this BinaryWriter writer, long value, int bytesCount)
+        public static void WriteIntPacked(this BinaryStreamWriter writer, long value, int bytesCount)
             => WriteUIntPacked(writer, IntToUInt(value), bytesCount);
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value, int bytesCount)
+        public static void WriteUIntPacked(this BinaryStreamWriter writer, ulong value, int bytesCount)
         {
             switch (bytesCount)
             {
-                case 1: writer.Write((byte)value); return;
-                case 2: writer.Write((ushort)value); return;
-                case 3: writer.Write((ushort)value); writer.Write((byte)(value >> 16)); return;
-                case 4: writer.Write((uint)value); return;
-                case 5: writer.Write((uint)value); writer.Write((byte)(value >> 32)); return;
-                case 6: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); return;
-                case 7: writer.Write((uint)value); writer.Write((ushort)(value >> 32)); writer.Write((byte)(value >> 48)); return;
-                case 8: writer.Write((ulong)value); return;
+                case 1: writer.WriteByte((byte)value); return;
+                case 2: writer.WriteUInt16((ushort)value); return;
+                case 3: writer.WriteUInt16((ushort)value); writer.WriteByte((byte)(value >> 16)); return;
+                case 4: writer.WriteUInt32((uint)value); return;
+                case 5: writer.WriteUInt32((uint)value); writer.WriteByte((byte)(value >> 32)); return;
+                case 6: writer.WriteUInt32((uint)value); writer.WriteUInt16((ushort)(value >> 32)); return;
+                case 7: writer.WriteUInt32((uint)value); writer.WriteUInt16((ushort)(value >> 32)); writer.WriteByte((byte)(value >> 48)); return;
+                case 8: writer.WriteUInt64((ulong)value); return;
                 default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(WriteUIntPacked)}");
             }
         }
@@ -229,9 +227,9 @@ namespace DaSerialization
             return format == 7 ? 9 : format + 1;
         }
 
-        public static long ReadIntPacked(this BinaryReader reader)
+        public static long ReadIntPacked(this BinaryStreamReader reader)
             => UIntToInt(ReadUIntPacked(reader));
-        public static ulong ReadUIntPacked(this BinaryReader reader)
+        public static ulong ReadUIntPacked(this BinaryStreamReader reader)
         {
             int formatAndHighBits = reader.ReadByte();
             int format = formatAndHighBits >> 5;
@@ -244,16 +242,16 @@ namespace DaSerialization
             return value;
         }
 
-        public static void WriteIntPacked(this BinaryWriter writer, long value)
+        public static void WriteIntPacked(this BinaryStreamWriter writer, long value)
             => WriteUIntPacked(writer, IntToUInt(value));
-        public static void WriteUIntPacked(this BinaryWriter writer, ulong value)
+        public static void WriteUIntPacked(this BinaryStreamWriter writer, ulong value)
         {
             var format = GetPackedFormat(value);
             int bytes = format == 7 ? 8 : format;
             int formatAndHighBits = format << 5;
             if (bytes < 8)
                 formatAndHighBits += (int)(value >> (8 * bytes));
-            writer.Write((byte)formatAndHighBits);
+            writer.WriteByte((byte)formatAndHighBits);
             if (bytes > 0)
                 writer.WriteUIntPacked(value, bytes);
         }

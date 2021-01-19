@@ -47,13 +47,13 @@ namespace DaSerialization
             {
                 case Metadata.Version:
                 case Metadata.CollectionSize:
-                    _writer.WriteUIntPacked((value + 1).ToUInt64());
+                    this.WriteUIntPacked((value + 1).ToUInt64());
                     return;
                 case Metadata.TypeID:
                     _writer.Write(value);
                     return;
                 case Metadata.ObjectID:
-                    _writer.WriteUIntPacked((ulong)value);
+                    this.WriteUIntPacked((ulong)value);
                     return;
                 default: throw new Exception(meta.ToString());
             }
@@ -131,17 +131,6 @@ namespace DaSerialization
 
         [Obsolete("Trying to write float data as double.\nUse WriteSingle method or convert argument with (double))", true)]
         public void WriteDouble(float value) { }
-
-        #endregion
-
-        #region Packed (TODO: move to separate file)
-
-        public void Write3ByteInt32(int value) => _writer.Write3ByteInt32(value);
-        public void Write3ByteUInt32(uint value) => _writer.Write3ByteUInt32(value);
-        public void WriteIntPacked(long value) => _writer.WriteIntPacked(value);
-        public void WriteUIntPacked(ulong value) => _writer.WriteUIntPacked(value);
-        public void WriteIntPacked(long value, int bytesCount) => _writer.WriteIntPacked(value, bytesCount);
-        public void WriteUIntPacked(ulong value, int bytesCount) => _writer.WriteUIntPacked(value, bytesCount);
 
         #endregion
 

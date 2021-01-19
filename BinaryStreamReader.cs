@@ -46,11 +46,11 @@ namespace DaSerialization
             {
                 case Metadata.Version:
                 case Metadata.CollectionSize:
-                    return (int)((long)_reader.ReadUIntPacked() - 1);
+                    return (int)((long)this.ReadUIntPacked() - 1);
                 case Metadata.TypeID:
                     return _reader.ReadInt32();
                 case Metadata.ObjectID:
-                    return (int)_reader.ReadUIntPacked();
+                    return (int)this.ReadUIntPacked();
                 default: throw new Exception(meta.ToString());
             }
         }
@@ -97,17 +97,6 @@ namespace DaSerialization
             for (int i = start; i < end; i++)
                 data[i] = _reader.ReadByte();
         }
-
-        #endregion
-
-        #region Packed (TODO: move to separate file)
-
-        public int Read3ByteInt32() => _reader.Read3ByteInt32();
-        public uint Read3ByteUInt32() => _reader.Read3ByteUInt32();
-        public long ReadIntPacked() => _reader.ReadIntPacked();
-        public ulong ReadUIntPacked() => _reader.ReadUIntPacked();
-        public long ReadIntPacked(int bytesCount) => _reader.ReadIntPacked(bytesCount);
-        public ulong ReadUIntPacked(int bytesCount) => _reader.ReadUIntPacked(bytesCount);
 
         #endregion
 
