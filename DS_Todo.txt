@@ -11,7 +11,7 @@
 + 	Core 	add Read/Write ASCII overloads for String/Char in BinaryStreamReader/Writer
 +	Core 	use WriteMetadata in AArray(De)serializer
 +	Core 	add compilation error if char was passed to Write(U)IntX method
-	Core 	use WriteMetadata in ArraySerializationExtensions
++	Core 	use WriteMetadata in ArraySerializationExtensions
 	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
 				inspect deserialization for simple types
 	Core 	add meta-info to deserialization methods as optional parameter

@@ -53,7 +53,7 @@
 
         private static int PrepareToRead<T>(BinaryStreamReader reader, ref T[] array, int arrayLength)
         {
-            int count = reader.ReadInt32();
+            int count = reader.ReadMetadata(Metadata.CollectionSize);
 
             if (array != null & arrayLength < 0)
                 arrayLength = array.Length;
