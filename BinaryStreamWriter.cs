@@ -122,12 +122,18 @@ namespace DaSerialization
 
         [Obsolete("Trying to write byte data as UInt16.\nUse WriteByte method or convert argument with ToUInt16()", true)]
         public void WriteUInt16(byte value) { }
+        [Obsolete("Trying to write char data as UInt16.\nUse WriteChar method or convert argument type explicitly", true)]
+        public void WriteUInt16(char value) { }
 
         [Obsolete("Trying to write UInt16 data as UInt32.\nUse WriteUInt16 method or convert argument with ToUInt32()", true)]
         public void WriteUInt32(ushort value) { }
+        [Obsolete("Trying to write char data as UInt32.\nUse WriteChar method or convert argument type explicitly", true)]
+        public void WriteUInt32(char value) { }
 
         [Obsolete("Trying to write UInt32 data as UInt64.\nUse WriteUInt32 method or convert argument with ToUInt64()", true)]
         public void WriteUInt64(uint value) { }
+        [Obsolete("Trying to write char data as UInt64.\nUse WriteChar method or convert argument type explicitly", true)]
+        public void WriteUInt64(char value) { }
 
         [Obsolete("Trying to write float data as double.\nUse WriteSingle method or convert argument with (double))", true)]
         public void WriteDouble(float value) { }
