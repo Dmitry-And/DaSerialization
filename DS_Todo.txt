@@ -12,8 +12,9 @@
 +	Core 	use WriteMetadata in AArray(De)serializer
 +	Core 	add compilation error if char was passed to Write(U)IntX method
 +	Core 	use WriteMetadata in ArraySerializationExtensions
-	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
-				inspect deserialization for simple types
++	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
+	Core	inspect deserialization for simple types
+				editor support
 	Core 	add meta-info to deserialization methods as optional parameter
 				display this meta-info in container inspector
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init

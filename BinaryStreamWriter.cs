@@ -24,7 +24,6 @@ namespace DaSerialization
         private MemoryStream _stream;
         private BinaryWriter _writer;
         private BinaryWriter _asciiWriter; // workaround, look at BinaryStream.StringEncoding
-        public BinaryWriter GetWriter() => _writer;
 
         public MemoryStream GetUnderlyingStream() => _stream;
 

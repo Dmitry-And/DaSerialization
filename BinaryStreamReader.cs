@@ -23,7 +23,6 @@ namespace DaSerialization
         private MemoryStream _stream;
         private BinaryReader _reader;
         private BinaryReader _asciiReader; // workaround, look at BinaryStream.StringEncoding
-        public BinaryReader GetReader() => _reader;
 
         public MemoryStream GetUnderlyingStream() => _stream;
 
