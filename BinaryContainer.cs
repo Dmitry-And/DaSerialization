@@ -66,10 +66,10 @@ namespace DaSerialization
             long size = TABLE_INFO_SIZE + 4 * contentTable.Count; // 4 bytes for each entry from typeId int
             foreach (var e in contentTable)
             {
-                size += PackingUtils.GetPackedIntSize(e.ObjectId.EnsureInt32());
+                size += PackingUtils.GetPackedIntSize(e.ObjectId);
                 // int (4 bytes) - typeId already counted in the first line
                 size += PackingUtils.GetPackedUIntSize(e.Position.ToUInt64());
-                size += PackingUtils.GetPackedUIntSize(e.Length.EnsureUInt32());
+                size += PackingUtils.GetPackedUIntSize(e.Length);
             }
             return size;
         }
@@ -122,10 +122,10 @@ namespace DaSerialization
             for (int i = 0; i < contentTable.Count; i++)
             {
                 var entry = contentTable[i];
-                writer.WriteIntPacked(entry.ObjectId.EnsureInt32());
+                writer.WriteIntPacked(entry.ObjectId);
                 writer.WriteInt32(entry.TypeId);
                 writer.WriteUIntPacked(entry.Position.ToUInt64());
-                writer.WriteUIntPacked(entry.Length.EnsureUInt32());
+                writer.WriteUIntPacked(entry.Length);
             }
 
             writer.WriteInt32(TABLE_INFO_TOKEN);
