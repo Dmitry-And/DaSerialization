@@ -117,7 +117,7 @@
         {
             if (count < 0)
                 count = array.Length;
-            writer.WriteInt32(count);
+            writer.WriteMetadata(Metadata.CollectionSize, count);
             return count;
         }
     }
