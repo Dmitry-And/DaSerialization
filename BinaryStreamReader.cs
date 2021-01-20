@@ -56,25 +56,121 @@ namespace DaSerialization
 
         #region stream read methods
 
-        public bool ReadBool() => _reader.ReadBoolean();
+        public bool ReadBool()
+        {
+            OnDeserializePrimitiveBegin(typeof(bool));
+            var result = _reader.ReadBoolean();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
 
-        public byte   ReadByte()  => _reader.ReadByte();
-        public short  ReadInt16() => _reader.ReadInt16();
-        public int    ReadInt32() => _reader.ReadInt32();
-        public long   ReadInt64() => _reader.ReadInt64();
-        public sbyte  ReadSByte()  => _reader.ReadSByte();
-        public ushort ReadUInt16() => _reader.ReadUInt16();
-        public uint   ReadUInt32() => _reader.ReadUInt32();
-        public ulong  ReadUInt64() => _reader.ReadUInt64();
+        public byte   ReadByte()
+        {
+            OnDeserializePrimitiveBegin(typeof(Byte));
+            var result = _reader.ReadByte();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public short  ReadInt16()
+        {
+            OnDeserializePrimitiveBegin(typeof(Int16));
+            var result = _reader.ReadInt16();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public int    ReadInt32()
+        {
+            OnDeserializePrimitiveBegin(typeof(Int32));
+            var result = _reader.ReadInt32();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public long   ReadInt64()
+        {
+            OnDeserializePrimitiveBegin(typeof(Int64));
+            var result = _reader.ReadInt64();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public sbyte  ReadSByte()
+        {
+            OnDeserializePrimitiveBegin(typeof(SByte));
+            var result = _reader.ReadSByte();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public ushort ReadUInt16()
+        {
+            OnDeserializePrimitiveBegin(typeof(UInt16));
+            var result = _reader.ReadUInt16();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public uint   ReadUInt32()
+        {
+            OnDeserializePrimitiveBegin(typeof(UInt32));
+            var result = _reader.ReadUInt32();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public ulong  ReadUInt64()
+        {
+            OnDeserializePrimitiveBegin(typeof(UInt64));
+            var result = _reader.ReadUInt64();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
 
-        public decimal ReadDecimal() => _reader.ReadDecimal();
-        public float   ReadSingle() => _reader.ReadSingle();
-        public double  ReadDouble() => _reader.ReadDouble();
+        public decimal ReadDecimal()
+        {
+            OnDeserializePrimitiveBegin(typeof(Decimal));
+            var result = _reader.ReadDecimal();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public float   ReadSingle()
+        {
+            OnDeserializePrimitiveBegin(typeof(Single));
+            var result = _reader.ReadSingle();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public double  ReadDouble()
+        {
+            OnDeserializePrimitiveBegin(typeof(Double));
+            var result = _reader.ReadDouble();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
 
-        public char   ReadChar() => _reader.ReadChar();
-        public char   ReadCharASCII() => _asciiReader.ReadChar();
-        public string ReadString() => _reader.ReadString();
-        public string ReadStringASCII() => _asciiReader.ReadString();
+        public char   ReadChar()
+        {
+            OnDeserializePrimitiveBegin(typeof(Char));
+            var result = _reader.ReadChar();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public char   ReadCharASCII()
+        {
+            OnDeserializePrimitiveBegin(typeof(Char));
+            var result = _asciiReader.ReadChar();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public string ReadString()
+        {
+            OnDeserializePrimitiveBegin(typeof(String));
+            var result = _reader.ReadString();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public string ReadStringASCII()
+        {
+            OnDeserializePrimitiveBegin(typeof(String));
+            var result = _asciiReader.ReadString();
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
         public char[] ReadChars(int count) => _reader.ReadChars(count);
         public void   ReadChars(char[] data, int start = 0, int length = -1)
         {
@@ -146,12 +242,12 @@ namespace DaSerialization
             if (deserializerTypeless == null)
             {
                 obj = default;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
             LockDeserialization();
-            OnDeserializeDataBegin(typeInfo, deserializerTypeless);
+            OnDeserializeObjectBegin(typeInfo, deserializerTypeless);
             if (deserializerIsOfDerivedType)
             {
                 var objTypeless = obj as object;
@@ -163,7 +259,7 @@ namespace DaSerialization
                 var deserializer = deserializerTypeless as IDeserializer<T>;
                 deserializer.ReadDataToObject(ref obj, this);
             }
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
             UnlockDeserialization();
         }
 
@@ -183,14 +279,14 @@ namespace DaSerialization
             if (deserializerTypeless == null)
             {
                 obj = default;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
             LockDeserialization();
-            OnDeserializeDataBegin(typeInfo, deserializerTypeless);
+            OnDeserializeObjectBegin(typeInfo, deserializerTypeless);
             deserializerTypeless.ReadDataToTypelessObject(ref obj, this);
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
             UnlockDeserialization();
             _binaryStream.ClearStreamPosition();
         }
@@ -248,20 +344,20 @@ namespace DaSerialization
             if (len == -1)
             {
                 arr = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
             if (arr == null || arr.Length != len)
                 arr = new T[len];
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(T[])), null);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null);
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
                 ReadObject(ref v);
                 arr[i] = v;
             }
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
         }
 
         /// <summary>
@@ -284,8 +380,8 @@ namespace DaSerialization
             if (len < 0)
             {
                 arr = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
 
@@ -297,17 +393,17 @@ namespace DaSerialization
             var deserializer = ReadDeserializer<T>(typeInfo);
 
             LockDeserialization();
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(T[])), null);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null);
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
                 OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
+                OnDeserializeObjectEnd();
                 arr[i] = v;
             }
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
             UnlockDeserialization();
         }
 
@@ -337,8 +433,8 @@ namespace DaSerialization
             if (len < 0)
             {
                 list = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
 
@@ -349,7 +445,7 @@ namespace DaSerialization
                 if (list.Capacity < len)
                     list.Capacity = len;
             }
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null);
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
@@ -360,7 +456,7 @@ namespace DaSerialization
                 list.Add(ReadObject<T>());
             if (list.Count > len)
                 list.RemoveRange(len, list.Count - len);
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
         }
 
         /// <summary>
@@ -383,8 +479,8 @@ namespace DaSerialization
             if (len < 0)
             {
                 list = null;
-                OnDeserializeDataBegin();
-                OnDeserializeEnd();
+                OnDeserializeObjectBegin();
+                OnDeserializeObjectEnd();
                 return;
             }
 
@@ -401,26 +497,26 @@ namespace DaSerialization
             var deserializer = ReadDeserializer<T>(typeInfo);
 
             LockDeserialization();
-            OnDeserializeDataBegin(new SerializationTypeInfo(typeof(List<T>)), null);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null);
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
                 OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
+                OnDeserializeObjectEnd();
                 list[i] = v;
             }
             for (int i = list.Count; i < len; i++)
             {
                 T v = default;
                 OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeDataBegin(typeInfo, deserializer);
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
-                OnDeserializeEnd();
+                OnDeserializeObjectEnd();
                 list.Add(v);
             }
-            OnDeserializeEnd();
+            OnDeserializeObjectEnd();
             UnlockDeserialization();
             if (list.Count > len)
                 list.RemoveRange(len, list.Count - len);
@@ -454,10 +550,13 @@ namespace DaSerialization
         #region deserialization inspection
 
         public bool EnableDeserializationInspection;
-        public delegate void DeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version);
-        public event DeserializationStarted ObjectDeserializationStarted;
-        public delegate void DeserializationFinished(long streamPos);
-        public event DeserializationFinished ObjectDeserializationFinished;
+        public delegate void ObjectDeserializationStart(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version);
+        public event ObjectDeserializationStart ObjectDeserializationStarted;
+        public delegate void PrimitiveDeserializationStart(Type refType, long streamPos);
+        public event PrimitiveDeserializationStart PrimitiveDeserializationStarted;
+        public delegate void DeserializationEnd(long streamPos);
+        public event DeserializationEnd DeserializationEnded;
+        public event DeserializationEnd PrimitiveDeserializationEnded;
         private long _lastMetaInfoStreamPosition = -1;
         private Type _lastRefType;
 
@@ -474,9 +573,11 @@ namespace DaSerialization
             _lastMetaInfoStreamPosition = startPosition;
 #endif
         }
-        private void OnDeserializeDataBegin()
-            => OnDeserializeDataBegin(SerializationTypeInfo.Invalid, null);
-        private void OnDeserializeDataBegin(SerializationTypeInfo typeInfo, IDeserializer deserializer)
+        [Conditional("INSPECT_DESERIALIZATION")]
+        private void OnDeserializeObjectBegin()
+            => OnDeserializeObjectBegin(SerializationTypeInfo.Invalid, null);
+        [Conditional("INSPECT_DESERIALIZATION")]
+        private void OnDeserializeObjectBegin(SerializationTypeInfo typeInfo, IDeserializer deserializer)
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
@@ -487,14 +588,39 @@ namespace DaSerialization
             _lastMetaInfoStreamPosition = -1;
 #endif
         }
-        private void OnDeserializeEnd()
+        private void OnDeserializeObjectEnd()
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
             var pos = _stream.Position;
-            ObjectDeserializationFinished?.Invoke(pos);
+            DeserializationEnded?.Invoke(pos);
             _lastMetaInfoStreamPosition = -1;
+#endif
+        }
+
+        [Conditional("INSPECT_DESERIALIZATION")]
+        private void OnDeserializePrimitiveBegin(Type type)
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            if (_lastMetaInfoStreamPosition != -1)
+                return; // when we deserialize primitives during meta deserialization
+            var pos = _stream.Position;
+            PrimitiveDeserializationStarted?.Invoke(type, pos);
+#endif
+        }
+        [Conditional("INSPECT_DESERIALIZATION")]
+        private void OnDeserializePrimitiveEnd()
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            if (_lastMetaInfoStreamPosition != -1)
+                return; // when we deserialize primitives during meta deserialization
+            var pos = _stream.Position;
+            PrimitiveDeserializationEnded?.Invoke(pos);
 #endif
         }
 

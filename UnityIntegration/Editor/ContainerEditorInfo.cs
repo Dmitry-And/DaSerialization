@@ -62,6 +62,7 @@ namespace DaSerialization.Editor
             public bool IsExpandable => InnerObjects != null;
             public bool OldVersion => LatestVersion > Version;
             public bool IsNull => TypeInfo.Type == null;
+            public bool IsSimpleType => IsSupported & Version == 0;
             public bool IsRealObject => TypeInfo.IsValid;
 
             public int Id; // for inner object it's an index inside the parent one
@@ -82,6 +83,7 @@ namespace DaSerialization.Editor
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
+            // for unsupported objects, doesn't require EndInit
             public InnerObjectInfo(Type refType, long streamPos, uint totalSize)
             {
                 RefType = refType;
@@ -95,6 +97,21 @@ namespace DaSerialization.Editor
                     : "[Error]";
                 HasOldVersions = false;
             }
+
+            // for simple types, requires EndInit() call later
+            public InnerObjectInfo(Type type, long streamPos)
+            {
+                RefType = type;
+                TypeInfo = SerializationTypeInfo.Invalid;
+                Version = 0;
+                LatestVersion = 0;
+                StreamPosition = streamPos;
+                MetaSize = 0;
+                Caption = RefType.PrettyName();
+                // requires EndInit() call
+            }
+
+            // for valid objects, requires EndInit() call later
             public InnerObjectInfo(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaSize, int version, int latestVersion)
             {
                 RefType = refType;
@@ -106,7 +123,9 @@ namespace DaSerialization.Editor
                 Caption = RefType == TypeInfo.Type
                     ? RefType.PrettyName()
                     : $"{RefType.PrettyName()} : {TypeInfo.Type.PrettyName()}";
+                // requires EndInit() call
             }
+
             public void EndInit(long endStreamPos)
             {
                 DataSize = (endStreamPos - StreamPosition).ToUInt32();
@@ -146,7 +165,9 @@ namespace DaSerialization.Editor
             var reader = stream.GetReader();
             reader.EnableDeserializationInspection = true;
             reader.ObjectDeserializationStarted += OnObjectDeserializationStarted;
-            reader.ObjectDeserializationFinished += OnObjectDeserializationFinished;
+            reader.DeserializationEnded += OnDeserializationEnded;
+            reader.PrimitiveDeserializationStarted += OnPrimitiveDeserializationStarted;
+            reader.PrimitiveDeserializationEnded += OnDeserializationEnded;
             foreach (var e in contentTable)
             {
                 object o = null;
@@ -169,7 +190,9 @@ namespace DaSerialization.Editor
                 RootObjects.Add(root);
             }
             reader.ObjectDeserializationStarted -= OnObjectDeserializationStarted;
-            reader.ObjectDeserializationFinished -= OnObjectDeserializationFinished;
+            reader.PrimitiveDeserializationStarted -= OnPrimitiveDeserializationStarted;
+            reader.DeserializationEnded -= OnDeserializationEnded;
+            reader.PrimitiveDeserializationEnded -= OnDeserializationEnded;
             reader.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
             MetaInfoSize = metaSize.ToInt32();
@@ -286,7 +309,12 @@ namespace DaSerialization.Editor
             var info = new InnerObjectInfo(refType, typeInfo, streamPos, metaInfoLen, version, lastVersion);
             _activeEntries.Push(info);
         }
-        private void OnObjectDeserializationFinished(long streamPos)
+        private void OnPrimitiveDeserializationStarted(Type refType, long streamPos)
+        {
+            var info = new InnerObjectInfo(refType, streamPos);
+            _activeEntries.Push(info);
+        }
+        private void OnDeserializationEnded(long streamPos)
         {
             var info = _activeEntries.Pop();
             info.EndInit(streamPos);
