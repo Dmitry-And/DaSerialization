@@ -34,7 +34,7 @@ namespace DaSerialization.Editor
             if (updatedContainer != null && _asset != null)
             {
                 ContainerAssetUtils.WriteToTextAsset(updatedContainer, _asset);
-                var container = ContainerRef.FromTextAsset(_asset).Container as BinaryContainer;
+                var container = ContainerRef.FromTextAsset(_asset).Container;
                 _view = new ContainerEditorView(new ContainerEditorInfo(container), _asset);
             }
         }

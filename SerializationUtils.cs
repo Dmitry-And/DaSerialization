@@ -40,6 +40,6 @@ public static class SerializationUtils
     {
         if (_copyContainers.Count > 0)
             return _copyContainers.Pop();
-        return _copyStorage.CreateContainer() as BinaryContainer;
+        return _copyStorage.CreateContainer();
     }
 }
