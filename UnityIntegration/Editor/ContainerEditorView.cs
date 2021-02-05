@@ -50,8 +50,32 @@ namespace DaSerialization.Editor
         public bool RenderRefType = true; // if not - only object type will be rendered
         public bool Editable { get; private set; }
 
+        private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
         private GUIContent _sizeText;
         private float _idWidth;
+        private int _cacheVersion = 0;
+        private List<InfoLayoutCache> _layoutCache = new List<InfoLayoutCache>();
+        private float _cachedHeight;
+
+        private struct InfoLayoutCache
+        {
+            public ContainerEditorInfo.InnerObjectInfo Info;
+            public float TopPos;
+            public float BottomPos;
+            public short DepthChange; // +1 - has expanded children, -1 - last in children list
+            public bool Highlighted;
+
+            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, float yMin, float yMax, bool expanded, bool highlighted)
+            {
+                Info = info;
+                TopPos = yMin;
+                BottomPos = yMax;
+                DepthChange = expanded ? (short)1 : (short)0;
+                Highlighted = highlighted;
+            }
+
+            public Rect GetRect(float width) => new Rect(0f, TopPos, width, BottomPos - TopPos);
+        }
 
         public ContainerEditorView(ContainerEditorInfo info, bool editable)
         {
@@ -65,6 +89,8 @@ namespace DaSerialization.Editor
             _idWidth = GetMaxIdWidth(Info, _idWidth);
             Editable = editable;
         }
+
+        public void MarkDirty() => _cacheVersion--;
 
         private static void InitStatic()
         {
@@ -82,11 +108,11 @@ namespace DaSerialization.Editor
 
         // returns updated container if it was changed, null otherwise
         private Vector2 _scrollPos;
+        private float _scrollViewHeight;
         public BinaryContainer DrawContainerContent(Rect position)
         {
             BinaryContainer updatedContainer = null;
 
-            _nextLineIsEven = false;
             var pos = position.SliceTop();
             GUI.contentColor = Color.white;
             EditorGUI.LabelField(pos.SliceRight(SizeWidth), _sizeText, Bold);
@@ -117,18 +143,17 @@ namespace DaSerialization.Editor
             GUILayout.BeginArea(position);
             _scrollViewHeight = position.height;
             _scrollPos = EditorGUILayout.BeginScrollView(_scrollPos);
-            _parentEntries.Clear();
-            foreach (var e in Info.RootObjects)
-                DrawEntry(e);
-            GetNextLineVisible(out var innerLineRect);
-            float inScrollWidth = innerLineRect.width;
+            var tableWidth = GUILayoutUtility.GetRect(100f, 2000f, 1f, 1f).width;
+
+            PrepareLayoutCache();
+            DrawLayoutCache(tableWidth);
             EditorGUILayout.EndScrollView();
             GUILayout.EndArea();
 
             // we render column header section after the table because we want to know its layout
             // particularly the width of the view area as the vertical scroll bar may or may not be visible
             GUI.contentColor = Color.gray;
-            colHeaderRect = colHeaderRect.SliceLeft(inScrollWidth, false);
+            colHeaderRect = colHeaderRect.SliceLeft(tableWidth, false);
             EditorGUI.LabelField(colHeaderRect.SliceLeft(_idWidth), "Id", NormalRight);
             EditorGUI.LabelField(colHeaderRect.SliceRight(18f), JsonLabel, NormalRight);
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth),
@@ -150,123 +175,165 @@ namespace DaSerialization.Editor
             return updatedContainer;
         }
 
-        private float _scrollViewHeight;
-        private bool _nextLineIsEven;
-        private bool GetNextLineVisible(out Rect rect, bool evenLineHighlighted = false)
+        private void PrepareLayoutCache()
         {
-            rect = GUILayoutUtility.GetRect(100f, 2000f, _lineHeight, _lineHeight);
-            _nextLineIsEven = !_nextLineIsEven;
-            bool isVisible = rect.yMax >= _scrollPos.y & rect.yMin <= _scrollPos.y + _scrollViewHeight;
-            if (_nextLineIsEven & evenLineHighlighted & isVisible)
-                EditorGUI.DrawRect(rect, new Color(0.5f, 0.5f, 0.5f, 0.13f));
-            return isVisible;
+            if (_cacheVersion == Info.CacheVersion)
+                return;
+
+            _layoutCache.Clear();
+            float y = 0f;
+            foreach (var root in Info.RootObjects)
+            {
+                bool highlighted = true;
+                PrepareLayoutCacheForEntry(root.Data, ref y, ref highlighted);
+            }
+            _cachedHeight = y + _lineHeight;
+
+            _cacheVersion = Info.CacheVersion;
         }
 
-        private void DrawEntry(ContainerEditorInfo.RootObjectInfo e)
+        private void PrepareLayoutCacheForEntry(ContainerEditorInfo.InnerObjectInfo e, ref float y, ref bool highlighted)
         {
-            var pos = DrawEntry(e.Data, 0f);
-            if (!e.IsSupported)
-                EditorGUI.HelpBox(pos.SliceRightRelative(0.7f), e.Error, MessageType.Error);
+            var yMin = y;
+            y += _lineHeight;
+            var expanded = e.IsExpandable && _expandedObjects.Contains(e);
+            var cache = new InfoLayoutCache(e, yMin, y, expanded, highlighted);
+            _layoutCache.Add(cache);
+            highlighted = !highlighted;
+
+            if (expanded)
+            {
+                foreach (var inner in e.InnerObjects)
+                    PrepareLayoutCacheForEntry(inner, ref y, ref highlighted);
+
+                var lastCache = _layoutCache[_layoutCache.Count - 1];
+                lastCache.DepthChange -= 1;
+                _layoutCache[_layoutCache.Count - 1] = lastCache;
+            }
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntries = new Stack<ContainerEditorInfo.InnerObjectInfo>();
-        private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
-        private static GUIContent _tempContent = new GUIContent();
-        private Rect DrawEntry(ContainerEditorInfo.InnerObjectInfo e, float indent)
+        private void DrawLayoutCache(float width)
         {
-            bool isRoot = _parentEntries.Count == 0;
-            bool isVisible = GetNextLineVisible(out var pos, true);
-            var lineRect = pos;
-            if (isVisible)
+            _parentEntries.Clear();
+            int rootIndex = 0;
+            GUILayoutUtility.GetRect(100f, 2000f, _cachedHeight, _cachedHeight);
+            for (int i = 0, max = _layoutCache.Count; i < max; i++)
             {
-                // id
-                var idRect = pos.SliceLeft(_idWidth);
-                if (isRoot)
-                {
-                    EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
-                    if (!e.HasOldVersions & !e.OldVersion)
-                        EditorGUI.DrawRect(idRect, new Color(0.3f, 0.3f, 1f, 0.2f));
-                }
-                if (e.OldVersion)
-                    EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.8f));
-                else if (e.HasOldVersions)
-                    EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.4f));
-                if (e.Id != -1)
-                {
-                    GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
-                    EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
-                }
-                if (e.HasOldVersions && GUI.Button(idRect, GUIContent.none, GUIStyle.none))
-                    ExpandOldWarnings(e);
+                var cache = _layoutCache[i];
+                var pos = DrawLayoutCacheLine(cache, width, out var isVisible);
 
-                var collapseRect = pos.SliceLeft(indent);
-                if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
-                    SetExpanded(_parentEntries.Peek(), false, Event.current.alt);
-
-                // expanded
-                var expandRect = pos.SliceLeft(16f);
-                bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
-                if (e.IsExpandable)
+                if (_parentEntries.Count == 0 & isVisible)
                 {
-                    GUI.contentColor = Color.gray;
-                    if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
-                        SetExpanded(e, !expanded, Event.current.alt);
+                    var root = Info.RootObjects[rootIndex];
+                    if (!root.IsSupported)
+                        EditorGUI.HelpBox(pos.SliceRightRelative(0.7f), root.Error, MessageType.Error);
                 }
 
-                // json
-                var jsonRect = pos.SliceRight(19f);
-                if (e.IsRealObject & !e.IsNull & e.IsSupported)
-                {
-                    bool requiresJsonUpdate = e.JsonData == null;
-                    GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
-                    GUI.backgroundColor = requiresJsonUpdate ? Color.clear
-                        : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
-                        : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
-                    if (GUI.Button(jsonRect, "D"))
-                        PopupWindow.Show(jsonRect, new ObjectContentPopupWindow(Info, e));
-                    GUI.backgroundColor = Color.white;
-                }
+                if (cache.DepthChange == 1)
+                    _parentEntries.Push(cache.Info);
+                else
+                    for (int j = cache.DepthChange; j < 0; j++)
+                        _parentEntries.Pop();
+            }
+        }
 
-                var nameRect = pos;
-                // size (persistent)
-                {
-                    _tempContent.text = Size(RenderTotalSize ? e.TotalSize : e.DataSize);
-                    var width = BoldRight.CalcSize(_tempContent).x;
-                    nameRect.xMax = pos.xMax - width;
-                    GUI.contentColor = Color.white;
-                    EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
-                }
-                // size (optional)
-                if (RenderSelfSize & e.SelfSize > 0)
-                {
-                    _tempContent.text = Size(e.SelfSize);
-                    var width = BoldRight.CalcSize(_tempContent).x;
-                    nameRect.xMax = pos.xMax - width;
-                    GUI.contentColor = Color.gray;
-                    EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
-                }
+        private static GUIContent _tempContent = new GUIContent();
+        private Rect DrawLayoutCacheLine(InfoLayoutCache cache, float windowWidth, out bool isVisible)
+        {
+            isVisible = cache.BottomPos >= _scrollPos.y
+                & cache.TopPos <= _scrollPos.y + _scrollViewHeight;
+            if (!isVisible)
+                return new Rect();
+            var pos = cache.GetRect(windowWidth);
+            var lineRect = pos;
+            var e = cache.Info;
+            float indent = 12f * _parentEntries.Count;
 
-                // name
-                GUI.contentColor = e.IsSupported
-                    ? e.IsNull ? Color.grey : Color.black
-                    : Color.red;
-                if (GUI.Button(nameRect, RenderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
-                    & e.IsExpandable)
+            bool isRoot = _parentEntries.Count == 0;
+            // id
+            var idRect = pos.SliceLeft(_idWidth);
+            if (isRoot)
+            {
+                EditorGUI.DrawRect(pos, new Color(0.3f, 0.3f, 1f, 0.2f));
+                if (!e.HasOldVersions & !e.OldVersion)
+                    EditorGUI.DrawRect(idRect, new Color(0.3f, 0.3f, 1f, 0.2f));
+            }
+            else if (cache.Highlighted)
+                EditorGUI.DrawRect(pos, new Color(0.5f, 0.5f, 0.5f, 0.13f));
+
+            if (e.OldVersion)
+                EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.8f));
+            else if (e.HasOldVersions)
+                EditorGUI.DrawRect(idRect, new Color(0.9f, 0.9f, 0.3f, 0.4f));
+            if (e.Id != -1)
+            {
+                GUI.contentColor = isRoot ? Color.white : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+                EditorGUI.LabelField(idRect, e.Id.ToString(), isRoot ? BoldRight : NormalRight);
+            }
+            if (e.HasOldVersions && GUI.Button(idRect, GUIContent.none, GUIStyle.none))
+                ExpandOldWarnings(e);
+
+            var collapseRect = pos.SliceLeft(indent);
+            if (!isRoot && GUI.Button(collapseRect, "", GUIStyle.none))
+                SetExpanded(_parentEntries.Peek(), false, Event.current.alt);
+
+            // expanded
+            var expandRect = pos.SliceLeft(16f);
+            bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
+            if (e.IsExpandable)
+            {
+                GUI.contentColor = Color.gray;
+                if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
                     SetExpanded(e, !expanded, Event.current.alt);
             }
 
-            // internal entries
-            if (e.IsExpandable && _expandedObjects.Contains(e))
+            // json
+            var jsonRect = pos.SliceRight(19f);
+            if (e.IsRealObject & !e.IsNull & e.IsSupported)
             {
-                _parentEntries.Push(e);
-                foreach (var inner in e.InnerObjects)
-                    DrawEntry(inner, indent + 12f);
-                _parentEntries.Pop();
+                bool requiresJsonUpdate = e.JsonData == null;
+                GUI.contentColor = new Color(1f, 1f, 1f, 0.5f);
+                GUI.backgroundColor = requiresJsonUpdate ? Color.clear
+                    : !e.JsonHasErrors ? new Color(0.7f, 0.9f, 0.7f, 0.6f)
+                    : e.JsonCreated ? new Color(0.9f, 0.9f, 0.7f, 0.6f) : new Color(0.9f, 0.7f, 0.7f, 0.6f);
+                if (GUI.Button(jsonRect, "D"))
+                    PopupWindow.Show(jsonRect, new ObjectContentPopupWindow(Info, e));
+                GUI.backgroundColor = Color.white;
             }
+
+            var nameRect = pos;
+            // size (persistent)
+            {
+                _tempContent.text = Size(RenderTotalSize ? e.TotalSize : e.DataSize);
+                var width = BoldRight.CalcSize(_tempContent).x;
+                nameRect.xMax = pos.xMax - width;
+                GUI.contentColor = Color.white;
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
+            }
+            // size (optional)
+            if (RenderSelfSize & e.SelfSize > 0)
+            {
+                _tempContent.text = Size(e.SelfSize);
+                var width = BoldRight.CalcSize(_tempContent).x;
+                nameRect.xMax = pos.xMax - width;
+                GUI.contentColor = Color.gray;
+                EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
+            }
+
+            // name
+            GUI.contentColor = e.IsSupported
+                ? e.IsNull ? Color.grey : Color.black
+                : Color.red;
+            if (GUI.Button(nameRect, RenderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
+                & e.IsExpandable)
+                SetExpanded(e, !expanded, Event.current.alt);
+
             return lineRect;
         }
         private void SetExpanded(ContainerEditorInfo.InnerObjectInfo e, bool value, bool child = false)
         {
+            MarkDirty();
             var oldValue = _expandedObjects.Contains(e);
             if (!value & oldValue)
                 _expandedObjects.Remove(e);

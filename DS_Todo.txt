@@ -15,6 +15,7 @@
 +	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
 +	Core	inspect deserialization for primitive types
 	Edtr	editor support for primitive types
++				rendering optimization
 				show/hide
 				collapse similar into one entry
 	Core 	make packed read/write methods via partial class, not extension methods

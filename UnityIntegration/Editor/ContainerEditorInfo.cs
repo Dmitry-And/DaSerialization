@@ -17,11 +17,12 @@ namespace DaSerialization.Editor
         public int EntriesCount => _container == null ? 0 : _container.GetContentTable().Count;
         private BinaryContainer _container;
         public BinaryContainer GetContainer() => _container;
+        public int CacheVersion { get; private set; } = 1; // get updated on each change
 
         public ContainerEditorInfo(TextAsset textAsset, bool verbose = false)
         {
             var containerRef = ContainerRef.FromTextAsset(textAsset, verbose);
-            _container = containerRef.Container as BinaryContainer;
+            _container = containerRef.Container;
         }
         public ContainerEditorInfo(BinaryContainer container)
         {
@@ -35,6 +36,8 @@ namespace DaSerialization.Editor
                     return true;
             return false;
         }
+
+        public void MarkDirty() => CacheVersion++;
 
         #endregion
 
@@ -196,6 +199,8 @@ namespace DaSerialization.Editor
             reader.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
             MetaInfoSize = metaSize.ToInt32();
+
+            MarkDirty();
         }
 
         private class SerializationTypeBinder : Newtonsoft.Json.Serialization.ISerializationBinder
