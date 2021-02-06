@@ -14,25 +14,29 @@
 +	Core 	use WriteMetadata in ArraySerializationExtensions
 +	Core 	get rid of GetReader/GetWriter methods (add stream overrides)
 +	Core	inspect deserialization for primitive types
++	Edtr 	add object-view wrapper class for ContainerEditorView
++				move all strings from InnerObjectInfo to view wrapper
++				cache all ContentGUI values in view wrapper
+	Edtr 	make object info tooltip optional (global editor option)
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
 				collapse similar into one entry
+				check editor is rendered correctly if container has old serializers
 	Core 	make packed read/write methods via partial class, not extension methods
 				inspect packed types deserialization
 	Core 	add meta-info to deserialization methods as optional parameter
 				display this meta-info in container inspector
+	Edtr 	display collections size in array/list object captions/tooltips in object table
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
 	Othr	extend readme
 				motivation
 				concepts
 				API
 				Unity integration
-	Edtr 	add object-view wrapper class for ContainerEditorView
-				move all strings from InnerObjectInfo to view wrapper
-				cache all ContentGUI values in view wrapper
 	Edtr 	show content of internal containers
 				propagate 'old serializers' warning from inner to root container
+				check editor is rendered correctly if container has old serializers
 	Edtr 	allow to remove objects from container in the inspector
 				support inner container object removal
 	Core 	unify 'size to string' method and move to common tools

@@ -76,13 +76,13 @@ namespace DaSerialization.Editor
         private struct InfoLayoutCache
         {
             public ContainerEditorInfo.InnerObjectInfo Info;
-            public string Caption;
+            public GUIContent Caption;
             public float TopPos;
             public float BottomPos;
             public short DepthChange; // +1 - has expanded children, -1 - last in children list
             public bool Highlighted;
 
-            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, string caption, float yMin, float yMax, bool expanded, bool highlighted)
+            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, GUIContent caption, float yMin, float yMax, bool expanded, bool highlighted)
             {
                 Caption = caption;
                 Info = info;
@@ -237,7 +237,7 @@ namespace DaSerialization.Editor
             }
         }
 
-        private string GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
+        private GUIContent GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
         {
             string captionPrefix = "";
             string captionPostfix = "";
@@ -267,7 +267,29 @@ namespace DaSerialization.Editor
                 && !string.IsNullOrEmpty(captionPostfix))
                 caption += " : ";
             caption += captionPostfix;
-            return caption;
+
+            string tooltip = "";
+            if (e.IsSupported)
+            {
+                if (e.RefType != null && !e.RefType.IsValueType)
+                    tooltip += $"Ref:     {e.RefType.PrettyName()}\n";
+                tooltip += e.IsSimpleType
+                    ? $"Type:  {e.RefType.PrettyName()}\n"
+                    : e.TypeInfo.Id == -1
+                        ? $"Type w/o deserializer\n"
+                        : $"Type:  {e.TypeInfo.Type.PrettyName()} ({e.TypeInfo.Id})\n";
+                if (!e.IsSimpleType) // TODO
+                    tooltip += $"Value: {e.TypeInfo.Type.PrettyName()}\n";
+                if (!e.IsSimpleType & e.Version > 0)
+                    tooltip += $"Version: {e.Version}{(e.OldVersion ? " (Old)" : "")}";
+            }
+            else
+                tooltip = "Unsupported (no deserializer)";
+
+            if (tooltip.Length > 0 && tooltip[tooltip.Length - 1] == '\n')
+                tooltip = tooltip.Substring(0, tooltip.Length - 1);
+
+            return new GUIContent(caption, tooltip);
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntries = new Stack<ContainerEditorInfo.InnerObjectInfo>();
