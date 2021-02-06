@@ -42,12 +42,28 @@ namespace DaSerialization.Editor
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
         private static GUIContent JsonLabel = new GUIContent("D ", "Show object data in JSON-like format...");
         private static GUIContent UpdateSerializersButton = new GUIContent("Update\nSerializers", "Deserializer container and serialize it again with newest available serializers");
+        private static GUIContent ShowPrimitiveTypes = new GUIContent("All", "Show serialized primitive types.\nIf false - only user-type objects will be displayed");
+        private static GUIContent[] CaptionLabels = new[]
+        {
+            //new GUIContent("Name : Value"),
+            new GUIContent("Ref : Value"),
+            new GUIContent("Value"),
+            //new GUIContent("Name : Ref"),
+        };
         private static float _lineHeight;
+
+        public enum ObjectCaptionMode : int
+        {
+            //NameValue = 0,
+            RefValue = 0,
+            Value,
+            //NameRef
+        }
 
         public ContainerEditorInfo Info { get; private set; }
         public bool RenderSelfSize = true;
         public bool RenderTotalSize = true; // if not - effective size will be rendered
-        public bool RenderRefType = true; // if not - only object type will be rendered
+        public ObjectCaptionMode CaptionMode = ObjectCaptionMode.RefValue;
         public bool Editable { get; private set; }
 
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
@@ -60,13 +76,15 @@ namespace DaSerialization.Editor
         private struct InfoLayoutCache
         {
             public ContainerEditorInfo.InnerObjectInfo Info;
+            public string Caption;
             public float TopPos;
             public float BottomPos;
             public short DepthChange; // +1 - has expanded children, -1 - last in children list
             public bool Highlighted;
 
-            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, float yMin, float yMax, bool expanded, bool highlighted)
+            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, string caption, float yMin, float yMax, bool expanded, bool highlighted)
             {
+                Caption = caption;
                 Info = info;
                 TopPos = yMin;
                 BottomPos = yMax;
@@ -164,8 +182,14 @@ namespace DaSerialization.Editor
                 RenderSelfSize = !RenderSelfSize;
             colHeaderRect.SliceLeft(16f);
             GUI.contentColor = Color.gray;
-            if (GUI.Button(colHeaderRect, RenderRefType ? "Ref : Object" : "Object", Normal))
-                RenderRefType = !RenderRefType;
+            if (GUI.Button(colHeaderRect, CaptionLabels[(int)CaptionMode], Normal))
+            {
+                int mode = (int)CaptionMode + 1;
+                if (mode > (int)ObjectCaptionMode.Value)
+                    mode = 0;
+                CaptionMode = (ObjectCaptionMode)mode;
+                MarkDirty();
+            }
 
             if (!Editable & updatedContainer != null)
             {
@@ -197,7 +221,8 @@ namespace DaSerialization.Editor
             var yMin = y;
             y += _lineHeight;
             var expanded = e.IsExpandable && _expandedObjects.Contains(e);
-            var cache = new InfoLayoutCache(e, yMin, y, expanded, highlighted);
+            var caption = GetObjectCaption(e);
+            var cache = new InfoLayoutCache(e, caption, yMin, y, expanded, highlighted);
             _layoutCache.Add(cache);
             highlighted = !highlighted;
 
@@ -210,6 +235,39 @@ namespace DaSerialization.Editor
                 lastCache.DepthChange -= 1;
                 _layoutCache[_layoutCache.Count - 1] = lastCache;
             }
+        }
+
+        private string GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            string captionPrefix = "";
+            string captionPostfix = "";
+            switch (CaptionMode)
+            {
+                case ObjectCaptionMode.Value:
+                    if (!e.IsSupported)
+                        captionPostfix = "[Error]";
+                    else if (e.IsSimpleType)
+                        captionPostfix = e.RefType.PrettyName(); // TODO
+                    else
+                        captionPostfix = e.TypeInfo.Type.PrettyName();
+                    break;
+                case ObjectCaptionMode.RefValue:
+
+                    if (e.RefType != null)
+                        captionPrefix = e.RefType.PrettyName();
+                    if (!e.IsSupported)
+                        captionPostfix = "[Error]";
+                    else if (!e.IsSimpleType)
+                        captionPostfix = e.TypeInfo.Type.PrettyName();
+                    break;
+                default: throw new NotImplementedException(CaptionMode.ToString());
+            }
+            string caption = captionPrefix;
+            if (!string.IsNullOrEmpty(captionPrefix)
+                && !string.IsNullOrEmpty(captionPostfix))
+                caption += " : ";
+            caption += captionPostfix;
+            return caption;
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntries = new Stack<ContainerEditorInfo.InnerObjectInfo>();
@@ -325,7 +383,7 @@ namespace DaSerialization.Editor
             GUI.contentColor = e.IsSupported
                 ? e.IsNull ? Color.grey : Color.black
                 : Color.red;
-            if (GUI.Button(nameRect, RenderRefType ? e.Caption : e.TypeInfo.Type.PrettyName(), e.IsRealObject ? Bold : Normal)
+            if (GUI.Button(nameRect, cache.Caption, e.IsRealObject ? Bold : Normal)
                 & e.IsExpandable)
                 SetExpanded(e, !expanded, Event.current.alt);
 

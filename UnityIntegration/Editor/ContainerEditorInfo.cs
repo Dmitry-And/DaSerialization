@@ -82,7 +82,6 @@ namespace DaSerialization.Editor
             public uint DataSize;
             public uint TotalSize => MetaSize + DataSize;
             public uint SelfSize; // DataSize excluding all inner objects' total size
-            public string Caption;
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
@@ -95,9 +94,6 @@ namespace DaSerialization.Editor
                 DataSize = totalSize;
                 SelfSize = 0;
                 IsSupported = false;
-                Caption = refType != null
-                    ? $"{RefType.PrettyName()} : [Error]"
-                    : "[Error]";
                 HasOldVersions = false;
             }
 
@@ -110,7 +106,6 @@ namespace DaSerialization.Editor
                 LatestVersion = 0;
                 StreamPosition = streamPos;
                 MetaSize = 0;
-                Caption = RefType.PrettyName();
                 // requires EndInit() call
             }
 
@@ -123,9 +118,6 @@ namespace DaSerialization.Editor
                 LatestVersion = latestVersion;
                 StreamPosition = streamPos;
                 MetaSize = metaSize;
-                Caption = RefType == TypeInfo.Type
-                    ? RefType.PrettyName()
-                    : $"{RefType.PrettyName()} : {TypeInfo.Type.PrettyName()}";
                 // requires EndInit() call
             }
 
