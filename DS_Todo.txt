@@ -19,11 +19,10 @@
 +				cache all ContentGUI values in view wrapper
 +	Core 	add meta-info (field name) to deserialization methods as optional parameter
 +				display this meta-info in container inspector
-	Edtr 	make object info tooltip optional (global editor option)
++	Edtr 	make object info tooltip optional (global editor option)
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
-				collapse similar into one entry
 				check editor is rendered correctly if container has old serializers
 	Edtr 	show meta info entries as a part of an object
 				make it optional (show only user types, show all types, show full info)

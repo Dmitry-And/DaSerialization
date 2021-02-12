@@ -199,8 +199,15 @@ namespace DaSerialization.Editor
             return updatedContainer;
         }
 
+        private bool _showTooltips;
         private void PrepareLayoutCache()
         {
+            if (_showTooltips != ContainerToolsMenu.ShowInfoTooltips)
+            {
+                _showTooltips = ContainerToolsMenu.ShowInfoTooltips;
+                MarkDirty();
+            }
+
             if (_cacheVersion == Info.CacheVersion)
                 return;
 
@@ -269,27 +276,35 @@ namespace DaSerialization.Editor
             caption += captionPostfix;
 
             string tooltip = "";
-            if (e.IsSupported)
+            if (_showTooltips)
             {
-                if (e.RefType != null && !e.RefType.IsValueType)
-                    tooltip += $"Ref:     {e.RefType.PrettyName()}\n";
-                tooltip += e.IsSimpleType
-                    ? $"Type:  {e.RefType.PrettyName()}\n"
-                    : e.TypeInfo.Id == -1
-                        ? $"Type w/o deserializer\n"
-                        : $"Type:  {e.TypeInfo.Type.PrettyName()} ({e.TypeInfo.Id})\n";
-                if (!e.IsSimpleType) // TODO
-                    tooltip += $"Value: {e.TypeInfo.Type.PrettyName()}\n";
-                if (!e.IsSimpleType & e.Version > 0)
-                    tooltip += $"Version: {e.Version}{(e.OldVersion ? $" (Old, latest {e.LatestVersion})" : "")}\n";
-                if (!e.OldVersion & e.HasOldVersions)
-                    tooltip += "Contains objects with old versions\n";
-            }
-            else
-                tooltip = "Unsupported (no deserializer)";
+                if (!string.IsNullOrEmpty(e.Name))
+                    tooltip += $"Name: {e.Name}\n";
 
-            if (tooltip.Length > 0 && tooltip[tooltip.Length - 1] == '\n')
-                tooltip = tooltip.Substring(0, tooltip.Length - 1);
+                if (e.IsSupported)
+                {
+                    if (e.RefType != null && !e.RefType.IsValueType)
+                        tooltip += $"Ref:     {e.RefType.PrettyName()}\n";
+                    tooltip += e.IsSimpleType
+                        ? $"Type:  {e.RefType.PrettyName()}\n"
+                        : e.TypeInfo.Id == -1
+                            ? $"Type w/o deserializer\n"
+                            : $"Type:  {e.TypeInfo.Type.PrettyName()} ({e.TypeInfo.Id})\n";
+                    if (!e.IsSimpleType) // TODO
+                        tooltip += $"Value: {e.TypeInfo.Type.PrettyName()}\n";
+                    if (!e.IsSimpleType & e.Version > 0)
+                        tooltip += $"Version: {e.Version}{(e.OldVersion ? $" (Old, latest {e.LatestVersion})" : "")}\n";
+                    if (!e.OldVersion & e.HasOldVersions)
+                        tooltip += "Contains objects with old versions\n";
+                }
+                else
+                    tooltip = "Unsupported (no deserializer)\n";
+
+                tooltip += $"Size: {e.TotalSize}, Self: {e.SelfSize}, Meta: {e.MetaSize}\n";
+
+                if (tooltip.Length > 0 && tooltip[tooltip.Length - 1] == '\n')
+                    tooltip = tooltip.Substring(0, tooltip.Length - 1);
+            }
 
             return new GUIContent(caption, tooltip);
         }

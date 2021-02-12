@@ -64,7 +64,7 @@ namespace DaSerialization.Editor
                     totalCount == 1 ? lastUpdated : null);
         }
         [MenuItem("Assets/Container/Update Serializers", true)]
-        public static bool SelectionHaveContainers()
+        public static bool SelectionHasContainers()
         {
             foreach (var text in Selection.GetFiltered<TextAsset>(SelectionMode.DeepAssets))
                 if (ContainerRef.FromTextAsset(text, false).IsValid)
