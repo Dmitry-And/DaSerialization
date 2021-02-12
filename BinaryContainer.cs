@@ -646,7 +646,7 @@ namespace DaSerialization.Serialization
         public override void ReadDataToObject(ref BinaryContainer c, BinaryStreamReader reader)
         {
             int len = reader.ReadUIntPacked().ToInt32();
-            bool writable = reader.ReadBool();
+            bool writable = reader.ReadBool("Writable");
 
             var memStream = c?.GetUnderlyingStream();
             if (memStream == null || !memStream.CanWrite)

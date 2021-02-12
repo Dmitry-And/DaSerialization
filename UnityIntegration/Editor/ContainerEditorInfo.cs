@@ -56,7 +56,7 @@ namespace DaSerialization.Editor
             }
             public RootObjectInfo(Type refType, long streamPos, uint totalSize, string error)
             {
-                Data = new InnerObjectInfo(refType, streamPos, totalSize);
+                Data = new InnerObjectInfo(refType, streamPos, totalSize, null);
                 Error = error;
             }
         }
@@ -82,11 +82,12 @@ namespace DaSerialization.Editor
             public uint DataSize;
             public uint TotalSize => MetaSize + DataSize;
             public uint SelfSize; // DataSize excluding all inner objects' total size
+            public string Name;
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
             // for unsupported objects, doesn't require EndInit
-            public InnerObjectInfo(Type refType, long streamPos, uint totalSize)
+            public InnerObjectInfo(Type refType, long streamPos, uint totalSize, string name)
             {
                 RefType = refType;
                 StreamPosition = streamPos;
@@ -95,10 +96,11 @@ namespace DaSerialization.Editor
                 SelfSize = 0;
                 IsSupported = false;
                 HasOldVersions = false;
+                Name = name;
             }
 
             // for simple types, requires EndInit() call later
-            public InnerObjectInfo(Type type, long streamPos)
+            public InnerObjectInfo(Type type, long streamPos, string name)
             {
                 RefType = type;
                 TypeInfo = SerializationTypeInfo.Invalid;
@@ -106,11 +108,12 @@ namespace DaSerialization.Editor
                 LatestVersion = 0;
                 StreamPosition = streamPos;
                 MetaSize = 0;
+                Name = name;
                 // requires EndInit() call
             }
 
             // for valid objects, requires EndInit() call later
-            public InnerObjectInfo(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaSize, int version, int latestVersion)
+            public InnerObjectInfo(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaSize, int version, int latestVersion, string name)
             {
                 RefType = refType;
                 TypeInfo = typeInfo;
@@ -118,6 +121,7 @@ namespace DaSerialization.Editor
                 LatestVersion = latestVersion;
                 StreamPosition = streamPos;
                 MetaSize = metaSize;
+                Name = name;
                 // requires EndInit() call
             }
 
@@ -300,15 +304,15 @@ namespace DaSerialization.Editor
 
         private InnerObjectInfo _rootInfo;
         private Stack<InnerObjectInfo> _activeEntries = new Stack<InnerObjectInfo>();
-        private void OnObjectDeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version)
+        private void OnObjectDeserializationStarted(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version, string name)
         {
             var lastVersion = typeInfo.IsValid ? _container.SerializerStorage.GetSerializer(typeInfo).Version : -1;
-            var info = new InnerObjectInfo(refType, typeInfo, streamPos, metaInfoLen, version, lastVersion);
+            var info = new InnerObjectInfo(refType, typeInfo, streamPos, metaInfoLen, version, lastVersion, name);
             _activeEntries.Push(info);
         }
-        private void OnPrimitiveDeserializationStarted(Type refType, long streamPos)
+        private void OnPrimitiveDeserializationStarted(Type refType, long streamPos, string name)
         {
-            var info = new InnerObjectInfo(refType, streamPos);
+            var info = new InnerObjectInfo(refType, streamPos, name);
             _activeEntries.Push(info);
         }
         private void OnDeserializationEnded(long streamPos)

@@ -45,25 +45,25 @@ namespace DaSerialization.Editor
         private static GUIContent ShowPrimitiveTypes = new GUIContent("All", "Show serialized primitive types.\nIf false - only user-type objects will be displayed");
         private static GUIContent[] CaptionLabels = new[]
         {
-            //new GUIContent("Name : Value"),
+            new GUIContent("Name : Value"),
             new GUIContent("Ref : Value"),
             new GUIContent("Value"),
-            //new GUIContent("Name : Ref"),
+            new GUIContent("Name : Ref"),
         };
         private static float _lineHeight;
 
         public enum ObjectCaptionMode : int
         {
-            //NameValue = 0,
-            RefValue = 0,
+            NameValue = 0,
+            RefValue,
             Value,
-            //NameRef
+            NameRef
         }
 
         public ContainerEditorInfo Info { get; private set; }
         public bool RenderSelfSize = true;
         public bool RenderTotalSize = true; // if not - effective size will be rendered
-        public ObjectCaptionMode CaptionMode = ObjectCaptionMode.RefValue;
+        public ObjectCaptionMode CaptionMode = ObjectCaptionMode.NameValue;
         public bool Editable { get; private set; }
 
         private HashSet<ContainerEditorInfo.InnerObjectInfo> _expandedObjects = new HashSet<ContainerEditorInfo.InnerObjectInfo>();
@@ -185,7 +185,7 @@ namespace DaSerialization.Editor
             if (GUI.Button(colHeaderRect, CaptionLabels[(int)CaptionMode], Normal))
             {
                 int mode = (int)CaptionMode + 1;
-                if (mode > (int)ObjectCaptionMode.Value)
+                if (mode > (int)ObjectCaptionMode.NameRef)
                     mode = 0;
                 CaptionMode = (ObjectCaptionMode)mode;
                 MarkDirty();
@@ -240,29 +240,29 @@ namespace DaSerialization.Editor
         private GUIContent GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
         {
             string captionPrefix = "";
-            string captionPostfix = "";
+            string captionPostfix;
             switch (CaptionMode)
             {
                 case ObjectCaptionMode.Value:
-                    if (!e.IsSupported)
-                        captionPostfix = "[Error]";
-                    else if (e.IsSimpleType)
-                        captionPostfix = e.RefType.PrettyName(); // TODO
-                    else
-                        captionPostfix = e.TypeInfo.Type.PrettyName();
+                    captionPostfix = GetValue(e);
                     break;
                 case ObjectCaptionMode.RefValue:
-
-                    if (e.RefType != null)
-                        captionPrefix = e.RefType.PrettyName();
-                    if (!e.IsSupported)
-                        captionPostfix = "[Error]";
-                    else if (!e.IsSimpleType)
-                        captionPostfix = e.TypeInfo.Type.PrettyName();
+                    captionPrefix = GetRef(e);
+                    captionPostfix = GetValue(e);
+                    break;
+                case ObjectCaptionMode.NameRef:
+                    captionPrefix = GetName(e, false);
+                    captionPostfix = GetRef(e);
+                    break;
+                case ObjectCaptionMode.NameValue:
+                    captionPrefix = GetName(e, true);
+                    captionPostfix = GetValue(e);
                     break;
                 default: throw new NotImplementedException(CaptionMode.ToString());
             }
             string caption = captionPrefix;
+            if (string.CompareOrdinal(captionPostfix, captionPrefix) == 0)
+                captionPostfix = null;
             if (!string.IsNullOrEmpty(captionPrefix)
                 && !string.IsNullOrEmpty(captionPostfix))
                 caption += " : ";
@@ -281,7 +281,9 @@ namespace DaSerialization.Editor
                 if (!e.IsSimpleType) // TODO
                     tooltip += $"Value: {e.TypeInfo.Type.PrettyName()}\n";
                 if (!e.IsSimpleType & e.Version > 0)
-                    tooltip += $"Version: {e.Version}{(e.OldVersion ? " (Old)" : "")}";
+                    tooltip += $"Version: {e.Version}{(e.OldVersion ? $" (Old, latest {e.LatestVersion})" : "")}\n";
+                if (!e.OldVersion & e.HasOldVersions)
+                    tooltip += "Contains objects with old versions\n";
             }
             else
                 tooltip = "Unsupported (no deserializer)";
@@ -290,6 +292,49 @@ namespace DaSerialization.Editor
                 tooltip = tooltip.Substring(0, tooltip.Length - 1);
 
             return new GUIContent(caption, tooltip);
+        }
+        private static string GetName(ContainerEditorInfo.InnerObjectInfo e, bool typeIfNoName)
+        {
+            if (!string.IsNullOrEmpty(e.Name))
+                return e.Name;
+            if (!typeIfNoName)
+                return null;
+            var type = GetRef(e);
+            if (string.IsNullOrEmpty(type))
+                type = GetType(e);
+            return type;
+        }
+        private static string GetType(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            if (!e.IsSupported)
+                return "[Unsupported]";
+            if (e.IsSimpleType)
+                return e.RefType.PrettyName();
+            if (e.TypeInfo.IsValid)
+                return e.TypeInfo.Type.PrettyName();
+            return null;
+        }
+        private static string GetRef(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            if (e.RefType != null)
+                return e.RefType.PrettyName();
+            return null;
+        }
+        private static string GetValue(ContainerEditorInfo.InnerObjectInfo e)
+        {
+            if (!e.IsSupported)
+                return "[Unsupported]";
+            else if (e.IsSimpleType)
+                return e.RefType.PrettyName(); // TODO
+            else
+            {
+                var value = e.TypeInfo.Type.PrettyName();
+                if (e.TypeInfo.IsContainer)
+                {
+                    // TODO: add container size in the parenthesis
+                }
+                return value;
+            }
         }
 
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntries = new Stack<ContainerEditorInfo.InnerObjectInfo>();

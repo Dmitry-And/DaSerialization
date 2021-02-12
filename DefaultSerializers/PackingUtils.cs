@@ -20,20 +20,20 @@
 
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B1");
             b1 = (p & 1) > 0;
         }
 
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B2");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
         }
 
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B3");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -42,7 +42,7 @@
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B4");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -52,7 +52,7 @@
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B5");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -63,7 +63,7 @@
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B6");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -75,7 +75,7 @@
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6, out bool b7)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B7");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -88,7 +88,7 @@
         public static void ReadPacked(this BinaryStreamReader reader, out bool b1, out bool b2, out bool b3,
             out bool b4, out bool b5, out bool b6, out bool b7, out bool b8)
         {
-            int p = reader.ReadByte();
+            int p = reader.ReadByte("Packed B8");
             b1 = (p & 1) > 0;
             b2 = (p & 2) > 0;
             b3 = (p & 4) > 0;
@@ -170,14 +170,14 @@
         {
             switch (bytesCount)
             {
-                case 1: return reader.ReadByte();
-                case 2: return reader.ReadUInt16();
-                case 3: return reader.ReadUInt16() + ((ulong)reader.ReadByte() << 16);
-                case 4: return reader.ReadUInt32();
-                case 5: return reader.ReadUInt32() + ((ulong)reader.ReadByte() << 32);
-                case 6: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32);
-                case 7: return reader.ReadUInt32() + ((ulong)reader.ReadUInt16() << 32) + ((ulong)reader.ReadByte() << 48);
-                case 8: return reader.ReadUInt64();
+                case 1: return reader.ReadByte("Packed 0-7");
+                case 2: return reader.ReadUInt16("Packed 0-15");
+                case 3: return reader.ReadUInt16("Packed 0-15") + ((ulong)reader.ReadByte("Packed 16-23") << 16);
+                case 4: return reader.ReadUInt32("Packed 0-31");
+                case 5: return reader.ReadUInt32("Packed 0-31") + ((ulong)reader.ReadByte("Packed 32-39") << 32);
+                case 6: return reader.ReadUInt32("Packed 0-31") + ((ulong)reader.ReadUInt16("Packed 32-47") << 32);
+                case 7: return reader.ReadUInt32("Packed 0-31") + ((ulong)reader.ReadUInt16("Packed 32-47") << 32) + ((ulong)reader.ReadByte("Packed 48-55") << 48);
+                case 8: return reader.ReadUInt64("Packed 0-63");
                 default: throw new System.Exception($"Unsupported bytes count {bytesCount} in {nameof(ReadUIntPacked)}");
             }
         }
@@ -231,7 +231,7 @@
             => UIntToInt(ReadUIntPacked(reader));
         public static ulong ReadUIntPacked(this BinaryStreamReader reader)
         {
-            int formatAndHighBits = reader.ReadByte();
+            int formatAndHighBits = reader.ReadByte("Format And MSB");
             int format = formatAndHighBits >> 5;
             int bytes = format == 7 ? 8 : format;
             ulong value = 0;
