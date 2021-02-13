@@ -30,7 +30,7 @@ namespace DaSerialization.Editor
     }
     public class ContainerEditorView
     {
-        private const float SizeWidth = 48f;
+        private const float SizeWidth = 44f;
         private static GUIStyle Bold;
         private static GUIStyle Normal;
         private static GUIStyle BoldRight;
@@ -38,6 +38,7 @@ namespace DaSerialization.Editor
         private static GUIContent TotalSizeHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
         private static GUIContent DataSizeHeader = new GUIContent("Data", "Size of this object, excluding meta-information.\nIn bytes");
         private static GUIContent SelfSizeHeader = new GUIContent("Self", "Data size excluding inner deserializers data sizes.\nIn bytes");
+        private static GUIContent MetaDataButton = new GUIContent("Meta", "Show metadata entries");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
         private static GUIContent JsonLabel = new GUIContent("D ", "Show object data in JSON-like format...");
@@ -63,6 +64,7 @@ namespace DaSerialization.Editor
         public ContainerEditorInfo Info { get; private set; }
         public bool RenderSelfSize = true;
         public bool RenderTotalSize = true; // if not - effective size will be rendered
+        public bool RenderMetaData = false;
         public ObjectCaptionMode CaptionMode = ObjectCaptionMode.NameValue;
         public bool Editable { get; private set; }
 
@@ -177,9 +179,18 @@ namespace DaSerialization.Editor
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth),
                 RenderTotalSize ? TotalSizeHeader : DataSizeHeader, NormalRight))
                 RenderTotalSize = !RenderTotalSize;
+
             GUI.contentColor = RenderSelfSize ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfSizeHeader, NormalRight))
                 RenderSelfSize = !RenderSelfSize;
+
+            GUI.contentColor = RenderMetaData ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            if (GUI.Button(colHeaderRect.SliceRight(32f), MetaDataButton, NormalRight))
+            {
+                RenderMetaData = !RenderMetaData;
+                MarkDirty();
+            }
+
             colHeaderRect.SliceLeft(16f);
             GUI.contentColor = Color.gray;
             if (GUI.Button(colHeaderRect, CaptionLabels[(int)CaptionMode], Normal))
@@ -225,6 +236,9 @@ namespace DaSerialization.Editor
 
         private void PrepareLayoutCacheForEntry(ContainerEditorInfo.InnerObjectInfo e, ref float y, ref bool highlighted)
         {
+            if (!RenderMetaData & e.IsMetaData)
+                return;
+
             var yMin = y;
             y += _lineHeight;
             var expanded = e.IsExpandable && _expandedObjects.Contains(e);

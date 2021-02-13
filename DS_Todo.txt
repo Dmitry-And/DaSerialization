@@ -22,15 +22,14 @@
 +	Edtr 	make object info tooltip optional (global editor option)
 -	Core 	make packed read/write methods via partial class, not extension methods
 -				inspect packed types deserialization
++	Edtr 	add Begin/EndSection methods to the reader
++				display sections properly in the editor
++	Edtr 	show meta info entries as a part of an object
++				make it optional
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
 				check editor is rendered correctly if container has old serializers
-+	Edtr 	show meta info entries as a part of an object
-				make it optional (show only user types, show all types, show full info)
-+	Edtr 	add Begin/EndSection methods to the reader
-				validate correct Begin/End count
-+				display sections properly in the editor
 	Edtr 	display entries for ReadBytes/Chars/String methods
 	Edtr 	display collections size in array/list object captions/tooltips in object table
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
@@ -44,6 +43,7 @@
 				check editor is rendered correctly if container has old serializers
 	Edtr 	allow to remove objects from container in the inspector
 				support inner container object removal
+	Edtr 	validate custom deserializers call Begin/EndSections equal number of times
 	Core 	unify 'size to string' method and move to common tools
 	Edtr 	allow to see raw byte data of an object/value
 				hex format
