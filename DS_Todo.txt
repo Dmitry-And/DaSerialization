@@ -20,14 +20,17 @@
 +	Core 	add meta-info (field name) to deserialization methods as optional parameter
 +				display this meta-info in container inspector
 +	Edtr 	make object info tooltip optional (global editor option)
+-	Core 	make packed read/write methods via partial class, not extension methods
+-				inspect packed types deserialization
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
 				check editor is rendered correctly if container has old serializers
-	Edtr 	show meta info entries as a part of an object
++	Edtr 	show meta info entries as a part of an object
 				make it optional (show only user types, show all types, show full info)
-	Core 	make packed read/write methods via partial class, not extension methods
-				inspect packed types deserialization
++	Edtr 	add Begin/EndSection methods to the reader
+				validate correct Begin/End count
++				display sections properly in the editor
 	Edtr 	display entries for ReadBytes/Chars/String methods
 	Edtr 	display collections size in array/list object captions/tooltips in object table
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init

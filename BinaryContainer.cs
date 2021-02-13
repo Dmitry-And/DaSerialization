@@ -172,7 +172,7 @@ namespace DaSerialization
                 return false;
             }
             var reader = _stream.GetReader();
-            reader.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, _contentTable[entryIndex].Position);
+            reader.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, null, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
             reader.ReadObject(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
@@ -645,7 +645,7 @@ namespace DaSerialization.Serialization
 
         public override void ReadDataToObject(ref BinaryContainer c, BinaryStreamReader reader)
         {
-            int len = reader.ReadUIntPacked().ToInt32();
+            int len = reader.ReadUIntPacked("Length").ToInt32();
             bool writable = reader.ReadBool("Writable");
 
             var memStream = c?.GetUnderlyingStream();

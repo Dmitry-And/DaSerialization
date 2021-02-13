@@ -37,7 +37,7 @@ namespace DaSerialization.Editor
         private static GUIStyle NormalRight;
         private static GUIContent TotalSizeHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
         private static GUIContent DataSizeHeader = new GUIContent("Data", "Size of this object, excluding meta-information.\nIn bytes");
-        private static GUIContent SelfSizeHeader = new GUIContent("Self", "It's total size excluding inner objects and meta info.\nIn bytes");
+        private static GUIContent SelfSizeHeader = new GUIContent("Self", "Data size excluding inner deserializers data sizes.\nIn bytes");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
         private static GUIContent JsonLabel = new GUIContent("D ", "Show object data in JSON-like format...");
@@ -278,6 +278,8 @@ namespace DaSerialization.Editor
             string tooltip = "";
             if (_showTooltips)
             {
+                if (e.IsMetaData)
+                    tooltip += "Metadata\n";
                 if (!string.IsNullOrEmpty(e.Name))
                     tooltip += $"Name: {e.Name}\n";
 
@@ -323,9 +325,11 @@ namespace DaSerialization.Editor
         {
             if (!e.IsSupported)
                 return "[Unsupported]";
-            if (e.IsSimpleType)
+            else if (e.IsSimpleType)
                 return e.RefType.PrettyName();
-            if (e.TypeInfo.IsValid)
+            else if (e.IsSection)
+                return e.SectionType;
+            else if (e.TypeInfo.IsValid)
                 return e.TypeInfo.Type.PrettyName();
             return null;
         }
@@ -341,6 +345,8 @@ namespace DaSerialization.Editor
                 return "[Unsupported]";
             else if (e.IsSimpleType)
                 return e.RefType.PrettyName(); // TODO
+            else if (e.IsSection)
+                return e.SectionType;
             else
             {
                 var value = e.TypeInfo.Type.PrettyName();
@@ -452,7 +458,7 @@ namespace DaSerialization.Editor
                 EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
             }
             // size (optional)
-            if (RenderSelfSize & e.SelfSize > 0)
+            if (RenderSelfSize & !e.IsSimpleType & e.SelfSize > 0)
             {
                 _tempContent.text = Size(e.SelfSize);
                 var width = BoldRight.CalcSize(_tempContent).x;
@@ -463,7 +469,7 @@ namespace DaSerialization.Editor
 
             // name
             GUI.contentColor = e.IsSupported
-                ? e.IsNull ? Color.grey : Color.black
+                ? e.IsMetaData ? Color.grey : Color.black
                 : Color.red;
             if (GUI.Button(nameRect, cache.Caption, e.IsRealObject ? Bold : Normal)
                 & e.IsExpandable)

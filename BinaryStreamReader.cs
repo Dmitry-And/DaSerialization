@@ -44,12 +44,13 @@ namespace DaSerialization
             switch (meta)
             {
                 case Metadata.Version:
+                    return (int)((long)this.ReadUIntPacked("Version") - 1);
                 case Metadata.CollectionSize:
-                    return (int)((long)this.ReadUIntPacked() - 1);
+                    return (int)((long)this.ReadUIntPacked("Size") - 1);
                 case Metadata.TypeID:
-                    return _reader.ReadInt32();
+                    return ReadInt32("Type ID");
                 case Metadata.ObjectID:
-                    return (int)this.ReadUIntPacked();
+                    return (int)this.ReadUIntPacked("Object ID");
                 default: throw new Exception(meta.ToString());
             }
         }
@@ -174,14 +175,14 @@ namespace DaSerialization
         public char[] ReadChars(int count) => _reader.ReadChars(count);
         public void   ReadChars(char[] data, int start = 0, int length = -1)
         {
-            int end = length < 0 ? end = data.Length : start + length;
+            int end = length < 0 ? data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _reader.ReadChar();
         }
         public char[] ReadCharsASCII(int count) => _asciiReader.ReadChars(count);
         public void   ReadCharsASCII(char[] data, int start = 0, int length = -1)
         {
-            int end = length < 0 ? end = data.Length : start + length;
+            int end = length < 0 ? data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _asciiReader.ReadChar();
         }
@@ -206,12 +207,12 @@ namespace DaSerialization
         public void ReadObject<T>(ref T obj, string metaInfo = null)
         {
             CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T));
+            OnDeserializeMetaBegin(typeof(T), metaInfo);
             int readTypeId = ReadMetadata(Metadata.TypeID);
             if (readTypeId == -1)
                 obj = default;
             var readTypeInfo = SerializerStorage.GetTypeInfo(readTypeId);
-            ReadObjectExact(ref obj, readTypeInfo, metaInfo);
+            ReadObjectExact(ref obj, readTypeInfo);
         }
 
         /// <summary>
@@ -220,8 +221,8 @@ namespace DaSerialization
         public void ReadObjectExact<T>(ref T obj, string metaInfo = null)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeof(T));
-            OnDeserializeMetaBegin(typeof(T));
-            ReadObjectExact(ref obj, typeInfo, metaInfo);
+            OnDeserializeMetaBegin(typeof(T), metaInfo);
+            ReadObjectExact(ref obj, typeInfo);
         }
         /// <summary>
         /// Polymorphism was not allowed during serialization
@@ -229,25 +230,25 @@ namespace DaSerialization
         public void ReadObjectExact<T>(ref T obj, int typeId, string metaInfo = null)
         {
             var typeInfo = SerializerStorage.GetTypeInfo(typeId);
-            OnDeserializeMetaBegin(typeInfo.Type);
-            ReadObjectExact(ref obj, typeInfo, metaInfo);
+            OnDeserializeMetaBegin(typeInfo.Type, metaInfo);
+            ReadObjectExact(ref obj, typeInfo);
         }
         /// <summary>
         /// Polymorphism was not allowed during serialization
         /// </summary>
-        private void ReadObjectExact<T>(ref T obj, SerializationTypeInfo typeInfo, string metaInfo)
+        private void ReadObjectExact<T>(ref T obj, SerializationTypeInfo typeInfo)
         {
             CheckStreamReady();
             var deserializerTypeless = ReadDeserializer<T>(typeInfo, out bool deserializerIsOfDerivedType);
             if (deserializerTypeless == null)
             {
                 obj = default;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
             LockDeserialization();
-            OnDeserializeObjectBegin(typeInfo, deserializerTypeless, metaInfo);
+            OnDeserializeObjectBegin(typeInfo, deserializerTypeless);
             if (deserializerIsOfDerivedType)
             {
                 var objTypeless = obj as object;
@@ -266,7 +267,7 @@ namespace DaSerialization
         public void Deserialize(long streamPos, ref object obj, SerializationTypeInfo typeInfo, int deserializerVersion, string metaInfo = null)
         {
             _binaryStream.Seek(streamPos);
-            OnDeserializeMetaBegin(typeInfo.Type);
+            OnDeserializeMetaBegin(typeInfo.Type, metaInfo);
             CheckStreamReady();
             IDeserializer deserializerTypeless = null;
             if (typeInfo.Id != -1
@@ -279,12 +280,12 @@ namespace DaSerialization
             if (deserializerTypeless == null)
             {
                 obj = default;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
             LockDeserialization();
-            OnDeserializeObjectBegin(typeInfo, deserializerTypeless, metaInfo);
+            OnDeserializeObjectBegin(typeInfo, deserializerTypeless);
             deserializerTypeless.ReadDataToTypelessObject(ref obj, this);
             OnDeserializeObjectEnd();
             UnlockDeserialization();
@@ -339,18 +340,18 @@ namespace DaSerialization
             where T : class
         {
             CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T[]));
+            OnDeserializeMetaBegin(typeof(T[]), metaInfo);
             int len = ReadMetadata(Metadata.CollectionSize);
             if (len == -1)
             {
                 arr = null;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
             if (arr == null || arr.Length != len)
                 arr = new T[len];
-            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null, metaInfo);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null);
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
@@ -375,12 +376,12 @@ namespace DaSerialization
         public void ReadArrayExact<T>(ref T[] arr, string metaInfo = null)
         {
             CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(T[]));
+            OnDeserializeMetaBegin(typeof(T[]), metaInfo);
             int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 arr = null;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
@@ -393,12 +394,12 @@ namespace DaSerialization
             var deserializer = ReadDeserializer<T>(typeInfo);
 
             LockDeserialization();
-            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null, metaInfo);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(T[])), null);
             for (int i = 0; i < len; i++)
             {
                 var v = arr[i];
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeObjectBegin(typeInfo, deserializer, IndexMetaInfo(i));
+                OnDeserializeMetaBegin(typeof(T), IndexMetaInfo(i));
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeObjectEnd();
                 arr[i] = v;
@@ -428,12 +429,12 @@ namespace DaSerialization
             where T : class
         {
             CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(List<T>));
+            OnDeserializeMetaBegin(typeof(List<T>), metaInfo);
             int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
@@ -445,7 +446,7 @@ namespace DaSerialization
                 if (list.Capacity < len)
                     list.Capacity = len;
             }
-            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null, metaInfo);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null);
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
@@ -474,12 +475,12 @@ namespace DaSerialization
         public void ReadListExact<T>(ref List<T> list, string metaInfo = null)
         {
             CheckStreamReady();
-            OnDeserializeMetaBegin(typeof(List<T>));
+            OnDeserializeMetaBegin(typeof(List<T>), metaInfo);
             int len = ReadMetadata(Metadata.CollectionSize);
             if (len < 0)
             {
                 list = null;
-                OnDeserializeObjectBegin(metaInfo);
+                OnDeserializeObjectBegin();
                 OnDeserializeObjectEnd();
                 return;
             }
@@ -497,12 +498,12 @@ namespace DaSerialization
             var deserializer = ReadDeserializer<T>(typeInfo);
 
             LockDeserialization();
-            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null, metaInfo);
+            OnDeserializeObjectBegin(new SerializationTypeInfo(typeof(List<T>)), null);
             for (int i = 0, count = list.Count; i < len & i < count; i++)
             {
                 var v = list[i];
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeObjectBegin(typeInfo, deserializer, IndexMetaInfo(i));
+                OnDeserializeMetaBegin(typeof(T), IndexMetaInfo(i));
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeObjectEnd();
                 list[i] = v;
@@ -510,8 +511,8 @@ namespace DaSerialization
             for (int i = list.Count; i < len; i++)
             {
                 T v = default;
-                OnDeserializeMetaBegin(typeof(T));
-                OnDeserializeObjectBegin(typeInfo, deserializer, IndexMetaInfo(i));
+                OnDeserializeMetaBegin(typeof(T), IndexMetaInfo(i));
+                OnDeserializeObjectBegin(typeInfo, deserializer);
                 deserializer.ReadDataToObject(ref v, this);
                 OnDeserializeObjectEnd();
                 list.Add(v);
@@ -550,71 +551,111 @@ namespace DaSerialization
         #region deserialization inspection
 
         public bool EnableDeserializationInspection;
-        public delegate void ObjectDeserializationStart(Type refType, SerializationTypeInfo typeInfo, long streamPos, uint metaInfoLen, int version, string name);
-        public event ObjectDeserializationStart ObjectDeserializationStarted;
+        //  scenarios:
+        //      root object deserialization
+        //          DeserializationStarted
+        //          DataDeserializationStarted
+        //          DeserializationEnded
+        //      inner object deserialization
+        //          DeserializationStarted
+        //          DataDeserializationStarted
+        //          DeserializationEnded
+        //      inner fake type (collection of objects for example)
+        //          DeserializationStarted
+        //          DataDeserializationStarted (invalid TypeInfo)
+        //          DeserializationEnded
+        //      inner primitive
+        //          PrimitiveDeserializationStarted
+        //          PrimitiveDeserializationEnded
+        //      inner section
+        //          SectionDeserializationStarted
+        //          SectionDeserializationEnded
+        public delegate void DeserializationStart(Type refType, long streamPos, string name);
+        public event DeserializationStart DeserializationStarted;
+        public delegate void DataDeserializationStart(SerializationTypeInfo typeInfo, long streamPos, int version);
+        public event DataDeserializationStart DataDeserializationStarted;
         public delegate void PrimitiveDeserializationStart(Type refType, long streamPos, string name);
         public event PrimitiveDeserializationStart PrimitiveDeserializationStarted;
+        public delegate void SectionDeserializationStart(string type, long streamPos, string name);
+        public event SectionDeserializationStart SectionDeserializationStarted;
         public delegate void DeserializationEnd(long streamPos);
         public event DeserializationEnd DeserializationEnded;
         public event DeserializationEnd PrimitiveDeserializationEnded;
-        private long _lastMetaInfoStreamPosition = -1;
-        private Type _lastRefType;
+        public event DeserializationEnd SectionDeserializationEnded;
+        private bool _isDeserializingMeta;
 
-        public void OnDeserializeMetaBegin(Type refType, long startPosition = long.MaxValue)
+        public void OnDeserializeMetaBegin(Type refType, string name, long startPosition = long.MaxValue)
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
-            if (_lastMetaInfoStreamPosition != -1)
+            if (_isDeserializingMeta)
                 return;
             if (startPosition == long.MaxValue)
                 startPosition = _stream.Position;
-            _lastRefType = refType;
-            _lastMetaInfoStreamPosition = startPosition;
+            DeserializationStarted?.Invoke(refType, startPosition, name);
+            _isDeserializingMeta = true;
 #endif
         }
-        [Conditional("INSPECT_DESERIALIZATION")]
-        private void OnDeserializeObjectBegin(string name)
-            => OnDeserializeObjectBegin(SerializationTypeInfo.Invalid, null, name);
-        [Conditional("INSPECT_DESERIALIZATION")]
-        private void OnDeserializeObjectBegin(SerializationTypeInfo typeInfo, IDeserializer deserializer, string name)
+        private void OnDeserializeObjectBegin()
+            => OnDeserializeObjectBegin(SerializationTypeInfo.Invalid, null);
+        private void OnDeserializeObjectBegin(SerializationTypeInfo typeInfo, IDeserializer deserializer)
         {
+#if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
             var pos = _stream.Position;
-            uint metaLen = _lastMetaInfoStreamPosition < 0 ? 0 : (pos - _lastMetaInfoStreamPosition).ToUInt32();
-            ObjectDeserializationStarted?.Invoke(_lastRefType, typeInfo, pos, metaLen, deserializer == null ? -1 : deserializer.Version, name);
-            _lastMetaInfoStreamPosition = -1;
+            DataDeserializationStarted?.Invoke(typeInfo, pos, deserializer == null ? -1 : deserializer.Version);
+            _isDeserializingMeta = false;
+#endif
         }
-        [Conditional("INSPECT_DESERIALIZATION")]
         private void OnDeserializeObjectEnd()
         {
+#if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
             var pos = _stream.Position;
             DeserializationEnded?.Invoke(pos);
-            _lastMetaInfoStreamPosition = -1;
+            _isDeserializingMeta = false;
+#endif
         }
 
-        [Conditional("INSPECT_DESERIALIZATION")]
         private void OnDeserializePrimitiveBegin(Type type, string name)
         {
+#if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
-            if (_lastMetaInfoStreamPosition != -1)
-                return; // when we deserialize primitives during meta deserialization
             var pos = _stream.Position;
             PrimitiveDeserializationStarted?.Invoke(type, pos, name);
+#endif
         }
-        [Conditional("INSPECT_DESERIALIZATION")]
         private void OnDeserializePrimitiveEnd()
         {
+#if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
-            if (_lastMetaInfoStreamPosition != -1)
-                return; // when we deserialize primitives during meta deserialization
             var pos = _stream.Position;
             PrimitiveDeserializationEnded?.Invoke(pos);
+#endif
+        }
+
+        public void BeginSection(string type, string name = null)
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            var pos = _stream.Position;
+            SectionDeserializationStarted?.Invoke(type, pos, name);
+#endif
+        }
+        public void EndSection()
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            var pos = _stream.Position;
+            SectionDeserializationEnded?.Invoke(pos);
+#endif
         }
 
         private string IndexMetaInfo(int index)
