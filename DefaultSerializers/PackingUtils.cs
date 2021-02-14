@@ -1,4 +1,6 @@
-﻿namespace DaSerialization
+﻿using System.Runtime.CompilerServices;
+
+namespace DaSerialization
 {
     public static class PackingUtils
     {
@@ -104,11 +106,24 @@
         #region 3-byte
 
         public static int Read3ByteInt32(this BinaryStreamReader reader)
-            => UIntToInt(Read3ByteUInt32(reader)).ToInt32();
+        {
+            reader.BeginSection("3ByteInt32");
+            var result = UIntToInt(Read3ByteUInt32(reader)).ToInt32();
+            reader.EndSection();
+            return result;
+        }
         public static uint Read3ByteUInt32(this BinaryStreamReader reader)
         {
-            uint head = reader.ReadByte();
-            uint tail = reader.ReadUInt16();
+            reader.BeginSection("3ByteUInt32");
+            var result = Read3ByteUInt32Inner(reader);
+            reader.EndSection();
+            return result;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static uint Read3ByteUInt32Inner(BinaryStreamReader reader)
+        {
+            uint head = reader.ReadByte("Bytes 16-23");
+            uint tail = reader.ReadUInt16("Bytes 0-15");
             return (head << 16) + tail;
         }
 
@@ -165,8 +180,21 @@
         }
 
         public static long ReadIntPacked(this BinaryStreamReader reader, int bytesCount)
-            => UIntToInt(ReadUIntPacked(reader, bytesCount));
+        {
+            reader.BeginSection("IntPacked");
+            var result = UIntToInt(ReadUIntPacked(reader, bytesCount));
+            reader.EndSection();
+            return result;
+        }
         public static ulong ReadUIntPacked(this BinaryStreamReader reader, int bytesCount)
+        {
+            reader.BeginSection("UIntPacked");
+            var result = ReadUIntPackedInner(reader, bytesCount);
+            reader.EndSection();
+            return result;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ReadUIntPackedInner(BinaryStreamReader reader, int bytesCount)
         {
             switch (bytesCount)
             {
@@ -227,9 +255,22 @@
             return format == 7 ? 9 : format + 1;
         }
 
-        public static long ReadIntPacked(this BinaryStreamReader reader)
-            => UIntToInt(ReadUIntPacked(reader));
-        public static ulong ReadUIntPacked(this BinaryStreamReader reader)
+        public static long ReadIntPacked(this BinaryStreamReader reader, string metaInfo = null)
+        {
+            reader.BeginSection("Int Packed", metaInfo);
+            var result = UIntToInt(ReadUIntPackedInternal(reader));
+            reader.EndSection();
+            return result;
+        }
+        public static ulong ReadUIntPacked(this BinaryStreamReader reader, string metaInfo = null)
+        {
+            reader.BeginSection("UInt Packed", metaInfo);
+            var result = ReadUIntPackedInternal(reader);
+            reader.EndSection();
+            return result;
+        }
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static ulong ReadUIntPackedInternal(BinaryStreamReader reader)
         {
             int formatAndHighBits = reader.ReadByte("Format And MSB");
             int format = formatAndHighBits >> 5;
