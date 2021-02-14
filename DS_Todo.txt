@@ -26,10 +26,11 @@
 +				display sections properly in the editor
 +	Edtr 	show meta info entries as a part of an object
 +				make it optional
++	Edtr 	fix: null lists are expandable if meta info rendering is disabled
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
-				check editor is rendered correctly if container has old serializers
++				check editor is rendered correctly if container has old serializers
 	Edtr 	display entries for ReadBytes/Chars/String methods
 	Edtr 	display collections size in array/list object captions/tooltips in object table
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init

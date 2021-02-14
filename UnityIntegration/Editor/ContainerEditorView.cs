@@ -83,8 +83,9 @@ namespace DaSerialization.Editor
             public float BottomPos;
             public short DepthChange; // +1 - has expanded children, -1 - last in children list
             public bool Highlighted;
+            public bool IsExpandable; // may differ from Info.IsExpandable if some filtering is applied to the rendered list of Infos
 
-            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, GUIContent caption, float yMin, float yMax, bool expanded, bool highlighted)
+            public InfoLayoutCache(ContainerEditorInfo.InnerObjectInfo info, GUIContent caption, float yMin, float yMax, bool expandable, bool expanded, bool highlighted)
             {
                 Caption = caption;
                 Info = info;
@@ -92,6 +93,7 @@ namespace DaSerialization.Editor
                 BottomPos = yMax;
                 DepthChange = expanded ? (short)1 : (short)0;
                 Highlighted = highlighted;
+                IsExpandable = expandable;
             }
 
             public Rect GetRect(float width) => new Rect(0f, TopPos, width, BottomPos - TopPos);
@@ -236,14 +238,22 @@ namespace DaSerialization.Editor
 
         private void PrepareLayoutCacheForEntry(ContainerEditorInfo.InnerObjectInfo e, ref float y, ref bool highlighted)
         {
-            if (!RenderMetaData & e.IsMetaData)
+            if (!ShouldDisplayEntry(e))
                 return;
 
             var yMin = y;
             y += _lineHeight;
-            var expanded = e.IsExpandable && _expandedObjects.Contains(e);
+            var expandable = e.IsExpandable;
+            if (expandable)
+            {
+                bool anyChildIsDisplayable = false;
+                foreach (var inner in e.InnerObjects)
+                    anyChildIsDisplayable |= ShouldDisplayEntry(inner);
+                expandable = anyChildIsDisplayable;
+            }
+            var expanded = expandable && _expandedObjects.Contains(e);
             var caption = GetObjectCaption(e);
-            var cache = new InfoLayoutCache(e, caption, yMin, y, expanded, highlighted);
+            var cache = new InfoLayoutCache(e, caption, yMin, y, expandable, expanded, highlighted);
             _layoutCache.Add(cache);
             highlighted = !highlighted;
 
@@ -257,6 +267,8 @@ namespace DaSerialization.Editor
                 _layoutCache[_layoutCache.Count - 1] = lastCache;
             }
         }
+        private bool ShouldDisplayEntry(ContainerEditorInfo.InnerObjectInfo e)
+            => RenderMetaData | !e.IsMetaData;
 
         private GUIContent GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
         {
@@ -440,8 +452,8 @@ namespace DaSerialization.Editor
 
             // expanded
             var expandRect = pos.SliceLeft(16f);
-            bool expanded = e.IsExpandable && _expandedObjects.Contains(e);
-            if (e.IsExpandable)
+            bool expanded = cache.IsExpandable && _expandedObjects.Contains(e);
+            if (cache.IsExpandable)
             {
                 GUI.contentColor = Color.gray;
                 if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
@@ -486,7 +498,7 @@ namespace DaSerialization.Editor
                 ? e.IsMetaData ? Color.grey : Color.black
                 : Color.red;
             if (GUI.Button(nameRect, cache.Caption, e.IsRealObject ? Bold : Normal)
-                & e.IsExpandable)
+                & cache.IsExpandable)
                 SetExpanded(e, !expanded, Event.current.alt);
 
             return lineRect;
