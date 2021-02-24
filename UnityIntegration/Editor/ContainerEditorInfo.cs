@@ -68,7 +68,7 @@ namespace DaSerialization.Editor
             public bool IsNull => HasDeserializer & TypeInfo.Type == null;
             public bool IsSimpleType => IsSupported & Version == 0 & RefType != null;
             public bool IsRealObject => TypeInfo.IsValid;
-            public bool IsSection => IsSupported & Version == 0 & RefType == null & SectionType != null;
+            public bool IsSection => IsSupported & Version == 0 & RefType == null & RefTypeName != null;
             public bool HasDeserializer => Version > 0;
 
             public int Id; // for inner object it's an index inside the parent one
@@ -79,7 +79,7 @@ namespace DaSerialization.Editor
             public bool IsMetaData;
 
             public Type RefType; // represent type the serialized object is referenced by, not neccesseraly serializable type
-            public string SectionType; // valid for sections only, non-existent type
+            public string RefTypeName; // valid for sections only, non-existent type
             public SerializationTypeInfo TypeInfo = SerializationTypeInfo.Invalid;
 
             public int Version = 0; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>() method
@@ -94,11 +94,12 @@ namespace DaSerialization.Editor
             public List<InnerObjectInfo> InnerObjects;
 
             // when we begin to initialize
-            public InnerObjectInfo(Type refType, long streamPos, string name)
+            public InnerObjectInfo(Type refType, long streamPos, string name, string typeSuffix = null)
             {
                 RefType = refType;
                 StreamPosition = streamPos;
                 Name = name;
+                RefTypeName = typeSuffix;
             }
             public void ValidDataFound(SerializationTypeInfo typeInfo, long streamPos, int version, int latestVersion)
             {
@@ -130,7 +131,7 @@ namespace DaSerialization.Editor
 
             public InnerObjectInfo(string type, long streamPos, string name)
             {
-                SectionType = type;
+                RefTypeName = type;
                 StreamPosition = streamPos;
                 Name = name;
                 IsSupported = true;
@@ -318,9 +319,9 @@ namespace DaSerialization.Editor
             var info = _activeEntries.Peek();
             info.ValidDataFound(typeInfo, streamPos, version, lastVersion);
         }
-        private void OnPrimitiveDeserializationStarted(Type type, long streamPos, string name)
+        private void OnPrimitiveDeserializationStarted(Type type, long streamPos, string name, string typeSuffix)
         {
-            var info = new InnerObjectInfo(type, streamPos, name);
+            var info = new InnerObjectInfo(type, streamPos, name, typeSuffix);
             info.PrimitiveDataFound();
             _activeEntries.Push(info);
         }

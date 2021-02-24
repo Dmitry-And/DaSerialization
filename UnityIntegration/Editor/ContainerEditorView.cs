@@ -352,9 +352,14 @@ namespace DaSerialization.Editor
             if (!e.IsSupported)
                 return "[Unsupported]";
             else if (e.IsSimpleType)
-                return e.RefType.PrettyName();
+            {
+                string type = e.RefType.PrettyName();
+                if (e.RefTypeName != null)
+                    type += " " + e.RefTypeName;
+                return type;
+            }
             else if (e.IsSection)
-                return e.SectionType;
+                return e.RefTypeName;
             else if (e.TypeInfo.IsValid)
                 return e.TypeInfo.Type.PrettyName();
             return null;
@@ -372,7 +377,7 @@ namespace DaSerialization.Editor
             else if (e.IsSimpleType)
                 return e.RefType.PrettyName(); // TODO
             else if (e.IsSection)
-                return e.SectionType;
+                return e.RefTypeName;
             else
             {
                 var value = e.TypeInfo.Type.PrettyName();

@@ -146,52 +146,95 @@ namespace DaSerialization
 
         public char   ReadChar(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(Char), metaInfo);
+            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, "Unicode");
             var result = _reader.ReadChar();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public char   ReadCharASCII(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(Char), metaInfo);
+            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, "ASCII");
             var result = _asciiReader.ReadChar();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public string ReadString(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(String), metaInfo);
+            OnDeserializePrimitiveBegin(typeof(String), metaInfo, "Unicode");
             var result = _reader.ReadString();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public string ReadStringASCII(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(String), metaInfo);
+            OnDeserializePrimitiveBegin(typeof(String), metaInfo, "ASCII");
             var result = _asciiReader.ReadString();
             OnDeserializePrimitiveEnd();
             return result;
         }
-        public char[] ReadChars(int count) => _reader.ReadChars(count);
-        public void   ReadChars(char[] data, int start = 0, int length = -1)
+        public char[] ReadChars(int count, string metaInfo = null)
         {
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "Unicode");
+            var result = _reader.ReadChars(count);
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public void   ReadChars(ref char[] data, int start, string metaInfo)
+            => ReadChars(ref data, start, -1, metaInfo);
+        public void   ReadChars(ref char[] data, string metaInfo)
+            => ReadChars(ref data, 0, -1, metaInfo);
+        public void   ReadChars(ref char[] data, int start = 0, int length = -1, string metaInfo = null)
+        {
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "Unicode");
+            if (data == null)
+                data = new char[start + length];
             int end = length < 0 ? data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _reader.ReadChar();
+            OnDeserializePrimitiveEnd();
         }
-        public char[] ReadCharsASCII(int count) => _asciiReader.ReadChars(count);
-        public void   ReadCharsASCII(char[] data, int start = 0, int length = -1)
+        public char[] ReadCharsASCII(int count, string metaInfo = null)
         {
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "ASCII");
+            var result = _asciiReader.ReadChars(count);
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public void ReadCharsASCII(ref char[] data, int start, string metaInfo)
+            => ReadCharsASCII(ref data, start, -1, metaInfo);
+        public void   ReadCharsASCII(ref char[] data, string metaInfo)
+            => ReadCharsASCII(ref data, 0, -1, metaInfo);
+        public void   ReadCharsASCII(ref char[] data, int start = 0, int length = -1, string metaInfo = null)
+        {
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "ASCII");
+            if (data == null)
+                data = new char[start + length];
             int end = length < 0 ? data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _asciiReader.ReadChar();
+            OnDeserializePrimitiveEnd();
         }
-        public byte[] ReadBytes(int count) => _reader.ReadBytes(count);
-        public void   ReadBytes(byte[] data, int start = 0, int length = -1)
+
+        public byte[] ReadBytes(int count, string metaInfo = null)
         {
-            int end = length < 0 ? end = data.Length : start + length;
+            OnDeserializePrimitiveBegin(typeof(byte[]), metaInfo);
+            var result = _reader.ReadBytes(count);
+            OnDeserializePrimitiveEnd();
+            return result;
+        }
+        public void   ReadBytes(ref byte[] data, int start, string metaInfo)
+            => ReadBytes(ref data, start, -1, metaInfo);
+        public void   ReadBytes(ref byte[] data, string metaInfo)
+            => ReadBytes(ref data, 0, -1, metaInfo);
+        public void   ReadBytes(ref byte[] data, int start = 0, int length = -1, string metaInfo = null)
+        {
+            OnDeserializePrimitiveBegin(typeof(byte[]), metaInfo);
+            if (data == null)
+                data = new byte[start + length];
+            int end = length < 0 ? data.Length : start + length;
             for (int i = start; i < end; i++)
                 data[i] = _reader.ReadByte();
+            OnDeserializePrimitiveEnd();
         }
 
         #endregion
@@ -574,7 +617,7 @@ namespace DaSerialization
         public event DeserializationStart DeserializationStarted;
         public delegate void DataDeserializationStart(SerializationTypeInfo typeInfo, long streamPos, int version);
         public event DataDeserializationStart DataDeserializationStarted;
-        public delegate void PrimitiveDeserializationStart(Type refType, long streamPos, string name);
+        public delegate void PrimitiveDeserializationStart(Type refType, long streamPos, string name, string typeSuffix);
         public event PrimitiveDeserializationStart PrimitiveDeserializationStarted;
         public delegate void SectionDeserializationStart(string type, long streamPos, string name);
         public event SectionDeserializationStart SectionDeserializationStarted;
@@ -620,13 +663,13 @@ namespace DaSerialization
 #endif
         }
 
-        private void OnDeserializePrimitiveBegin(Type type, string name)
+        private void OnDeserializePrimitiveBegin(Type type, string name, string typeSuffix = null)
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
                 return;
             var pos = _stream.Position;
-            PrimitiveDeserializationStarted?.Invoke(type, pos, name);
+            PrimitiveDeserializationStarted?.Invoke(type, pos, name, typeSuffix);
 #endif
         }
         private void OnDeserializePrimitiveEnd()
