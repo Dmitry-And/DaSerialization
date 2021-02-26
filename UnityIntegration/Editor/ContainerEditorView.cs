@@ -352,12 +352,7 @@ namespace DaSerialization.Editor
             if (!e.IsSupported)
                 return "[Unsupported]";
             else if (e.IsSimpleType)
-            {
-                string type = e.RefType.PrettyName();
-                if (e.RefTypeName != null)
-                    type += " " + e.RefTypeName;
-                return type;
-            }
+                return GetRef(e);
             else if (e.IsSection)
                 return e.RefTypeName;
             else if (e.TypeInfo.IsValid)
@@ -367,7 +362,12 @@ namespace DaSerialization.Editor
         private static string GetRef(ContainerEditorInfo.InnerObjectInfo e)
         {
             if (e.RefType != null)
-                return e.RefType.PrettyName();
+            {
+                string type = e.RefType.PrettyName();
+                if (!string.IsNullOrEmpty(e.RefTypeName))
+                    type += " " + e.RefTypeName;
+                return type;
+            }
             return null;
         }
         private static string GetValue(ContainerEditorInfo.InnerObjectInfo e)
@@ -375,7 +375,7 @@ namespace DaSerialization.Editor
             if (!e.IsSupported)
                 return "[Unsupported]";
             else if (e.IsSimpleType)
-                return e.RefType.PrettyName(); // TODO
+                return GetRef(e); // TODO
             else if (e.IsSection)
                 return e.RefTypeName;
             else
