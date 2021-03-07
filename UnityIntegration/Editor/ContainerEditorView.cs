@@ -351,7 +351,7 @@ namespace DaSerialization.Editor
         {
             if (!e.IsSupported)
                 return "[Unsupported]";
-            else if (e.IsSimpleType)
+            else if (e.IsSimpleType | e.IsMetaData)
                 return GetRef(e);
             else if (e.IsSection)
                 return e.RefTypeName;
@@ -368,13 +368,15 @@ namespace DaSerialization.Editor
                     type += " " + e.RefTypeName;
                 return type;
             }
+            if (e.IsMetaData)
+                return e.MetadataType.ToString();
             return null;
         }
         private static string GetValue(ContainerEditorInfo.InnerObjectInfo e)
         {
             if (!e.IsSupported)
                 return "[Unsupported]";
-            else if (e.IsSimpleType)
+            else if (e.IsSimpleType | e.IsMetaData)
                 return GetRef(e); // TODO
             else if (e.IsSection)
                 return e.RefTypeName;

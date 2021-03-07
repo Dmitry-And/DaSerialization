@@ -15,6 +15,8 @@ namespace DaSerialization
         TypeID, // 0 if object is null
         Version, // 0 if object is null
         CollectionSize,
+
+        None = -1,
     }
 
     public class BinaryStream

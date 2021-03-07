@@ -40,24 +40,32 @@ namespace DaSerialization
             _asciiReader = new BinaryReader(_stream, Encoding.ASCII, true);
         }
 
-        public int ReadMetadata(Metadata meta)
+        public int ReadMetadata(Metadata meta, string metaInfo = null)
         {
             if (_stream == null)
                 throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from empty {this.PrettyTypeName()}");
             if (_binaryStream.IsLocked)
                 throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from {this.PrettyTypeName()} w/o setting position");
+            OnDeserializeMetaBegin(meta, metaInfo);
+            int result;
             switch (meta)
             {
                 case Metadata.Version:
-                    return (int)((long)this.ReadUIntPacked(VERSION_TAG) - 1);
+                    result = (int)((long)this.ReadUIntPacked(VERSION_TAG) - 1);
+                    break;
                 case Metadata.CollectionSize:
-                    return (int)((long)this.ReadUIntPacked(SIZE_TAG) - 1);
+                    result = (int)((long)this.ReadUIntPacked(SIZE_TAG) - 1);
+                    break;
                 case Metadata.TypeID:
-                    return ReadInt32(TYPE_ID_TAG);
+                    result = ReadInt32(TYPE_ID_TAG);
+                    break;
                 case Metadata.ObjectID:
-                    return (int)this.ReadUIntPacked(OBJECT_ID_TAG);
+                    result = (int)this.ReadUIntPacked(OBJECT_ID_TAG);
+                    break;
                 default: throw new Exception(meta.ToString());
             }
+            OnDeserializeMetaEnd();
+            return result;
         }
 
         #region stream read methods
@@ -620,6 +628,9 @@ namespace DaSerialization
         //          SectionDeserializationEnded
         public delegate void DeserializationStart(Type refType, long streamPos, string name);
         public event DeserializationStart DeserializationStarted;
+        public delegate void MetaDeserializationStart(Metadata type, long streamPos, string name);
+        public event MetaDeserializationStart MetaDeserializationStarted;
+        public event DeserializationEnd MetaDeserializationEnded;
         public delegate void DataDeserializationStart(SerializationTypeInfo typeInfo, long streamPos, int version);
         public event DataDeserializationStart DataDeserializationStarted;
         public delegate void PrimitiveDeserializationStart(Type refType, long streamPos, string name, string typeSuffix);
@@ -665,6 +676,25 @@ namespace DaSerialization
             var pos = _stream.Position;
             DeserializationEnded?.Invoke(pos);
             _isDeserializingInternal = false;
+#endif
+        }
+
+        private void OnDeserializeMetaBegin(Metadata type, string name)
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            var pos = _stream.Position;
+            MetaDeserializationStarted?.Invoke(type, pos, name);
+#endif
+        }
+        private void OnDeserializeMetaEnd()
+        {
+#if INSPECT_DESERIALIZATION
+            if (!EnableDeserializationInspection)
+                return;
+            var pos = _stream.Position;
+            MetaDeserializationEnded?.Invoke(pos);
 #endif
         }
 

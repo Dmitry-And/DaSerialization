@@ -77,10 +77,12 @@ namespace DaSerialization.Editor
             public bool JsonHasErrors;
             public bool JsonCreated;
             public bool IsInternalData { get; private set; }
+            public bool IsMetaData => MetadataType != Metadata.None;
 
             public Type RefType; // represent type the serialized object is referenced by, not neccesseraly serializable type
             public string RefTypeName; // valid for sections only, non-existent type
             public SerializationTypeInfo TypeInfo = SerializationTypeInfo.Invalid;
+            public Metadata MetadataType = Metadata.None;
 
             public int Version = 0; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>() method
             public int LatestVersion = 0;
@@ -129,6 +131,14 @@ namespace DaSerialization.Editor
                     }
             }
 
+            public InnerObjectInfo(Metadata type, long streamPos, string name)
+            {
+                MetadataType = type;
+                StreamPosition = streamPos;
+                Name = name;
+                IsSupported = true;
+            }
+
             public InnerObjectInfo(string type, long streamPos, string name)
             {
                 RefTypeName = type;
@@ -162,8 +172,10 @@ namespace DaSerialization.Editor
             var reader = stream.GetReader();
             reader.EnableDeserializationInspection = true;
             reader.DeserializationStarted += OnDeserializationStarted;
+            reader.MetaDeserializationStarted += OnMetaDeserializationStarted;
             reader.DataDeserializationStarted += OnDataDeserializationStarted;
             reader.DeserializationEnded += OnDeserializationEnded;
+            reader.MetaDeserializationEnded += OnDeserializationEnded;
             reader.PrimitiveDeserializationStarted += OnPrimitiveDeserializationStarted;
             reader.PrimitiveDeserializationEnded += OnDeserializationEnded;
             reader.SectionDeserializationStarted += OnSectionDeserializationStarted;
@@ -190,10 +202,12 @@ namespace DaSerialization.Editor
                 RootObjects.Add(root);
             }
             reader.DeserializationStarted -= OnDeserializationStarted;
+            reader.MetaDeserializationStarted -= OnMetaDeserializationStarted;
             reader.DataDeserializationStarted -= OnDataDeserializationStarted;
             reader.PrimitiveDeserializationStarted -= OnPrimitiveDeserializationStarted;
             reader.SectionDeserializationStarted -= OnSectionDeserializationStarted;
             reader.DeserializationEnded -= OnDeserializationEnded;
+            reader.MetaDeserializationEnded -= OnDeserializationEnded;
             reader.PrimitiveDeserializationEnded -= OnDeserializationEnded;
             reader.SectionDeserializationEnded -= OnDeserializationEnded;
             reader.EnableDeserializationInspection = false;
@@ -308,29 +322,40 @@ namespace DaSerialization.Editor
 
         private InnerObjectInfo _rootInfo;
         private Stack<InnerObjectInfo> _activeEntries = new Stack<InnerObjectInfo>();
+
         private void OnDeserializationStarted(Type refType, long streamPos, string name)
         {
             var info = new InnerObjectInfo(refType, streamPos, name);
             _activeEntries.Push(info);
         }
+
+        private void OnMetaDeserializationStarted(Metadata type, long streamPos, string name)
+        {
+            var info = new InnerObjectInfo(type, streamPos, name);
+            _activeEntries.Push(info);
+        }
+
         private void OnDataDeserializationStarted(SerializationTypeInfo typeInfo, long streamPos, int version)
         {
             var lastVersion = typeInfo.IsValid ? _container.SerializerStorage.GetSerializer(typeInfo).Version : -1;
             var info = _activeEntries.Peek();
             info.ValidDataFound(typeInfo, streamPos, version, lastVersion);
         }
+
         private void OnPrimitiveDeserializationStarted(Type type, long streamPos, string name, string typeSuffix)
         {
             var info = new InnerObjectInfo(type, streamPos, name, typeSuffix);
             info.PrimitiveDataFound();
             _activeEntries.Push(info);
         }
+
         private void OnSectionDeserializationStarted(string type, long streamPos, string name)
         {
             name = name ?? type;
             var info = new InnerObjectInfo(type, streamPos, name);
             _activeEntries.Push(info);
         }
+
         private void OnDeserializationEnded(long streamPos)
         {
             var info = _activeEntries.Pop();
