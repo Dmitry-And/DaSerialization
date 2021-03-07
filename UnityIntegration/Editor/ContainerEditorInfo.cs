@@ -76,7 +76,7 @@ namespace DaSerialization.Editor
             public bool HasOldVersions { get; private set; }
             public bool JsonHasErrors;
             public bool JsonCreated;
-            public bool IsMetaData;
+            public bool IsInternalData { get; private set; }
 
             public Type RefType; // represent type the serialized object is referenced by, not neccesseraly serializable type
             public string RefTypeName; // valid for sections only, non-existent type
@@ -85,9 +85,9 @@ namespace DaSerialization.Editor
             public int Version = 0; // version may be -1 if it's non-serializable type, for example List<T> in SerializeList<T>() method
             public int LatestVersion = 0;
             public long StreamPosition;
-            public uint MetaSize = 0;
+            public uint InternalSize = 0;
             public uint DataSize;
-            public uint TotalSize => MetaSize + DataSize;
+            public uint TotalSize => InternalSize + DataSize;
             public uint SelfSize; // DataSize excluding inner deserializers data
             public string Name;
             public string JsonData;
@@ -106,7 +106,7 @@ namespace DaSerialization.Editor
                 TypeInfo = typeInfo;
                 Version = version;
                 LatestVersion = latestVersion;
-                MetaSize = (streamPos - StreamPosition).ToUInt32();
+                InternalSize = (streamPos - StreamPosition).ToUInt32();
                 StreamPosition = streamPos; // we should point to first non-meta bit for correct deserialization for JSON preview
                 IsSupported = true;
             }
@@ -114,16 +114,16 @@ namespace DaSerialization.Editor
             {
                 IsSupported = true;
             }
-            public void EndInit(long endStreamPos, bool isMetaData)
+            public void EndInit(long endStreamPos, bool isInternalData)
             {
                 DataSize = (endStreamPos - StreamPosition).ToUInt32();
                 SelfSize = IsSupported ? DataSize : 0;
-                IsMetaData = isMetaData;
+                IsInternalData = isInternalData;
                 HasOldVersions = false;
                 if (InnerObjects != null)
                     foreach (var io in InnerObjects)
                     {
-                        if (!io.IsSimpleType & !io.IsMetaData)
+                        if (!io.IsSimpleType & !io.IsInternalData)
                             SelfSize -= io.DataSize;
                         HasOldVersions |= io.OldVersion | io.HasOldVersions;
                     }
@@ -146,7 +146,7 @@ namespace DaSerialization.Editor
             }
         }
 
-        public int MetaInfoSize { get; private set; } = -1;
+        public int InternalDataSize { get; private set; } = -1;
         public bool HasOldVersions { get; private set; }
         public List<RootObjectInfo> RootObjects { get; private set; }
 
@@ -198,7 +198,7 @@ namespace DaSerialization.Editor
             reader.SectionDeserializationEnded -= OnDeserializationEnded;
             reader.EnableDeserializationInspection = false;
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
-            MetaInfoSize = metaSize.ToInt32();
+            InternalDataSize = metaSize.ToInt32();
 
             MarkDirty();
         }
@@ -334,20 +334,20 @@ namespace DaSerialization.Editor
         private void OnDeserializationEnded(long streamPos)
         {
             var info = _activeEntries.Pop();
-            bool isMetaData = false;
+            bool isInternalData = false;
             if (_activeEntries.Count > 0)
             {
                 // add this object info as inner one for the previous object
                 var parent = _activeEntries.Peek();
                 parent.Add(info);
-                isMetaData = !parent.IsSupported;
+                isInternalData = !parent.IsSupported;
             }
             else
             {
                 // this is a top-level object
                 _rootInfo = info;
             }
-            info.EndInit(streamPos, isMetaData);
+            info.EndInit(streamPos, isInternalData);
         }
 
         #endregion

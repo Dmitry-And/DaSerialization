@@ -35,10 +35,10 @@ namespace DaSerialization.Editor
         private static GUIStyle Normal;
         private static GUIStyle BoldRight;
         private static GUIStyle NormalRight;
-        private static GUIContent TotalSizeHeader = new GUIContent("Total", "Total size of this object, including meta-information.\nIn bytes");
-        private static GUIContent DataSizeHeader = new GUIContent("Data", "Size of this object, excluding meta-information.\nIn bytes");
+        private static GUIContent TotalSizeHeader = new GUIContent("Total", "Total size of this object, including internal data.\nIn bytes");
+        private static GUIContent DataSizeHeader = new GUIContent("Data", "Size of this object, excluding internal data.\nIn bytes");
         private static GUIContent SelfSizeHeader = new GUIContent("Self", "Data size excluding inner deserializers data sizes.\nIn bytes");
-        private static GUIContent MetaDataButton = new GUIContent("Meta", "Show metadata entries");
+        private static GUIContent InternalDataButton = new GUIContent("Int.", "Show internal data entries");
         private static GUIContent ExpandButton = new GUIContent("+", "Expand");
         private static GUIContent ShrinkButton = new GUIContent("-", "Shrink");
         private static GUIContent JsonLabel = new GUIContent("D ", "Show object data in JSON-like format...");
@@ -64,7 +64,7 @@ namespace DaSerialization.Editor
         public ContainerEditorInfo Info { get; private set; }
         public bool RenderSelfSize = true;
         public bool RenderTotalSize = true; // if not - effective size will be rendered
-        public bool RenderMetaData = false;
+        public bool RenderInternalData = false;
         public ObjectCaptionMode CaptionMode = ObjectCaptionMode.NameValue;
         public bool Editable { get; private set; }
 
@@ -106,7 +106,7 @@ namespace DaSerialization.Editor
             Info = info;
             if (info.IsValid)
                 info.UpdateDetailedInfo();
-            _sizeText = new GUIContent(Size(Info.Size), $"Total size: {Info.Size}\nMeta data: {Info.MetaInfoSize}\nUseful: {Info.Size - Info.MetaInfoSize}");
+            _sizeText = new GUIContent(Size(Info.Size), $"Total size: {Info.Size}\nInternal data: {Info.InternalDataSize}\nUseful: {Info.Size - Info.InternalDataSize}");
             _expandedObjects.Clear();
             _idWidth = GetMaxIdWidth(Info, _idWidth);
             Editable = editable;
@@ -186,10 +186,10 @@ namespace DaSerialization.Editor
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfSizeHeader, NormalRight))
                 RenderSelfSize = !RenderSelfSize;
 
-            GUI.contentColor = RenderMetaData ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
-            if (GUI.Button(colHeaderRect.SliceRight(32f), MetaDataButton, NormalRight))
+            GUI.contentColor = RenderInternalData ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            if (GUI.Button(colHeaderRect.SliceRight(32f), InternalDataButton, NormalRight))
             {
-                RenderMetaData = !RenderMetaData;
+                RenderInternalData = !RenderInternalData;
                 MarkDirty();
             }
 
@@ -268,7 +268,7 @@ namespace DaSerialization.Editor
             }
         }
         private bool ShouldDisplayEntry(ContainerEditorInfo.InnerObjectInfo e)
-            => RenderMetaData | !e.IsMetaData;
+            => RenderInternalData | !e.IsInternalData;
 
         private GUIContent GetObjectCaption(ContainerEditorInfo.InnerObjectInfo e)
         {
@@ -304,8 +304,8 @@ namespace DaSerialization.Editor
             string tooltip = "";
             if (_showTooltips)
             {
-                if (e.IsMetaData)
-                    tooltip += "Metadata\n";
+                if (e.IsInternalData)
+                    tooltip += "Internal data\n";
                 if (!string.IsNullOrEmpty(e.Name))
                     tooltip += $"Name: {e.Name}\n";
 
@@ -328,7 +328,7 @@ namespace DaSerialization.Editor
                 else
                     tooltip = "Unsupported (no deserializer)\n";
 
-                tooltip += $"Size: {e.TotalSize}, Self: {e.SelfSize}, Meta: {e.MetaSize}\n";
+                tooltip += $"Size: {e.TotalSize}, Self: {e.SelfSize}, Int.: {e.InternalSize}\n";
 
                 if (tooltip.Length > 0 && tooltip[tooltip.Length - 1] == '\n')
                     tooltip = tooltip.Substring(0, tooltip.Length - 1);
@@ -500,7 +500,7 @@ namespace DaSerialization.Editor
 
             // name
             GUI.contentColor = e.IsSupported
-                ? e.IsMetaData ? Color.grey : Color.black
+                ? e.IsInternalData ? Color.grey : Color.black
                 : Color.red;
             if (GUI.Button(nameRect, cache.Caption, e.IsRealObject ? Bold : Normal)
                 & cache.IsExpandable)

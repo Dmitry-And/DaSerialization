@@ -172,7 +172,7 @@ namespace DaSerialization
                 return false;
             }
             var reader = _stream.GetReader();
-            reader.OnDeserializeMetaBegin(SerializerStorage.GetTypeInfo(typeId).Type, null, _contentTable[entryIndex].Position);
+            reader.OnDeserializeBegin(SerializerStorage.GetTypeInfo(typeId).Type, null, _contentTable[entryIndex].Position);
             var endPos = SetStreamPositionAndGetEndPosition(entryIndex);
             reader.ReadObject(ref obj);
             return ValidateAndClearStreamPosition(entryIndex, endPos);
