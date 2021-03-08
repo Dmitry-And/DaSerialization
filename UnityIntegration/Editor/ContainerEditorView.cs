@@ -312,14 +312,13 @@ namespace DaSerialization.Editor
                 if (e.IsSupported)
                 {
                     if (e.RefType != null && !e.RefType.IsValueType)
-                        tooltip += $"Ref:     {e.RefType.PrettyName()}\n";
+                        tooltip += $"Ref:     {GetRef(e)}\n";
                     tooltip += e.IsSimpleType
                         ? $"Type:  {e.RefType.PrettyName()}\n"
                         : e.TypeInfo.Id == -1
                             ? $"Type w/o deserializer\n"
                             : $"Type:  {e.TypeInfo.Type.PrettyName()} ({e.TypeInfo.Id})\n";
-                    if (!e.IsSimpleType) // TODO
-                        tooltip += $"Value: {GetValue(e)}\n";
+                    tooltip += $"Value: {GetValue(e)}\n";
                     if (!e.IsSimpleType & e.Version > 0)
                         tooltip += $"Version: {e.Version}{(e.OldVersion ? $" (Old, latest {e.LatestVersion})" : "")}\n";
                     if (!e.OldVersion & e.HasOldVersions)

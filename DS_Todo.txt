@@ -28,11 +28,16 @@
 +				make it optional
 +	Edtr 	fix: null lists are expandable if meta info rendering is disabled
 +	Edtr 	display entries for ReadBytes/Chars/String methods
++	Edtr 	display collections size in array/list object captions/tooltips in object table
+	Edtr 	allow to see content of primitive types in the container inspector
++				integer types
++				string type (take encoding into account)
++				TypeID values (with corresponding type name)
+				packed data types: packed bools, packed ulongs, packed longs
 	Edtr	editor support for primitive types
 +				rendering optimization
 				show/hide
 +				check editor is rendered correctly if container has old serializers
-	Edtr 	display collections size in array/list object captions/tooltips in object table
 	Core 	check (de)serializers type argument covariance is correct in SerializerStorage.Init
 	Othr	extend readme
 				motivation
@@ -59,11 +64,6 @@
 					7: packed long, packed ulong
 					8: long, ulong, packed long, packed ulong, double
 					9: packed long, packed ulong
-	Edtr 	allow to see content of primitive types in the container inspector
-				integer types
-				string type (take encoding into account)
-				packed data types: packed bools, packed ulongs, packed longs
-				TypeID values (with corresponding type name)
 	Edtr 	color scheme should support dark mode
 ?	Edtr 	replace Json.Net dll by source code
 				move to internal namespace

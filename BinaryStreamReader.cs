@@ -17,6 +17,8 @@ namespace DaSerialization
         public static readonly string SIZE_TAG = "Size";
         public static readonly string TYPE_ID_TAG = "Type ID";
         public static readonly string OBJECT_ID_TAG = "Object ID";
+        public static readonly string UNICODE_SUFFIX = "Unicode";
+        public static readonly string ASCII_SUFFIX = "ASCII";
 
         public SerializerStorage SerializerStorage { get; private set; }
 
@@ -159,35 +161,35 @@ namespace DaSerialization
 
         public char   ReadChar(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, "Unicode");
+            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, UNICODE_SUFFIX);
             var result = _reader.ReadChar();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public char   ReadCharASCII(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, "ASCII");
+            OnDeserializePrimitiveBegin(typeof(Char), metaInfo, ASCII_SUFFIX);
             var result = _asciiReader.ReadChar();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public string ReadString(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(String), metaInfo, "Unicode");
+            OnDeserializePrimitiveBegin(typeof(String), metaInfo, UNICODE_SUFFIX);
             var result = _reader.ReadString();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public string ReadStringASCII(string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(String), metaInfo, "ASCII");
+            OnDeserializePrimitiveBegin(typeof(String), metaInfo, ASCII_SUFFIX);
             var result = _asciiReader.ReadString();
             OnDeserializePrimitiveEnd();
             return result;
         }
         public char[] ReadChars(int count, string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "Unicode");
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, UNICODE_SUFFIX);
             var result = _reader.ReadChars(count);
             OnDeserializePrimitiveEnd();
             return result;
@@ -198,7 +200,7 @@ namespace DaSerialization
             => ReadChars(ref data, 0, -1, metaInfo);
         public void   ReadChars(ref char[] data, int start = 0, int length = -1, string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "Unicode");
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, UNICODE_SUFFIX);
             if (data == null)
                 data = new char[start + length];
             int end = length < 0 ? data.Length : start + length;
@@ -208,7 +210,7 @@ namespace DaSerialization
         }
         public char[] ReadCharsASCII(int count, string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "ASCII");
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, ASCII_SUFFIX);
             var result = _asciiReader.ReadChars(count);
             OnDeserializePrimitiveEnd();
             return result;
@@ -219,7 +221,7 @@ namespace DaSerialization
             => ReadCharsASCII(ref data, 0, -1, metaInfo);
         public void   ReadCharsASCII(ref char[] data, int start = 0, int length = -1, string metaInfo = null)
         {
-            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, "ASCII");
+            OnDeserializePrimitiveBegin(typeof(char[]), metaInfo, ASCII_SUFFIX);
             if (data == null)
                 data = new char[start + length];
             int end = length < 0 ? data.Length : start + length;

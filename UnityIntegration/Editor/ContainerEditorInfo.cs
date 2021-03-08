@@ -80,7 +80,7 @@ namespace DaSerialization.Editor
             public bool IsMetaData => MetadataType != Metadata.None;
 
             public Type RefType; // represent type the serialized object is referenced by, not neccesseraly serializable type
-            public string RefTypeName; // valid for sections only, non-existent type
+            public string RefTypeName; // valid for sections only, non-existent type. Otherwise it's a type name suffix
             public SerializationTypeInfo TypeInfo = SerializationTypeInfo.Invalid;
             public Metadata MetadataType = Metadata.None;
 
@@ -224,9 +224,9 @@ namespace DaSerialization.Editor
 
         private void ReadValue(InnerObjectInfo info, InnerObjectInfo parent, BinaryStream stream, BinaryStreamReader reader)
         {
+            stream.Seek(info.StreamPosition);
             if (info.IsMetaData)
             {
-                stream.Seek(info.StreamPosition);
                 int value = reader.ReadMetadata(info.MetadataType);
                 info.Value = value.ToString();
                 if (info.MetadataType == Metadata.CollectionSize)
@@ -237,6 +237,42 @@ namespace DaSerialization.Editor
                     if (typeInfo.IsValid)
                         info.Value += $" ({typeInfo.Type.PrettyName()})";
                 }
+            }
+            else
+            {
+                var type = info.RefType;
+                string value = null;
+                if (type == typeof(byte))
+                    value = reader.ReadByte().ToString();
+                else if (type == typeof(sbyte))
+                    value = reader.ReadSByte().ToString();
+                else if (type == typeof(short))
+                    value = reader.ReadInt16().ToString();
+                else if (type == typeof(ushort))
+                    value = reader.ReadUInt16().ToString();
+                else if (type == typeof(int))
+                    value = reader.ReadInt32().ToString();
+                else if (type == typeof(uint))
+                    value = reader.ReadUInt32().ToString();
+                else if (type == typeof(long))
+                    value = reader.ReadInt64().ToString();
+                else if (type == typeof(ulong))
+                    value = reader.ReadUInt64().ToString();
+                else if (type == typeof(string))
+                {
+                    if (info.RefTypeName.Equals(BinaryStreamReader.ASCII_SUFFIX, StringComparison.Ordinal))
+                        value = reader.ReadStringASCII();
+                    else if (info.RefTypeName.Equals(BinaryStreamReader.UNICODE_SUFFIX, StringComparison.Ordinal))
+                        value = reader.ReadString();
+                }
+                else if (type == typeof(char))
+                {
+                    if (info.RefTypeName.Equals(BinaryStreamReader.ASCII_SUFFIX, StringComparison.Ordinal))
+                        value = reader.ReadCharASCII().ToString();
+                    else if (info.RefTypeName.Equals(BinaryStreamReader.UNICODE_SUFFIX, StringComparison.Ordinal))
+                        value = reader.ReadChar().ToString();
+                }
+                info.Value = value;
             }
 
             if (info.IsExpandable)
