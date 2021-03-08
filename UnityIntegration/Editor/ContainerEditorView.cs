@@ -319,7 +319,7 @@ namespace DaSerialization.Editor
                             ? $"Type w/o deserializer\n"
                             : $"Type:  {e.TypeInfo.Type.PrettyName()} ({e.TypeInfo.Id})\n";
                     if (!e.IsSimpleType) // TODO
-                        tooltip += $"Value: {e.TypeInfo.Type.PrettyName()}\n";
+                        tooltip += $"Value: {GetValue(e)}\n";
                     if (!e.IsSimpleType & e.Version > 0)
                         tooltip += $"Version: {e.Version}{(e.OldVersion ? $" (Old, latest {e.LatestVersion})" : "")}\n";
                     if (!e.OldVersion & e.HasOldVersions)
@@ -351,13 +351,15 @@ namespace DaSerialization.Editor
         {
             if (!e.IsSupported)
                 return "[Unsupported]";
-            else if (e.IsSimpleType | e.IsMetaData)
-                return GetRef(e);
-            else if (e.IsSection)
-                return e.RefTypeName;
-            else if (e.TypeInfo.IsValid)
-                return e.TypeInfo.Type.PrettyName();
-            return null;
+            string result = null;
+            if (e.IsSimpleType | e.IsMetaData)
+                result = GetRef(e);
+            if (e.IsSection)
+                result = e.RefTypeName;
+            if (e.TypeInfo.IsValid)
+                result = e.TypeInfo.Type.PrettyName();
+            AppendCollectionSize(ref result, e.CollectionSize);
+            return result;
         }
         private static string GetRef(ContainerEditorInfo.InnerObjectInfo e)
         {
@@ -376,18 +378,22 @@ namespace DaSerialization.Editor
         {
             if (!e.IsSupported)
                 return "[Unsupported]";
-            else if (e.IsSimpleType | e.IsMetaData)
-                return GetRef(e); // TODO
-            else if (e.IsSection)
-                return e.RefTypeName;
-            else
+            if (e.IsSimpleType | e.IsMetaData)
+                return e.Value ?? GetRef(e);
+            var value = e.IsSection ? e.RefTypeName : e.TypeInfo.Type.PrettyName();
+            AppendCollectionSize(ref value, e.CollectionSize);
+            return value;
+        }
+
+        private static void AppendCollectionSize(ref string value, int collectionSize)
+        {
+            if (collectionSize >= 0 && !string.IsNullOrEmpty(value))
             {
-                var value = e.TypeInfo.Type.PrettyName();
-                if (e.TypeInfo.IsContainer)
-                {
-                    // TODO: add container size in the parenthesis
-                }
-                return value;
+                var arrayIndex = value.LastIndexOf(']');
+                if (arrayIndex >= 0)
+                    value = value.Substring(0, arrayIndex) + collectionSize + value.Substring(arrayIndex, value.Length - arrayIndex);
+                else
+                    value = $"{value}{{{collectionSize}}}";
             }
         }
 

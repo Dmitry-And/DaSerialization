@@ -91,7 +91,9 @@ namespace DaSerialization.Editor
             public uint DataSize;
             public uint TotalSize => InternalSize + DataSize;
             public uint SelfSize; // DataSize excluding inner deserializers data
+            public int CollectionSize = -1; // -1 - not a collection or null
             public string Name;
+            public string Value;
             public string JsonData;
             public List<InnerObjectInfo> InnerObjects;
 
@@ -214,7 +216,32 @@ namespace DaSerialization.Editor
             RootObjects.Sort((x, y) => x.Data.Id.CompareTo(y.Data.Id));
             InternalDataSize = metaSize.ToInt32();
 
+            foreach (var root in RootObjects)
+                ReadValue(root.Data, null, stream, reader);
+
             MarkDirty();
+        }
+
+        private void ReadValue(InnerObjectInfo info, InnerObjectInfo parent, BinaryStream stream, BinaryStreamReader reader)
+        {
+            if (info.IsMetaData)
+            {
+                stream.Seek(info.StreamPosition);
+                int value = reader.ReadMetadata(info.MetadataType);
+                info.Value = value.ToString();
+                if (info.MetadataType == Metadata.CollectionSize)
+                    parent.CollectionSize = value;
+                if (info.MetadataType == Metadata.TypeID)
+                {
+                    var typeInfo = stream.SerializerStorage.GetTypeInfo(value, false);
+                    if (typeInfo.IsValid)
+                        info.Value += $" ({typeInfo.Type.PrettyName()})";
+                }
+            }
+
+            if (info.IsExpandable)
+                foreach (var inner in info.InnerObjects)
+                    ReadValue(inner, info, stream, reader);
         }
 
         private class SerializationTypeBinder : Newtonsoft.Json.Serialization.ISerializationBinder
