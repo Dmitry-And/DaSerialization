@@ -29,6 +29,7 @@
 +	Edtr 	fix: null lists are expandable if meta info rendering is disabled
 +	Edtr 	display entries for ReadBytes/Chars/String methods
 +	Edtr 	display collections size in array/list object captions/tooltips in object table
++	Edtr 	color scheme should support dark theme
 	Edtr 	allow to see content of primitive types in the container inspector
 +				integer types
 +				string type (take encoding into account)
@@ -64,7 +65,6 @@
 					7: packed long, packed ulong
 					8: long, ulong, packed long, packed ulong, double
 					9: packed long, packed ulong
-	Edtr 	color scheme should support dark mode
 ?	Edtr 	replace Json.Net dll by source code
 				move to internal namespace
 				strip unused code

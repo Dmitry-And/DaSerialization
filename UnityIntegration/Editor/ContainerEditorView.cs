@@ -174,7 +174,7 @@ namespace DaSerialization.Editor
 
             // we render column header section after the table because we want to know its layout
             // particularly the width of the view area as the vertical scroll bar may or may not be visible
-            GUI.contentColor = Color.gray;
+            GUI.contentColor = Color.grey;
             colHeaderRect = colHeaderRect.SliceLeft(tableWidth, false);
             EditorGUI.LabelField(colHeaderRect.SliceLeft(_idWidth), "Id", NormalRight);
             EditorGUI.LabelField(colHeaderRect.SliceRight(18f), JsonLabel, NormalRight);
@@ -182,11 +182,11 @@ namespace DaSerialization.Editor
                 RenderTotalSize ? TotalSizeHeader : DataSizeHeader, NormalRight))
                 RenderTotalSize = !RenderTotalSize;
 
-            GUI.contentColor = RenderSelfSize ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            GUI.contentColor = RenderSelfSize ? Color.grey : new Color(0.5f, 0.5f, 0.5f, 0.4f);
             if (GUI.Button(colHeaderRect.SliceRight(SizeWidth), SelfSizeHeader, NormalRight))
                 RenderSelfSize = !RenderSelfSize;
 
-            GUI.contentColor = RenderInternalData ? Color.gray : new Color(0.5f, 0.5f, 0.5f, 0.4f);
+            GUI.contentColor = RenderInternalData ? Color.grey : new Color(0.5f, 0.5f, 0.5f, 0.4f);
             if (GUI.Button(colHeaderRect.SliceRight(32f), InternalDataButton, NormalRight))
             {
                 RenderInternalData = !RenderInternalData;
@@ -194,7 +194,7 @@ namespace DaSerialization.Editor
             }
 
             colHeaderRect.SliceLeft(16f);
-            GUI.contentColor = Color.gray;
+            GUI.contentColor = Color.grey;
             if (GUI.Button(colHeaderRect, CaptionLabels[(int)CaptionMode], Normal))
             {
                 int mode = (int)CaptionMode + 1;
@@ -399,6 +399,7 @@ namespace DaSerialization.Editor
         private Stack<ContainerEditorInfo.InnerObjectInfo> _parentEntries = new Stack<ContainerEditorInfo.InnerObjectInfo>();
         private void DrawLayoutCache(float width)
         {
+            _isDarkTheme = EditorGUIUtility.isProSkin;
             _parentEntries.Clear();
             int rootIndex = 0;
             GUILayoutUtility.GetRect(100f, 2000f, _cachedHeight, _cachedHeight);
@@ -423,6 +424,7 @@ namespace DaSerialization.Editor
         }
 
         private static GUIContent _tempContent = new GUIContent();
+        private static bool _isDarkTheme;
         private Rect DrawLayoutCacheLine(InfoLayoutCache cache, float windowWidth, out bool isVisible)
         {
             isVisible = cache.BottomPos >= _scrollPos.y
@@ -467,7 +469,7 @@ namespace DaSerialization.Editor
             bool expanded = cache.IsExpandable && _expandedObjects.Contains(e);
             if (cache.IsExpandable)
             {
-                GUI.contentColor = Color.gray;
+                GUI.contentColor = Color.grey;
                 if (GUI.Button(expandRect, expanded ? ShrinkButton : ExpandButton, BoldRight))
                     SetExpanded(e, !expanded, Event.current.alt);
             }
@@ -492,7 +494,7 @@ namespace DaSerialization.Editor
                 _tempContent.text = Size(RenderTotalSize ? e.TotalSize : e.DataSize);
                 var width = BoldRight.CalcSize(_tempContent).x;
                 nameRect.xMax = pos.xMax - width;
-                GUI.contentColor = Color.white;
+                GUI.contentColor = _isDarkTheme ? Color.black : Color.white;
                 EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, BoldRight);
             }
             // size (optional)
@@ -501,13 +503,14 @@ namespace DaSerialization.Editor
                 _tempContent.text = Size(e.SelfSize);
                 var width = BoldRight.CalcSize(_tempContent).x;
                 nameRect.xMax = pos.xMax - width;
-                GUI.contentColor = Color.gray;
+                GUI.contentColor = Color.grey;
                 EditorGUI.LabelField(pos.SliceRight(SizeWidth), _tempContent, NormalRight);
             }
 
             // name
             GUI.contentColor = e.IsSupported
-                ? e.IsInternalData ? Color.grey : Color.black
+                ? e.IsInternalData ? Color.grey : 
+                    _isDarkTheme ? Color.white : Color.black
                 : Color.red;
             if (GUI.Button(nameRect, cache.Caption, e.IsRealObject ? Bold : Normal)
                 & cache.IsExpandable)
