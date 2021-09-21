@@ -1,7 +1,7 @@
-using DaSerialization;
+using Tests;
 using UnityEditor;
 
-namespace Tests
+namespace DaSerialization.Tests
 {
     static class SerializationContainerTests
     {
@@ -9,7 +9,7 @@ namespace Tests
         private const string CONTAINER_NAME = "TestContainer";
         private const string FULL_CONTAINER_PATH = CONTAINER_PATH + CONTAINER_NAME;
 
-        [MenuItem("Tools/Tests/Create Test Container", priority = int.MaxValue)]
+        [MenuItem("Tools/Tests/Load or Create Test Container", priority = int.MaxValue)]
         private static BinaryContainer LoadOrCreateContainer()
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
@@ -29,16 +29,18 @@ namespace Tests
             }
         }
 
-  //      [Test(-112)]
+        [Test(-111)]
         private static bool TopLevelObjectSerialization()
         {
-            var storage = new BinaryContainerStorageOnUnity();
-            var testContainer = LoadOrCreateContainer();
-            TestClass testClass = new TestClass(testContainer);
+            var storage = new BinaryContainerStorageOnFiles(null, "");
+            var testContainer = storage.LoadContainer(FULL_CONTAINER_PATH, true);
+            TopLevelObject testObj = new TopLevelObject();
 
-            testContainer.Serialize(testClass, 0);
+            if (!testContainer.Serialize(testObj, 0))
+                throw new FailedTest($"Failed to serialized {testObj.PrettyTypeName()}");
             storage.SaveContainer(testContainer, FULL_CONTAINER_PATH);
             return true;
         }
+
     }
 }
