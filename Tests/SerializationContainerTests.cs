@@ -30,7 +30,7 @@ namespace DaSerialization.Tests
         }
 
         [Test(-111)]
-        private static bool TopLevelObjectSerialization()
+        private static bool TopLevelObjectSerializationTest()
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
             var testContainer = storage.LoadContainer(FULL_CONTAINER_PATH, true);
@@ -42,5 +42,17 @@ namespace DaSerialization.Tests
             return true;
         }
 
+        [Test(-112)]
+        private static bool TopLevelStructureSerializationTest()
+        {
+            var storage = new BinaryContainerStorageOnFiles(null, "");
+            var testContainer = storage.LoadContainer(FULL_CONTAINER_PATH, true);
+            TopLevelScructure testStruct = new TopLevelScructure(-1985351954);
+
+            if (!testContainer.Serialize(testStruct, 1))
+                throw new FailedTest($"Failed to serialized {testStruct.PrettyTypeName()}");
+            storage.SaveContainer(testContainer, FULL_CONTAINER_PATH);
+            return true;
+        }
     }
 }
