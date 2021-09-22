@@ -24,6 +24,7 @@ namespace DaSerialization.Tests
             {
                 var container = storage.CreateContainer();
                 storage.SaveContainer(container, FULL_CONTAINER_PATH);
+                AssetDatabase.Refresh();
                 Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
                 return container;
             }
