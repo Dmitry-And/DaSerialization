@@ -16,7 +16,7 @@ namespace DaSerialization.Tests
             var container = storage.CreateContainer();
 
             // test object serialization
-            TopLevelObject testObj = new TopLevelObject();
+            TestObject testObj = new TestObject();
             container.Serialize(testObj, 0);
 
             // top level structure serialization

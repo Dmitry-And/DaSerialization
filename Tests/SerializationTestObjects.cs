@@ -3,14 +3,14 @@ using System;
 namespace DaSerialization.Tests
 {
     [Serializable, TypeId(54876)]
-    public class TopLevelObject
+    public class TestObject
     {
         public int intTest;
         public double doubleTest;
         public short shortTest;
         public string stringTest;
 
-        public TopLevelObject() 
+        public TestObject() 
         {
             intTest = 2047483647;
             doubleTest = 2.457692;
@@ -19,21 +19,21 @@ namespace DaSerialization.Tests
         }
     }
 
-    public class TopLevelObjectSerializer : AFullSerializer<TopLevelObject>
+    public class TopLevelObjectSerializer : AFullSerializer<TestObject>
     {
         public override int Version => 1;        
 
-        public override void ReadDataToObject(ref TopLevelObject obj, BinaryStreamReader reader)
+        public override void ReadDataToObject(ref TestObject obj, BinaryStreamReader reader)
         {
             if (obj == null)
-                obj = new TopLevelObject();
+                obj = new TestObject();
             obj.intTest = reader.ReadInt32("N_Int32");
             obj.doubleTest = reader.ReadDouble("N_Double");
             obj.shortTest = reader.ReadInt16("N_Int16");
             obj.stringTest = reader.ReadString("N_String");
         }
 
-        public override void WriteObject(TopLevelObject obj, BinaryStreamWriter writer)
+        public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
         {
             writer.WriteInt32(obj.intTest);
             writer.WriteDouble(obj.doubleTest);
