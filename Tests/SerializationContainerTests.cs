@@ -9,25 +9,15 @@ namespace DaSerialization.Tests
         private const string CONTAINER_NAME = "TestContainer";
         private const string FULL_CONTAINER_PATH = CONTAINER_PATH + CONTAINER_NAME;
 
-        [MenuItem("Tools/Tests/Load or Create Test Container", priority = int.MaxValue)]
-        private static BinaryContainer LoadOrCreateContainer()
+        [MenuItem("Tools/Tests/Create Test Container", priority = int.MaxValue)]
+        private static BinaryContainer CreateContainer()
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
-            var loadedContainer = storage.LoadContainer(FULL_CONTAINER_PATH, true);
-
-            if (loadedContainer != null)
-            {
-                Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
-                return loadedContainer;
-            }
-            else
-            {
-                var container = storage.CreateContainer();
-                storage.SaveContainer(container, FULL_CONTAINER_PATH);
-                AssetDatabase.Refresh();
-                Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
-                return container;
-            }
+            var container = storage.CreateContainer();
+            storage.SaveContainer(container, FULL_CONTAINER_PATH);
+            AssetDatabase.Refresh();
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
+            return container;
         }
 
         [Test(-111)]
@@ -48,7 +38,7 @@ namespace DaSerialization.Tests
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
             var testContainer = storage.LoadContainer(FULL_CONTAINER_PATH, true);
-            TopLevelScructure testStruct = new TopLevelScructure(-1985351954);
+            TopLevelStructure testStruct = new TopLevelStructure(-1985351954);
 
             if (!testContainer.Serialize(testStruct, 1))
                 throw new FailedTest($"Failed to serialized {testStruct.PrettyTypeName()}");
