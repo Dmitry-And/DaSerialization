@@ -21,18 +21,16 @@ namespace DaSerialization.Tests
 
     public class TopLevelObjectSerializer : AFullSerializer<TopLevelObject>
     {
-        private const string FIELD_META_INFO_PREFIX = "N_";
-
         public override int Version => 1;        
 
         public override void ReadDataToObject(ref TopLevelObject obj, BinaryStreamReader reader)
         {
             if (obj == null)
                 obj = new TopLevelObject();
-            obj.intTest = reader.ReadInt32(FIELD_META_INFO_PREFIX + obj.intTest.PrettyTypeName());
-            obj.doubleTest = reader.ReadDouble(FIELD_META_INFO_PREFIX + obj.doubleTest.PrettyTypeName());
-            obj.shortTest = reader.ReadInt16(FIELD_META_INFO_PREFIX + obj.shortTest.PrettyTypeName());
-            obj.stringTest = reader.ReadString(FIELD_META_INFO_PREFIX + obj.stringTest.PrettyTypeName());
+            obj.intTest = reader.ReadInt32("N_Int32");
+            obj.doubleTest = reader.ReadDouble("N_Double");
+            obj.shortTest = reader.ReadInt16("N_Int16");
+            obj.stringTest = reader.ReadString("N_String");
         }
 
         public override void WriteObject(TopLevelObject obj, BinaryStreamWriter writer)
@@ -45,14 +43,14 @@ namespace DaSerialization.Tests
     }
 
     [Serializable, TypeId(1546853)]
-    public struct TopLevelScructure
+    public struct TopLevelStructure
     {
         public int intTest;
         public string stringTest;
         public char charTest;
         public byte byteTest;
 
-        public TopLevelScructure(int intVal)
+        public TopLevelStructure(int intVal)
         {
             intTest = intVal;
             stringTest = "   qeri.kjnvj2DFJE";
@@ -61,21 +59,19 @@ namespace DaSerialization.Tests
         }
     }
 
-    public class TopLevelStructureSerializer : AFullSerializer<TopLevelScructure>
+    public class TopLevelStructureSerializer : AFullSerializer<TopLevelStructure>
     {
-        private const string FIELD_META_INFO_PREFIX = "N_";
-
         public override int Version => 1;
 
-        public override void ReadDataToObject(ref TopLevelScructure obj, BinaryStreamReader reader)
+        public override void ReadDataToObject(ref TopLevelStructure obj, BinaryStreamReader reader)
         {
-            obj.intTest = reader.ReadInt32(FIELD_META_INFO_PREFIX + obj.intTest.PrettyTypeName());
-            obj.stringTest = reader.ReadString(FIELD_META_INFO_PREFIX + obj.stringTest.PrettyTypeName());
-            obj.charTest = reader.ReadChar(FIELD_META_INFO_PREFIX + obj.charTest.PrettyTypeName());
-            obj.byteTest = reader.ReadByte(FIELD_META_INFO_PREFIX + obj.byteTest.PrettyTypeName());
+            obj.intTest = reader.ReadInt32("N_Int32");
+            obj.stringTest = reader.ReadString("N_String");
+            obj.charTest = reader.ReadChar("N_Char");
+            obj.byteTest = reader.ReadByte("N_Byte");
         }
 
-        public override void WriteObject(TopLevelScructure obj, BinaryStreamWriter writer)
+        public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
         {
             writer.WriteInt32(obj.intTest);
             writer.WriteString(obj.stringTest);
