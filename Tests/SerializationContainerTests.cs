@@ -23,6 +23,16 @@ namespace DaSerialization.Tests
             TopLevelStructure testStruct = new TopLevelStructure(-1985351954);
             container.Serialize(testStruct, 1);
 
+            // top level container serialization
+            var testContainer = storage.CreateContainer();
+            int data1 = 1576521201;
+            byte data2 = 250;
+            string data3 = "4257-=fefj2";
+            testContainer.Serialize(data1, 0);
+            testContainer.Serialize(data2, 1);
+            testContainer.Serialize(data3, 2);
+            container.Serialize(testContainer, 2);
+
             storage.SaveContainer(container, FULL_CONTAINER_PATH);
             AssetDatabase.Refresh();
             Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
