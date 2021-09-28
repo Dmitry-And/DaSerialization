@@ -129,6 +129,8 @@ namespace DaSerialization.Tests
         public char[] CharsASCIITest;
         public byte[] BytesTest;
 
+        public BottomLevelStructure BottomLevelStruct;
+
         public static TopLevelStructure Default
             => new TopLevelStructure() 
             {
@@ -150,6 +152,7 @@ namespace DaSerialization.Tests
             CharsTest = new char[] { '-', '5', 'f' },
             CharsASCIITest = new char[] { '3', 'e', '+' },
             BytesTest = new byte[] { 2, 99, 254 },
+            BottomLevelStruct = BottomLevelStructure.Default
             };    
     }
 
@@ -177,6 +180,7 @@ namespace DaSerialization.Tests
             obj.CharsTest = reader.ReadChars(3, "N_Chars");
             obj.CharsASCIITest = reader.ReadCharsASCII(3, "N_CharsASCII");
             obj.BytesTest = reader.ReadBytes(3, "N_Bytes");
+            obj.BottomLevelStruct = reader.ReadObject<BottomLevelStructure>("N_BottomLevelStructure");
         }
 
         public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
@@ -199,6 +203,7 @@ namespace DaSerialization.Tests
             writer.WriteChars(obj.CharsTest);
             writer.WriteCharsASCII(obj.CharsASCIITest);
             writer.WriteBytes(obj.BytesTest);
+            writer.WriteObject(obj.BottomLevelStruct);
         }
     }
 
