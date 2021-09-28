@@ -24,7 +24,10 @@ namespace DaSerialization.Tests
         public char[] CharsASCIITest;
         public byte[] BytesTest;
 
-        public TestObject() 
+        public TestObject TestObj;
+        public TopLevelStructure TopLevelStruct;
+
+        public TestObject(TestObject obj) 
         {
             BoolTest = true;
             ByteTest = 253;
@@ -44,6 +47,8 @@ namespace DaSerialization.Tests
             CharsTest = new char[] { 'f', '2', '=' };
             CharsASCIITest = new char[] { '/', '8', 'b' };
             BytesTest = new byte[] { 16, 145, 249 };
+            TestObj = obj;
+            TopLevelStruct = TopLevelStructure.Default;
         }
     }
 
@@ -54,7 +59,7 @@ namespace DaSerialization.Tests
         public override void ReadDataToObject(ref TestObject obj, BinaryStreamReader reader)
         {
             if (obj == null)
-                obj = new TestObject();
+                obj = new TestObject(null);
             obj.BoolTest = reader.ReadBool("N_Bool");
             obj.ByteTest = reader.ReadByte("N_Byte");
             obj.ShortTest = reader.ReadInt16("N_Int16");
@@ -73,6 +78,8 @@ namespace DaSerialization.Tests
             obj.CharsTest = reader.ReadChars(3, "N_Chars");
             obj.CharsASCIITest = reader.ReadCharsASCII(3, "N_CharsASCII");
             obj.BytesTest = reader.ReadBytes(3, "N_Bytes");
+            obj.TestObj = reader.ReadObject<TestObject>("N_TestObject");
+            obj.TopLevelStruct = reader.ReadObject<TopLevelStructure>("N_TopLevelStructure");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -95,6 +102,8 @@ namespace DaSerialization.Tests
             writer.WriteChars(obj.CharsTest);
             writer.WriteCharsASCII(obj.CharsASCIITest);
             writer.WriteBytes(obj.BytesTest);
+            writer.WriteObject(obj.TestObj);
+            writer.WriteObject(obj.TopLevelStruct);
         }
     }
 
