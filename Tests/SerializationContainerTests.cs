@@ -22,10 +22,12 @@ namespace DaSerialization.Tests
             // test object serialization
             testObject1.TestObj = testObject2;
             testObject1.TopLevelStruct.TestObj = testObject2;
+            testObject1.TestObjects = new TestObject[] { testObject2, null, testObject2, testObject2, null };
             testContainer.Serialize(testObject1, 0);
 
             // top level structure serialization
             testStruct.TestObj = testObject2;
+            testStruct.TestObjects = new TestObject[] { null, testObject2, null, testObject2, testObject2 };
             testContainer.Serialize(testStruct, 1);
 
             // top level container serialization
