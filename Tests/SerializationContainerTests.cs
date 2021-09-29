@@ -15,13 +15,18 @@ namespace DaSerialization.Tests
             var storage = new BinaryContainerStorageOnFiles(null, "");
             var testContainer = storage.CreateContainer();
 
+            var testObject2 = new TestObject();
+            var testObject1 = new TestObject();
+            var testStruct = TopLevelStructure.Default;
+
             // test object serialization
-            var testObject2 = new TestObject(null);
-            var testObject1 = new TestObject(testObject2);
+            testObject1.TestObj = testObject2;
+            testObject1.TopLevelStruct.TestObj = testObject2;
             testContainer.Serialize(testObject1, 0);
 
             // top level structure serialization
-            testContainer.Serialize(TopLevelStructure.Default, 1);
+            testStruct.TestObj = testObject2;
+            testContainer.Serialize(testStruct, 1);
 
             // top level container serialization
             var container = storage.CreateContainer();
