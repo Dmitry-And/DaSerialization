@@ -28,6 +28,7 @@ namespace DaSerialization.Tests
         public TopLevelStructure TopLevelStruct;
 
         public TestObject[] TestObjects;
+        public TopLevelStructure[] TestStructs;
 
         public TestObject() 
         {
@@ -82,6 +83,7 @@ namespace DaSerialization.Tests
             obj.TestObj = reader.ReadObject<TestObject>("N_TestObject");
             obj.TopLevelStruct = reader.ReadObject<TopLevelStructure>("N_TopLevelStructure");
             obj.TestObjects = reader.ReadArray<TestObject>("N_TestObject[]");
+            obj.TestStructs = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -107,6 +109,7 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.TestObj);
             writer.WriteObject(obj.TopLevelStruct);
             writer.WriteArray(obj.TestObjects);
+            writer.WriteArrayExact(obj.TestStructs);
         }
     }
 
@@ -136,6 +139,7 @@ namespace DaSerialization.Tests
         public TestObject TestObj;
 
         public TestObject[] TestObjects;
+        public TopLevelStructure[] TestStructs;
 
         public static TopLevelStructure Default
             => new TopLevelStructure() 
@@ -189,6 +193,7 @@ namespace DaSerialization.Tests
             obj.BottomLevelStruct = reader.ReadObject<BottomLevelStructure>("N_BottomLevelStructure");
             obj.TestObj = reader.ReadObject<TestObject>("N_TestObject");
             obj.TestObjects = reader.ReadArray<TestObject>("N_TestObject[]");
+            obj.TestStructs = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
         }
 
         public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
@@ -214,6 +219,7 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.BottomLevelStruct);
             writer.WriteObject(obj.TestObj);
             writer.WriteArray(obj.TestObjects);
+            writer.WriteArrayExact(obj.TestStructs);
         }
     }
 
