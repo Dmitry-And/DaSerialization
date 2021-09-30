@@ -24,15 +24,17 @@ namespace DaSerialization.Tests
             testObject1.TestObj = testObject2;
             testObject1.TopLevelStruct.TestObj = testObject2;
             testObject1.TestObjectsArray = new TestObject[] { testObject2, null, testObject2, testObject2, null };
-            testObject1.TestStructs = new TopLevelStructure[] { testStruct, testStruct, testStruct };
+            testObject1.TopLevelStructsArray = new TopLevelStructure[] { testStruct, testStruct, testStruct };
             testObject1.TestObjectsList = new List<TestObject>() { null, null, testObject2, testObject2, null };
+            testObject1.TopLevelStructsList = new List<TopLevelStructure>() { testStruct, testStruct, testStruct };
             testContainer.Serialize(testObject1, 0);
 
             // top level structure serialization
             testStruct.TestObj = testObject2;
             testStruct.TestObjectsArray = new TestObject[] { null, testObject2, null, testObject2, testObject2 };
-            testStruct.TestStructs = new TopLevelStructure[] { testStruct, testStruct, testStruct };
+            testStruct.TopLevelStructsArray = new TopLevelStructure[] { testStruct, testStruct, testStruct };
             testStruct.TestObjectsList = new List<TestObject>() { testObject2, null, testObject2, null };
+            testStruct.TopLevelStructsList = new List<TopLevelStructure>() { testStruct, testStruct, testStruct };
             testContainer.Serialize(testStruct, 1);
 
             // top level container serialization

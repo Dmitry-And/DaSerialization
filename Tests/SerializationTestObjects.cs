@@ -29,8 +29,9 @@ namespace DaSerialization.Tests
         public TopLevelStructure TopLevelStruct;
 
         public TestObject[] TestObjectsArray;
-        public TopLevelStructure[] TestStructs;
+        public TopLevelStructure[] TopLevelStructsArray;
         public List<TestObject> TestObjectsList;
+        public List<TopLevelStructure> TopLevelStructsList;
 
         public TestObject() 
         {
@@ -85,8 +86,9 @@ namespace DaSerialization.Tests
             obj.TestObj = reader.ReadObject<TestObject>("N_TestObject");
             obj.TopLevelStruct = reader.ReadObject<TopLevelStructure>("N_TopLevelStructure");
             obj.TestObjectsArray = reader.ReadArray<TestObject>("N_TestObject[]");
-            obj.TestStructs = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
+            obj.TopLevelStructsArray = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
             obj.TestObjectsList = reader.ReadList<TestObject>("N_List<TestObject>");
+            obj.TopLevelStructsList = reader.ReadListExact<TopLevelStructure>("N_List<TopLevelStructure");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -112,8 +114,9 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.TestObj);
             writer.WriteObject(obj.TopLevelStruct);
             writer.WriteArray(obj.TestObjectsArray);
-            writer.WriteArrayExact(obj.TestStructs);
+            writer.WriteArrayExact(obj.TopLevelStructsArray);
             writer.WriteList(obj.TestObjectsList);
+            writer.WriteListExact(obj.TopLevelStructsList);
         }
     }
 
@@ -143,8 +146,9 @@ namespace DaSerialization.Tests
         public TestObject TestObj;
 
         public TestObject[] TestObjectsArray;
-        public TopLevelStructure[] TestStructs;
+        public TopLevelStructure[] TopLevelStructsArray;
         public List<TestObject> TestObjectsList;
+        public List<TopLevelStructure> TopLevelStructsList;
 
         public static TopLevelStructure Default
             => new TopLevelStructure() 
@@ -198,8 +202,9 @@ namespace DaSerialization.Tests
             obj.BottomLevelStruct = reader.ReadObject<BottomLevelStructure>("N_BottomLevelStructure");
             obj.TestObj = reader.ReadObject<TestObject>("N_TestObject");
             obj.TestObjectsArray = reader.ReadArray<TestObject>("N_TestObject[]");
-            obj.TestStructs = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
+            obj.TopLevelStructsArray = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
             obj.TestObjectsList = reader.ReadList<TestObject>("N_List<TestObject>");
+            obj.TopLevelStructsList = reader.ReadListExact<TopLevelStructure>("N_List<TopLevelStructure");
         }
 
         public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
@@ -225,8 +230,9 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.BottomLevelStruct);
             writer.WriteObject(obj.TestObj);
             writer.WriteArray(obj.TestObjectsArray);
-            writer.WriteArrayExact(obj.TestStructs);
+            writer.WriteArrayExact(obj.TopLevelStructsArray);
             writer.WriteList(obj.TestObjectsList);
+            writer.WriteListExact(obj.TopLevelStructsList);
         }
     }
 
