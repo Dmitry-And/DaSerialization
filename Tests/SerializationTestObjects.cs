@@ -3,8 +3,10 @@ using System.Collections.Generic;
 
 namespace DaSerialization.Tests
 {
+    public interface ITestInterface { }
+
     [Serializable, TypeId(54876)]
-    public class TestObject 
+    public class TestObject : ITestInterface
     {
         public bool BoolTest;
         public byte ByteTest;
@@ -46,6 +48,8 @@ namespace DaSerialization.Tests
         public List<TestObject> TestObjectsList;
         public List<TopLevelStructure> TopLevelStructsList;
 
+        public ITestInterface TestInterface;
+
         public TestObject() 
         {
             BoolTest = true;
@@ -67,18 +71,18 @@ namespace DaSerialization.Tests
             CharsASCIITest = new char[] { '/', '8', 'b' };
             BytesTest = new byte[] { 16, 145, 249 };
             TopLevelStruct = TopLevelStructure.Default;
-            BoolsTestArray = new bool[] { true, true, false };
-            ShortsTestArray = new short[] { 30567, 18457, 29456 };
-            IntsTestArray = new int[] { 2047483647, 1947483647, 1847483647 };
-            LongsTestArray = new long[] { 8112261925743664796, 7912261925743664796, 7712261925743664796 };
-            SBytesTestArray = new sbyte[] { -125, 125, -120 };
-            UIntsTestArray = new uint[] { 4021563158, 3521563158, 2521563158 };
-            ULongsTestArray = new ulong[] { 17446744073709551615, 10446744073709551615, 14446744073709551615 };
-            DecimalsTestArray = new decimal[] { 5.012654201m, 4.112654201m, 2.312654201m };
-            FloatsTestArray = new float[] { 1.2575646f, 0.2575646f, 1.5575646f };
-            DoublesTestArray = new double[] { 2.457692, 1.657692, 0.557692 };
-            StringsTestArray = new string[] { "dflkajefciv,;eiq", "f562", "fjei2mn" };
-            StringsASCIITestArray = new string[] { "ieqrjmz. 923 ; j3", " dfj;efj3", "5425fvadv" };
+            //BoolsTestArray = new bool[] { true, true, false };
+            //ShortsTestArray = new short[] { 30567, 18457, 29456 };
+            //IntsTestArray = new int[] { 2047483647, 1947483647, 1847483647 };
+            //LongsTestArray = new long[] { 8112261925743664796, 7912261925743664796, 7712261925743664796 };
+            //SBytesTestArray = new sbyte[] { -125, 125, -120 };
+            //UIntsTestArray = new uint[] { 4021563158, 3521563158, 2521563158 };
+            //ULongsTestArray = new ulong[] { 17446744073709551615, 10446744073709551615, 14446744073709551615 };
+            //DecimalsTestArray = new decimal[] { 5.012654201m, 4.112654201m, 2.312654201m };
+            //FloatsTestArray = new float[] { 1.2575646f, 0.2575646f, 1.5575646f };
+            //DoublesTestArray = new double[] { 2.457692, 1.657692, 0.557692 };
+            //StringsTestArray = new string[] { "dflkajefciv,;eiq", "f562", "fjei2mn" };
+            //StringsASCIITestArray = new string[] { "ieqrjmz. 923 ; j3", " dfj;efj3", "5425fvadv" };
         }
     }
 
@@ -114,18 +118,20 @@ namespace DaSerialization.Tests
             obj.TopLevelStructsArray = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
             obj.TestObjectsList = reader.ReadList<TestObject>("N_List<TestObject>");
             obj.TopLevelStructsList = reader.ReadListExact<TopLevelStructure>("N_List<TopLevelStructure");
-            obj.BoolsTestArray = reader.ReadArrayExact<bool>("N_Bool[]");
-            obj.ShortsTestArray = reader.ReadArrayExact<Int16>("N_Int16[]");
-            obj.IntsTestArray = reader.ReadArrayExact<Int32>("N_Int32[]");
-            obj.LongsTestArray = reader.ReadArrayExact<Int64>("N_Int64[]");
-            obj.SBytesTestArray = reader.ReadArrayExact<sbyte>("N_SByte[]");
-            obj.UIntsTestArray = reader.ReadArrayExact<UInt32>("N_UInt32[]");
-            obj.ULongsTestArray = reader.ReadArrayExact<UInt64>("N_UInt64[]");
-            obj.DecimalsTestArray = reader.ReadArrayExact<decimal>("N_Decimal[]");
-            obj.FloatsTestArray = reader.ReadArrayExact<float>("N_Float[]");
-            obj.DoublesTestArray = reader.ReadArrayExact<double>("N_Double[]");
-            obj.StringsTestArray = reader.ReadArray<string>("N_String[]");
-            obj.StringsASCIITestArray = reader.ReadArray<string>("N_StringASCII[]");
+            //obj.BoolsTestArray = reader.ReadArrayExact<bool>("N_Bool[]");
+            //obj.ShortsTestArray = reader.ReadArrayExact<Int16>("N_Int16[]");
+            //obj.IntsTestArray = reader.ReadArrayExact<Int32>("N_Int32[]");
+            //obj.LongsTestArray = reader.ReadArrayExact<Int64>("N_Int64[]");
+            //obj.SBytesTestArray = reader.ReadArrayExact<sbyte>("N_SByte[]");
+            //obj.UIntsTestArray = reader.ReadArrayExact<UInt32>("N_UInt32[]");
+            //obj.ULongsTestArray = reader.ReadArrayExact<UInt64>("N_UInt64[]");
+            //obj.DecimalsTestArray = reader.ReadArrayExact<decimal>("N_Decimal[]");
+            //obj.FloatsTestArray = reader.ReadArrayExact<float>("N_Float[]");
+            //obj.DoublesTestArray = reader.ReadArrayExact<double>("N_Double[]");
+            //obj.StringsTestArray = reader.ReadArray<string>("N_String[]");
+            //obj.StringsASCIITestArray = reader.ReadArray<string>("N_StringASCII[]");
+
+            obj.TestInterface = reader.ReadObject<ITestInterface>("N_ITestInterface");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -154,18 +160,20 @@ namespace DaSerialization.Tests
             writer.WriteArrayExact(obj.TopLevelStructsArray);
             writer.WriteList(obj.TestObjectsList);
             writer.WriteListExact(obj.TopLevelStructsList);
-            writer.WriteArrayExact(obj.BoolsTestArray);
-            writer.WriteArrayExact(obj.ShortsTestArray);
-            writer.WriteArrayExact(obj.IntsTestArray);
-            writer.WriteArrayExact(obj.LongsTestArray);
-            writer.WriteArrayExact(obj.SBytesTestArray);
-            writer.WriteArrayExact(obj.UIntsTestArray);
-            writer.WriteArrayExact(obj.ULongsTestArray);
-            writer.WriteArrayExact(obj.DecimalsTestArray);
-            writer.WriteArrayExact(obj.FloatsTestArray);
-            writer.WriteArrayExact(obj.DoublesTestArray);
-            writer.WriteArray(obj.StringsTestArray);
-            writer.WriteArray(obj.StringsASCIITestArray);
+            //writer.WriteArrayExact(obj.BoolsTestArray);
+            //writer.WriteArrayExact(obj.ShortsTestArray);
+            //writer.WriteArrayExact(obj.IntsTestArray);
+            //writer.WriteArrayExact(obj.LongsTestArray);
+            //writer.WriteArrayExact(obj.SBytesTestArray);
+            //writer.WriteArrayExact(obj.UIntsTestArray);
+            //writer.WriteArrayExact(obj.ULongsTestArray);
+            //writer.WriteArrayExact(obj.DecimalsTestArray);
+            //writer.WriteArrayExact(obj.FloatsTestArray);
+            //writer.WriteArrayExact(obj.DoublesTestArray);
+            //writer.WriteArray(obj.StringsTestArray);
+            //writer.WriteArray(obj.StringsASCIITestArray);
+
+            writer.WriteObject(obj.TestInterface);
         }
     }
 
@@ -341,18 +349,18 @@ namespace DaSerialization.Tests
                 CharsTest = new char[] { '*', '0', 'q' },
                 CharsASCIITest = new char[] { '9', 's', '>' },
                 BytesTest = new byte[] { 7, 100, 252 },
-                BoolsTestArray = new bool[] { true, true, false },
-                ShortsTestArray = new short[] { 30567, 18457, 29456 },
-                IntsTestArray = new int[] { 2047483647, 1947483647, 1847483647 },
-                LongsTestArray = new long[] { 8112261925743664796, 7912261925743664796, 7712261925743664796 },
-                SBytesTestArray = new sbyte[] { -125, 125, -120 },
-                UIntsTestArray = new uint[] { 4021563158, 3521563158, 2521563158 },
-                ULongsTestArray = new ulong[] { 17446744073709551615, 10446744073709551615, 14446744073709551615 },
-                DecimalsTestArray = new decimal[] { 5.012654201m, 4.112654201m, 2.312654201m },
-                FloatsTestArray = new float[] { 1.2575646f, 0.2575646f, 1.5575646f },
-                DoublesTestArray = new double[] { 2.457692, 1.657692, 0.557692 },
-                StringsTestArray = new string[] { "dflkajefciv,;eiq", "f562", "fjei2mn" },
-                StringsASCIITestArray = new string[] { "ieqrjmz. 923 ; j3", " dfj;efj3", "5425fvadv" },
+                //BoolsTestArray = new bool[] { true, true, false },
+                //ShortsTestArray = new short[] { 30567, 18457, 29456 },
+                //IntsTestArray = new int[] { 2047483647, 1947483647, 1847483647 },
+                //LongsTestArray = new long[] { 8112261925743664796, 7912261925743664796, 7712261925743664796 },
+                //SBytesTestArray = new sbyte[] { -125, 125, -120 },
+                //UIntsTestArray = new uint[] { 4021563158, 3521563158, 2521563158 },
+                //ULongsTestArray = new ulong[] { 17446744073709551615, 10446744073709551615, 14446744073709551615 },
+                //DecimalsTestArray = new decimal[] { 5.012654201m, 4.112654201m, 2.312654201m },
+                //FloatsTestArray = new float[] { 1.2575646f, 0.2575646f, 1.5575646f },
+                //DoublesTestArray = new double[] { 2.457692, 1.657692, 0.557692 },
+                //StringsTestArray = new string[] { "dflkajefciv,;eiq", "f562", "fjei2mn" },
+                //StringsASCIITestArray = new string[] { "ieqrjmz. 923 ; j3", " dfj;efj3", "5425fvadv" },
             };
     }
 
@@ -380,18 +388,18 @@ namespace DaSerialization.Tests
             obj.CharsTest = reader.ReadChars(3, "N_Chars");
             obj.CharsASCIITest = reader.ReadCharsASCII(3, "N_CharsASCII");
             obj.BytesTest = reader.ReadBytes(3, "N_Bytes");
-            obj.BoolsTestArray = reader.ReadArrayExact<bool>("N_Bool[]");
-            obj.ShortsTestArray = reader.ReadArrayExact<Int16>("N_Int16[]");
-            obj.IntsTestArray = reader.ReadArrayExact<Int32>("N_Int32[]");
-            obj.LongsTestArray = reader.ReadArrayExact<Int64>("N_Int64[]");
-            obj.SBytesTestArray = reader.ReadArrayExact<sbyte>("N_SByte[]");
-            obj.UIntsTestArray = reader.ReadArrayExact<UInt32>("N_UInt32[]");
-            obj.ULongsTestArray = reader.ReadArrayExact<UInt64>("N_UInt64[]");
-            obj.DecimalsTestArray = reader.ReadArrayExact<decimal>("N_Decimal[]");
-            obj.FloatsTestArray = reader.ReadArrayExact<float>("N_Float[]");
-            obj.DoublesTestArray = reader.ReadArrayExact<double>("N_Double[]");
-            obj.StringsTestArray = reader.ReadArray<string>("N_String[]");
-            obj.StringsASCIITestArray = reader.ReadArray<string>("N_StringASCII[]");
+            //obj.BoolsTestArray = reader.ReadArrayExact<bool>("N_Bool[]");
+            //obj.ShortsTestArray = reader.ReadArrayExact<Int16>("N_Int16[]");
+            //obj.IntsTestArray = reader.ReadArrayExact<Int32>("N_Int32[]");
+            //obj.LongsTestArray = reader.ReadArrayExact<Int64>("N_Int64[]");
+            //obj.SBytesTestArray = reader.ReadArrayExact<sbyte>("N_SByte[]");
+            //obj.UIntsTestArray = reader.ReadArrayExact<UInt32>("N_UInt32[]");
+            //obj.ULongsTestArray = reader.ReadArrayExact<UInt64>("N_UInt64[]");
+            //obj.DecimalsTestArray = reader.ReadArrayExact<decimal>("N_Decimal[]");
+            //obj.FloatsTestArray = reader.ReadArrayExact<float>("N_Float[]");
+            //obj.DoublesTestArray = reader.ReadArrayExact<double>("N_Double[]");
+            //obj.StringsTestArray = reader.ReadArray<string>("N_String[]");
+            //obj.StringsASCIITestArray = reader.ReadArray<string>("N_StringASCII[]");
         }
 
         public override void WriteObject(BottomLevelStructure obj, BinaryStreamWriter writer)
@@ -414,18 +422,18 @@ namespace DaSerialization.Tests
             writer.WriteChars(obj.CharsTest);
             writer.WriteCharsASCII(obj.CharsASCIITest);
             writer.WriteBytes(obj.BytesTest);
-            writer.WriteArrayExact(obj.BoolsTestArray);
-            writer.WriteArrayExact(obj.ShortsTestArray);
-            writer.WriteArrayExact(obj.IntsTestArray);
-            writer.WriteArrayExact(obj.LongsTestArray);
-            writer.WriteArrayExact(obj.SBytesTestArray);
-            writer.WriteArrayExact(obj.UIntsTestArray);
-            writer.WriteArrayExact(obj.ULongsTestArray);
-            writer.WriteArrayExact(obj.DecimalsTestArray);
-            writer.WriteArrayExact(obj.FloatsTestArray);
-            writer.WriteArrayExact(obj.DoublesTestArray);
-            writer.WriteArray(obj.StringsTestArray);
-            writer.WriteArray(obj.StringsASCIITestArray);
+            //writer.WriteArrayExact(obj.BoolsTestArray);
+            //writer.WriteArrayExact(obj.ShortsTestArray);
+            //writer.WriteArrayExact(obj.IntsTestArray);
+            //writer.WriteArrayExact(obj.LongsTestArray);
+            //writer.WriteArrayExact(obj.SBytesTestArray);
+            //writer.WriteArrayExact(obj.UIntsTestArray);
+            //writer.WriteArrayExact(obj.ULongsTestArray);
+            //writer.WriteArrayExact(obj.DecimalsTestArray);
+            //writer.WriteArrayExact(obj.FloatsTestArray);
+            //writer.WriteArrayExact(obj.DoublesTestArray);
+            //writer.WriteArray(obj.StringsTestArray);
+            //writer.WriteArray(obj.StringsASCIITestArray);
         }
     }
 }
