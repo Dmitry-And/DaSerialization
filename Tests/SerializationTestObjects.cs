@@ -52,6 +52,8 @@ namespace DaSerialization.Tests
         public ITestInterface[] TestInterfacesArray;
         public List<ITestInterface> TestInterfacesList;
 
+        public BinaryContainer TestContainer;
+
         public TestObject() 
         {
             BoolTest = true;
@@ -88,7 +90,8 @@ namespace DaSerialization.Tests
         }
     }
 
-    public class TopLevelObjectSerializer : AFullSerializer<TestObject>
+    public class TopLevelObjectSerializer : AFullSerializer<TestObject>,
+        ISerializerWritesContainer
     {
         public override int Version => 1;        
 
@@ -136,6 +139,7 @@ namespace DaSerialization.Tests
             obj.TestInterface = reader.ReadObject<ITestInterface>("N_ITestInterface");
             obj.TestInterfacesArray = reader.ReadArray<ITestInterface>("N_ITestInterface[]");
             obj.TestInterfacesList = reader.ReadList<ITestInterface>("N_List<ITestInterface>");
+            obj.TestContainer = reader.ReadObject<BinaryContainer>("N_BinaryContainer");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -180,6 +184,15 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.TestInterface);
             writer.WriteArray(obj.TestInterfacesArray);
             writer.WriteList(obj.TestInterfacesList);
+            writer.WriteObject(obj.TestContainer);
+        }
+
+        public bool UpdateSerializersInInnerContainers(ref object obj)
+        {
+            var testObj = obj as TestObject;
+            if (testObj?.TestContainer == null)
+                return false;
+            return testObj.TestContainer.UpdateSerializers();
         }
     }
 
