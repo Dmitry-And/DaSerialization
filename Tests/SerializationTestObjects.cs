@@ -40,8 +40,6 @@ namespace DaSerialization.Tests
         public string[] StringsTestArray;
         public string[] StringsASCIITestArray;
 
-        public List<bool> BoolsTestList;
-
         public TestObject TestObj;
         public TopLevelStructure TopLevelStruct;
 
@@ -52,6 +50,7 @@ namespace DaSerialization.Tests
 
         public ITestInterface TestInterface;
         public ITestInterface[] TestInterfacesArray;
+        public List<ITestInterface> TestInterfacesList;
 
         public TestObject() 
         {
@@ -86,7 +85,6 @@ namespace DaSerialization.Tests
             //DoublesTestArray = new double[] { 2.457692, 1.657692, 0.557692 };
             //StringsTestArray = new string[] { "dflkajefciv,;eiq", "f562", "fjei2mn" };
             //StringsASCIITestArray = new string[] { "ieqrjmz. 923 ; j3", " dfj;efj3", "5425fvadv" };
-            BoolsTestList = new List<bool>() { true, false, false };
         }
     }
 
@@ -137,6 +135,7 @@ namespace DaSerialization.Tests
 
             obj.TestInterface = reader.ReadObject<ITestInterface>("N_ITestInterface");
             obj.TestInterfacesArray = reader.ReadArray<ITestInterface>("N_ITestInterface[]");
+            obj.TestInterfacesList = reader.ReadList<ITestInterface>("N_List<ITestInterface>");
         }
 
         public override void WriteObject(TestObject obj, BinaryStreamWriter writer)
@@ -180,6 +179,7 @@ namespace DaSerialization.Tests
 
             writer.WriteObject(obj.TestInterface);
             writer.WriteArray(obj.TestInterfacesArray);
+            writer.WriteList(obj.TestInterfacesList);
         }
     }
 

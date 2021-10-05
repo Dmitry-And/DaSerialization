@@ -29,6 +29,7 @@ namespace DaSerialization.Tests
             testObject1.TopLevelStructsList = new List<TopLevelStructure>() { testStruct, testStruct, testStruct };
             testObject1.TestInterface = testObject2;
             testObject1.TestInterfacesArray = new ITestInterface[] { null, testObject2, BottomLevelStructure.Default, null };
+            testObject1.TestInterfacesList = new List<ITestInterface>() { testObject2, null, BottomLevelStructure.Default };
             testContainer.Serialize(testObject1, 0);
 
             // top level structure serialization
