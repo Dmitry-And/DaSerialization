@@ -226,6 +226,8 @@ namespace DaSerialization.Tests
         public List<TestObject> TestObjectsList;
         public List<TopLevelStructure> TopLevelStructsList;
 
+        public BinaryContainer TestContainer;
+
         public static TopLevelStructure Default
             => new TopLevelStructure() 
             {
@@ -251,7 +253,8 @@ namespace DaSerialization.Tests
             };    
     }
 
-    public class TopLevelStructureSerializer : AFullSerializer<TopLevelStructure>
+    public class TopLevelStructureSerializer : AFullSerializer<TopLevelStructure>,
+        ISerializerWritesContainer
     {
         public override int Version => 1;
 
@@ -281,6 +284,7 @@ namespace DaSerialization.Tests
             obj.TopLevelStructsArray = reader.ReadArrayExact<TopLevelStructure>("N_TopLevelStructure[]");
             obj.TestObjectsList = reader.ReadList<TestObject>("N_List<TestObject>");
             obj.TopLevelStructsList = reader.ReadListExact<TopLevelStructure>("N_List<TopLevelStructure");
+            obj.TestContainer = reader.ReadObject<BinaryContainer>("N_BinaryContainer");
         }
 
         public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
@@ -309,6 +313,15 @@ namespace DaSerialization.Tests
             writer.WriteArrayExact(obj.TopLevelStructsArray);
             writer.WriteList(obj.TestObjectsList);
             writer.WriteListExact(obj.TopLevelStructsList);
+            writer.WriteObject(obj.TestContainer);
+        }
+
+        public bool UpdateSerializersInInnerContainers(ref object obj)
+        {
+            TopLevelStructure testStruct = (TopLevelStructure)obj;
+            if (testStruct.TestContainer == null)
+                return false;
+            return testStruct.TestContainer.UpdateSerializers();
         }
     }
 

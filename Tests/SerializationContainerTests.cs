@@ -44,6 +44,7 @@ namespace DaSerialization.Tests
             container.Serialize(TopLevelStructure.Default, 1);
 
             testObject1.TestContainer = container;
+            testStruct.TestContainer = container;
             testContainer.Serialize(testObject1, 0);
             testContainer.Serialize(testStruct, 1);
             testContainer.Serialize(container, 2);
