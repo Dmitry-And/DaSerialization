@@ -43,11 +43,15 @@ namespace DaSerialization.Tests
             container.Serialize(testObject1, 0);
             container.Serialize(TopLevelStructure.Default, 1);
 
+            var container2 = storage.CreateContainer();
+            container2.Serialize(container, 0);
+
             testObject1.TestContainer = container;
             testStruct.TestContainer = container;
             testContainer.Serialize(testObject1, 0);
             testContainer.Serialize(testStruct, 1);
             testContainer.Serialize(container, 2);
+            testContainer.Serialize(container2, 3);
             storage.SaveContainer(testContainer, FULL_CONTAINER_PATH);
             AssetDatabase.Refresh();
             Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
