@@ -1,3 +1,5 @@
+#if UNITY_2018_1_OR_NEWER
+
 using Tests;
 using UnityEditor;
 using System.Collections.Generic;
@@ -58,3 +60,5 @@ namespace DaSerialization.Tests
         }
     }
 }
+
+#endif
