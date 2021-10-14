@@ -177,6 +177,7 @@ namespace DaSerialization.Tests
 
         public ITestInterface TestInterface;
         public ITestInterface[] TestInterfacesArray;
+        public List<ITestInterface> TestInterfacesList;
 
         public BinaryContainer TestContainer;
 
@@ -239,6 +240,7 @@ namespace DaSerialization.Tests
             obj.TestContainer = reader.ReadObject<BinaryContainer>("N_BinaryContainer");
             obj.TestInterface = reader.ReadObject<ITestInterface>("N_ITestInterface");
             obj.TestInterfacesArray = reader.ReadArray<ITestInterface>("N_ITestInterface[]");
+            obj.TestInterfacesList = reader.ReadList<ITestInterface>("N_List<ITestInterface>");
         }
 
         public override void WriteObject(TopLevelStructure obj, BinaryStreamWriter writer)
@@ -270,6 +272,7 @@ namespace DaSerialization.Tests
             writer.WriteObject(obj.TestContainer);
             writer.WriteObject(obj.TestInterface);
             writer.WriteArray(obj.TestInterfacesArray);
+            writer.WriteList(obj.TestInterfacesList);
         }
 
         public bool UpdateSerializersInInnerContainers(ref object obj)
