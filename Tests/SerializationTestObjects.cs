@@ -65,7 +65,7 @@ namespace DaSerialization.Tests
         }
     }
 
-    public class TopLevelObjectSerializer : AFullSerializer<TestObject>,
+    public class TestObjectSerializer : AFullSerializer<TestObject>,
         ISerializerWritesContainer
     {
         public override int Version => 1;        

@@ -6,7 +6,7 @@ using System.Collections.Generic;
 
 namespace DaSerialization.Tests
 {
-    static class SerializationContainerTests
+    static class TestContainerCreator
     {
         private const string CONTAINER_PATH = "Assets/Tests/";
         private const string CONTAINER_NAME = "TestContainer";
@@ -16,7 +16,7 @@ namespace DaSerialization.Tests
         private static void CreateContainer()
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
-            var testContainer = storage.CreateContainer();
+            var container = storage.CreateContainer();
 
             var testObject2 = new TestObject();
             var testObject1 = new TestObject();
@@ -44,20 +44,20 @@ namespace DaSerialization.Tests
             testStruct.TestInterfacesList = new List<ITestInterface>() { BottomLevelStructure.Default, null, testObject2, null };
 
             // top level container serialization
-            var container = storage.CreateContainer();
+            var topContainer = storage.CreateContainer();
+            topContainer.Serialize(testObject1, 0);
+            topContainer.Serialize(TopLevelStructure.Default, 1);
+
+            var innerContainer = storage.CreateContainer();
+            innerContainer.Serialize(topContainer, 0);
+
+            testObject1.TestContainer = topContainer;
+            testStruct.TestContainer = topContainer;
             container.Serialize(testObject1, 0);
-            container.Serialize(TopLevelStructure.Default, 1);
-
-            var container2 = storage.CreateContainer();
-            container2.Serialize(container, 0);
-
-            testObject1.TestContainer = container;
-            testStruct.TestContainer = container;
-            testContainer.Serialize(testObject1, 0);
-            testContainer.Serialize(testStruct, 1);
-            testContainer.Serialize(container, 2);
-            testContainer.Serialize(container2, 3);
-            storage.SaveContainer(testContainer, FULL_CONTAINER_PATH);
+            container.Serialize(testStruct, 1);
+            container.Serialize(topContainer, 2);
+            container.Serialize(innerContainer, 3);
+            storage.SaveContainer(container, FULL_CONTAINER_PATH);
             AssetDatabase.Refresh();
             Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
         }
