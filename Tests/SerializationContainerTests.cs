@@ -40,6 +40,7 @@ namespace DaSerialization.Tests
             testStruct.TestObjectsList = new List<TestObject>() { testObject2, null, testObject2, null };
             testStruct.TopLevelStructsList = new List<TopLevelStructure>() { testStruct, testStruct, testStruct };
             testStruct.TestInterface = testObject2;
+            testStruct.TestInterfacesArray = new ITestInterface[] { null, null, BottomLevelStructure.Default, testObject2 };
 
             // top level container serialization
             var container = storage.CreateContainer();
