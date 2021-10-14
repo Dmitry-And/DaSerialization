@@ -43,20 +43,22 @@ namespace DaSerialization.Tests
             testStruct.TestInterfacesArray = new ITestInterface[] { null, null, BottomLevelStructure.Default, testObject2 };
             testStruct.TestInterfacesList = new List<ITestInterface>() { BottomLevelStructure.Default, null, testObject2, null };
 
-            // top level container serialization
             var topContainer = storage.CreateContainer();
+            var innerContainer = storage.CreateContainer();
+            var supportContainer = storage.CreateContainer();
+
             topContainer.Serialize(testObject1, 0);
             topContainer.Serialize(TopLevelStructure.Default, 1);
-
-            var innerContainer = storage.CreateContainer();
-            innerContainer.Serialize(topContainer, 0);
+            innerContainer.Serialize(testObject1, 0);
+            innerContainer.Serialize(TopLevelStructure.Default, 1);
+            topContainer.Serialize(innerContainer, 2);
+            supportContainer.Serialize(topContainer, 0);
 
             testObject1.TestContainer = topContainer;
             testStruct.TestContainer = topContainer;
             container.Serialize(testObject1, 0);
             container.Serialize(testStruct, 1);
-            container.Serialize(topContainer, 2);
-            container.Serialize(innerContainer, 3);
+            container.Serialize(supportContainer, 2);
             storage.SaveContainer(container, FULL_CONTAINER_PATH);
             AssetDatabase.Refresh();
             Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
