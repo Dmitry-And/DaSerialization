@@ -1,19 +1,10 @@
-#if UNITY_2018_1_OR_NEWER
-
-using Tests;
-using UnityEditor;
 using System.Collections.Generic;
 
 namespace DaSerialization.Tests
 {
-    static class TestContainerCreator
+    static partial class TestContainerCreator
     {
-        private const string CONTAINER_PATH = "Assets/Tests/";
-        private const string CONTAINER_NAME = "TestContainer";
-        private const string FULL_CONTAINER_PATH = CONTAINER_PATH + CONTAINER_NAME;
-
-        [MenuItem("Tools/Tests/Create Test Container", priority = int.MaxValue)]
-        private static void CreateContainer()
+        private static void CreateContainer(string containerPath)
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
             var container = storage.CreateContainer();
@@ -59,11 +50,7 @@ namespace DaSerialization.Tests
             container.Serialize(testObject1, 0);
             container.Serialize(testStruct, 1);
             container.Serialize(supportContainer, 2);
-            storage.SaveContainer(container, FULL_CONTAINER_PATH);
-            AssetDatabase.Refresh();
-            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
+            storage.SaveContainer(container, containerPath);
         }
     }
 }
-
-#endif
