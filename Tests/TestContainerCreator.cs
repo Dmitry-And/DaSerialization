@@ -2,9 +2,9 @@ using System.Collections.Generic;
 
 namespace DaSerialization.Tests
 {
-    static partial class TestContainerCreator
+    public static partial class TestContainerCreator
     {
-        private static void CreateContainer(string containerPath)
+        public static void CreateContainer(string containerPath)
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
             var container = storage.CreateContainer();
