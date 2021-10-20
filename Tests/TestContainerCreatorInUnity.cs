@@ -15,7 +15,7 @@ namespace DaSerialization.Tests
         {
             CreateContainer(FULL_CONTAINER_PATH);
             AssetDatabase.Refresh();
-            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".bytes");
+            Selection.activeObject = AssetDatabase.LoadMainAssetAtPath(FULL_CONTAINER_PATH + ".container");
             EditorGUIUtility.PingObject(Selection.activeObject);
         }
     }
