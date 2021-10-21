@@ -4,7 +4,7 @@ using DaSerialization;
 using DaSerialization.Editor;
 
 [CustomEditor(typeof(DefaultAsset))]
-public class ContainerInspector : Editor
+public class ContainerFilesInspector : Editor
 {
     public override void OnInspectorGUI()
     {
