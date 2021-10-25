@@ -24,7 +24,7 @@ namespace DaSerialization
         public override BinaryContainer CreateContainer(int size = 0)
             => CreateBinaryContainer(size);
 
-        public override BinaryContainer LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
+        public override BinaryContainer LoadContainer(string name, bool writable, bool errorIfNotExist = true)
         {
             var assetName = GetResourcesAssetPath(name);
             var textAsset = Resources.Load<TextAsset>(assetName);

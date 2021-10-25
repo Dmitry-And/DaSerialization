@@ -28,7 +28,7 @@
     {
         BinaryContainer CreateContainer(int size = 0);
         // TODO: async container loading
-        BinaryContainer LoadContainer(string name, bool writable = false, bool errorIfNotExist = true);
+        BinaryContainer LoadContainer(string name, bool writable, bool errorIfNotExist = true);
         bool SaveContainer(BinaryContainer container, string name);
         bool DeleteContainer(string name);
     }

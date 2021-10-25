@@ -22,7 +22,7 @@ namespace DaSerialization
             return container;
         }
 
-        public override BinaryContainer LoadContainer(string name, bool writable = false, bool errorIfNotExist = true)
+        public override BinaryContainer LoadContainer(string name, bool writable, bool errorIfNotExist = true)
         {
             // all files are considered as writable
             string filePath = GetFilePath(name);
