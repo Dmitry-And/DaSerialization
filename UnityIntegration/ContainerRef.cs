@@ -101,12 +101,16 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
     public T Load<T>(bool objectExpected = true)
     {
         T result = default;
-        Load(ref result, objectExpected);
+        //Load(ref result, objectExpected);
+        LoadDefaultAsset(ref result, objectExpected);
         return result;
     }
 
     public bool Load<T>(ref T obj, bool objectExpected = true)
         => ContainerAssetUtils.Load(_textAsset, Container, ref obj, Id, objectExpected);
+
+    public bool LoadDefaultAsset<T>(ref T obj, bool objectExpected = true)
+        => ContainerAssetUtils.LoadDefaultAsset(_defaultAsset, Container, ref obj, Id, objectExpected);
 }
 
 [Serializable]
@@ -204,6 +208,9 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     public bool Load<T>(ref T obj, int id, bool objectExpected = true)
         => ContainerAssetUtils.Load(_textAsset, Container, ref obj, id, objectExpected);
+
+    public bool LoadDefaultAsset<T>(ref T obj, int id, bool objectExpected = true)
+        => ContainerAssetUtils.LoadDefaultAsset(_defaultAsset, Container, ref obj, id, objectExpected);
 }
 
 namespace DaSerialization.Internal
@@ -281,6 +288,29 @@ namespace DaSerialization.Internal
                 Debug.LogError($"No object of type {typeof(T).PrettyName()} with id {id} found in container {textAsset.name}\n", textAsset);
             return found;
         }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool LoadDefaultAsset<T>(DefaultAsset defaultAsset, BinaryContainer container, ref T obj, int id, bool objectExpected)
+        {
+            BinaryContainer.IsValidObjectId(id, true);
+            if (container == null)
+            {
+                if (objectExpected)
+                {
+                    if (defaultAsset == null)
+                        Debug.LogError("Trying to load from Null container");
+                    else
+                        Debug.LogError("Trying to load from invalid container " + defaultAsset.name, defaultAsset);
+                }
+                return false;
+            }
+
+            bool found = container.Deserialize(ref obj, id);
+            if (!found & objectExpected)
+                Debug.LogError($"No object of type {typeof(T).PrettyName()} with id {id} found in container {defaultAsset.name}\n", defaultAsset);
+            return found;
+        }
+
 
 #if UNITY_EDITOR
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
