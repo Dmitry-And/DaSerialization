@@ -1,6 +1,7 @@
 ﻿#if UNITY_2018_1_OR_NEWER
 
 using System;
+using System.IO;
 using DaSerialization;
 using UnityEngine;
 using UnityEngine.Serialization;
@@ -53,13 +54,20 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
 
     private bool _initialized;
     private BinaryContainer _container;
-    public BinaryContainer Container { get { Init(); return _container; } }
-    public bool IsValid => Init();
+    //public BinaryContainer Container { get { Init(); return _container; } }
+
+    public BinaryContainer Container { get { InitDefaultAsset(); return _container; } }
+    //public bool IsValid => Init();
+
+    public bool IsValid => InitDefaultAsset();
 
     public bool Equals(ContainerRefWithId other) => other.Id == Id && other._textAsset == _textAsset;
 
     public bool Init()
         => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container, !MuteInvalidAssetErrors);
+
+    public bool InitDefaultAsset()
+        => ContainerAssetUtils.InitDefaultAsset(ref _initialized, _defaultAsset, ref _container, !MuteInvalidAssetErrors);
 
 #if UNITY_EDITOR
     public bool UpdateSerializers()
@@ -141,8 +149,11 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     private bool _initialized;
     private BinaryContainer _container;
-    public BinaryContainer Container { get { Init(); return _container; } }
-    public bool IsValid => Init();
+   // public BinaryContainer Container { get { Init(); return _container; } }
+    public BinaryContainer Container { get { InitDefaultAsset(); return _container; } }
+
+    //public bool IsValid => Init();
+    public bool IsValid => InitDefaultAsset();
 
     public static ContainerRef FromTextAsset(TextAsset textAsset, bool verbose = true)
         => new ContainerRef() { _textAsset = textAsset, MuteInvalidAssetErrors = !verbose };
@@ -154,6 +165,9 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     public bool Init()
         => ContainerAssetUtils.Init(ref _initialized, _textAsset, ref _container, !MuteInvalidAssetErrors);
+
+    public bool InitDefaultAsset()
+        => ContainerAssetUtils.InitDefaultAsset(ref _initialized, _defaultAsset, ref _container, !MuteInvalidAssetErrors);
 
 #if UNITY_EDITOR
     public bool UpdateSerializers()
@@ -217,6 +231,31 @@ namespace DaSerialization.Internal
                 }
                 if (container == null & verbose)
                     Debug.LogError($"Asset {textAsset.name} contains data which is not a valid {nameof(BinaryContainer)}", textAsset);
+            }
+            return container != null;
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static bool InitDefaultAsset(ref bool initialized, DefaultAsset defaultAsset, ref BinaryContainer container, bool verbose)
+        {
+            if (!initialized)
+            {
+                initialized = true;
+                if (defaultAsset == null)
+                    return false;
+                var data = File.ReadAllBytes(AssetDatabase.GetAssetPath(defaultAsset));
+                try
+                {
+                    container = UnityStorage.Instance.GetContainerFromData(data, !Application.isPlaying);
+                }
+                catch (Exception e)
+                {
+                    if (verbose)
+                        Debug.LogException(e, defaultAsset);
+                    container = null;
+                }
+                if (container == null & verbose)
+                    Debug.LogError($"Asset {defaultAsset.name} contains data which is not a valid {nameof(BinaryContainer)}", defaultAsset);
             }
             return container != null;
         }
