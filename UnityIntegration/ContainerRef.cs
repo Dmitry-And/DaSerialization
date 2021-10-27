@@ -18,6 +18,8 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
 
     [FormerlySerializedAs("Container")]
     [SerializeField] private TextAsset _textAsset;
+    [SerializeField] private DefaultAsset _defaultAsset;
+
     public TextAsset TextAsset
     {
         get => _textAsset;
@@ -31,6 +33,21 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
             MuteInvalidAssetErrors = false; // conservative strategy
         }
     }
+
+    public DefaultAsset DefaultAsset
+    {
+        get => _defaultAsset;
+        set
+        {
+            if (_defaultAsset == value)
+                return;
+            _defaultAsset = value;
+            _initialized = false;
+            _container = null;
+            MuteInvalidAssetErrors = false; // conservative strategy
+        }
+    }
+
     public int Id;
     public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
@@ -91,6 +108,7 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     [FormerlySerializedAs("Container")]
     [SerializeField] private TextAsset _textAsset;
+    [SerializeField] private DefaultAsset _defaultAsset;
     public TextAsset TextAsset
     {
         get => _textAsset;
@@ -104,6 +122,21 @@ public struct ContainerRef : IEquatable<ContainerRef>
             MuteInvalidAssetErrors = false; // conservative strategy
         }
     }
+
+    public DefaultAsset DefaultAsset
+    {
+        get => _defaultAsset;
+        set
+        {
+            if (_defaultAsset == value)
+                return;
+            _defaultAsset = value;
+            _initialized = false;
+            _container = null;
+            MuteInvalidAssetErrors = false; // conservative strategy
+        }
+    }
+
     public bool MuteInvalidAssetErrors; // set true to avoid errors 'asset is not a containner'
 
     private bool _initialized;
@@ -113,6 +146,9 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     public static ContainerRef FromTextAsset(TextAsset textAsset, bool verbose = true)
         => new ContainerRef() { _textAsset = textAsset, MuteInvalidAssetErrors = !verbose };
+
+    public static ContainerRef FromDefaultAsset(DefaultAsset defaultAsset, bool verbose = true)
+        => new ContainerRef() { _defaultAsset = defaultAsset, MuteInvalidAssetErrors = !verbose };
 
     public bool Equals(ContainerRef other) => other._textAsset == _textAsset;
 
