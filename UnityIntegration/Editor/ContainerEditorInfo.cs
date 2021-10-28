@@ -6,6 +6,10 @@ using System.Text;
 using Newtonsoft.Json;
 using UnityEngine;
 
+#if UNITY_EDITOR
+using UnityEditor;
+#endif
+
 namespace DaSerialization.Editor
 {
     public class ContainerEditorInfo
@@ -22,6 +26,11 @@ namespace DaSerialization.Editor
         public ContainerEditorInfo(TextAsset textAsset, bool verbose = false)
         {
             var containerRef = ContainerRef.FromTextAsset(textAsset, verbose);
+            _container = containerRef.Container;
+        }
+        public ContainerEditorInfo(DefaultAsset defaultAsset, bool verbose = false)
+        {
+            var containerRef = ContainerRef.FromDefaultAsset(defaultAsset, verbose);
             _container = containerRef.Container;
         }
         public ContainerEditorInfo(BinaryContainer container)
