@@ -98,6 +98,13 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
     public void Remove(int idToDelete, Type typeToDelete, bool andWriteToAsset)
         => ContainerAssetUtils.Remove(_textAsset, Container, idToDelete, typeToDelete, andWriteToAsset);
 
+    public void RemoveDefaultAsset<T>(bool andWriteToAsset)
+        => RemoveDefaultAsset(typeof(T), andWriteToAsset);
+    public void RemoveDefaultAsset(Type typeToDelete, bool andWriteToAsset)
+    => RemoveDefaultAsset(Id, typeToDelete, andWriteToAsset);
+    public void RemoveDefaultAsset(int idToDelete, Type typeToDelete, bool andWriteToAsset)
+    => ContainerAssetUtils.RemoveDefaultAsset(_defaultAsset, Container, idToDelete, typeToDelete, andWriteToAsset);
+
     public void WriteToTextAsset()
         => ContainerAssetUtils.WriteToTextAsset(Container, _textAsset);
 
@@ -205,6 +212,11 @@ public struct ContainerRef : IEquatable<ContainerRef>
         => Remove(idToDelete, typeof(T), andWriteToAsset);
     public void Remove(int idToDelete, Type typeToDelete, bool andWriteToAsset)
         => ContainerAssetUtils.Remove(_textAsset, Container, idToDelete, typeToDelete, andWriteToAsset);
+
+    public void RemoveDefaultAsset<T>(int idToDelete, bool andWriteToAsset)
+        => RemoveDefaultAsset(idToDelete, typeof(T), andWriteToAsset);
+    public void RemoveDefaultAsset(int idToDelete, Type typeToDelete, bool andWriteToAsset)
+        => ContainerAssetUtils.RemoveDefaultAsset(_defaultAsset, Container, idToDelete, typeToDelete, andWriteToAsset);
 
     public void WriteToTextAsset()
         => ContainerAssetUtils.WriteToTextAsset(Container, _textAsset);
@@ -364,6 +376,19 @@ namespace DaSerialization.Internal
             container.Remove(idToDelete, typeToDelete);
             if (andWriteToAsset)
                 WriteToTextAsset(container, textAsset);
+        }
+
+        public static void RemoveDefaultAsset(DefaultAsset defaultAsset, BinaryContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
+        {
+            BinaryContainer.IsValidObjectId(idToDelete, true);
+            if (defaultAsset == null)
+                throw new NullReferenceException("Trying to remove from Null container");
+            if (container == null) // the same as !IsValid
+                throw new NullReferenceException("Trying to remove from invalid container");
+
+            container.Remove(idToDelete, typeToDelete);
+            if (andWriteToAsset)
+                WriteToDefaultAsset(container, defaultAsset);
         }
 
         public static void WriteToTextAsset(BinaryContainer container, TextAsset textAsset)
