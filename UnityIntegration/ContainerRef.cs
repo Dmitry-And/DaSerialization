@@ -78,7 +78,8 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
         var container = Container;
         if (container.UpdateSerializers())
         {
-            WriteToTextAsset();
+            //WriteToTextAsset();
+            WriteToDefaultAsset();
             return true;
         }
         return false;
@@ -96,6 +97,9 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
 
     public void WriteToTextAsset()
         => ContainerAssetUtils.WriteToTextAsset(Container, _textAsset);
+
+    public void WriteToDefaultAsset()
+        => ContainerAssetUtils.WriteToDefaultAsset(Container, _defaultAsset);
 #endif
 
     public T Load<T>(bool objectExpected = true)
@@ -181,7 +185,8 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
         if (Container.UpdateSerializers())
         {
-            WriteToTextAsset();
+            //WriteToTextAsset();
+            WriteToDefaultAsset();
             return true;
         }
         return false;
@@ -197,6 +202,9 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     public void WriteToTextAsset()
         => ContainerAssetUtils.WriteToTextAsset(Container, _textAsset);
+
+    public void WriteToDefaultAsset()
+        => ContainerAssetUtils.WriteToDefaultAsset(Container, _defaultAsset);
 #endif
 
     public T Load<T>(int id, bool objectExpected = true)
@@ -347,6 +355,18 @@ namespace DaSerialization.Internal
                 return;
             }
             var path = AssetDatabase.GetAssetPath(textAsset);
+            UnityStorage.Instance.SaveContainerAtPath(container, path);
+            AssetDatabase.Refresh();
+        }
+
+        public static void WriteToDefaultAsset(BinaryContainer container, DefaultAsset defaultAsset)
+        {
+            if (container == null) // same as !IsValid
+            {
+                Debug.LogError("Trying to write invalid container");
+                return;
+            }
+            var path = AssetDatabase.GetAssetPath(defaultAsset);
             UnityStorage.Instance.SaveContainerAtPath(container, path);
             AssetDatabase.Refresh();
         }
