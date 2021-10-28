@@ -88,6 +88,9 @@ public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
     public void Save<T>(T obj, bool andWriteToAsset)
     { Init(); ContainerAssetUtils.Save(_textAsset, ref _container, obj, Id, andWriteToAsset); }
 
+    public void SaveDefaultAsset<T>(T obj, bool andWriteToAsset)
+    { InitDefaultAsset(); ContainerAssetUtils.SaveDefaultAsset(_defaultAsset, ref _container, obj, Id, andWriteToAsset); }
+
     public void Remove<T>(bool andWriteToAsset)
         => Remove(typeof(T), andWriteToAsset);
     public void Remove(Type typeToDelete, bool andWriteToAsset)
@@ -194,6 +197,9 @@ public struct ContainerRef : IEquatable<ContainerRef>
 
     public void Save<T>(T obj, int id, bool andWriteToAsset)
     { Init(); ContainerAssetUtils.Save(_textAsset, ref _container, obj, id, andWriteToAsset); }
+
+    public void SaveDefaultAsset<T>(T obj, int id, bool andWriteToAsset)
+    { InitDefaultAsset(); ContainerAssetUtils.SaveDefaultAsset(_defaultAsset, ref _container, obj, id, andWriteToAsset); }
 
     public void Remove<T>(int idToDelete, bool andWriteToAsset)
         => Remove(idToDelete, typeof(T), andWriteToAsset);
@@ -332,6 +338,19 @@ namespace DaSerialization.Internal
             container.Serialize(obj, id);
             if (andWriteToAsset)
                 WriteToTextAsset(container, textAsset);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SaveDefaultAsset<T>(DefaultAsset defaultAsset, ref BinaryContainer container, T obj, int id, bool andWriteToAsset)
+        {
+            BinaryContainer.IsValidObjectId(id, true);
+            if (defaultAsset == null)
+                throw new NullReferenceException("Trying to save to Null container");
+
+            container = container ?? UnityStorage.Instance.CreateContainer();
+            container.Serialize(obj, id);
+            if (andWriteToAsset)
+                WriteToDefaultAsset(container, defaultAsset);
         }
 
         public static void Remove(TextAsset textAsset, BinaryContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
