@@ -15,20 +15,27 @@ namespace DaSerialization.Editor
 
         private ContainerEditorInfo _container;
         private TextAsset _text;
+        private DefaultAsset _defaultAsset;
         private GUIContent _infoLabel;
         private Color _color;
 
         private void UpdateContainer(SerializedProperty property)
         {
-            var text = property.objectReferenceValue as TextAsset;
-            if (_container == null | _text != text)
+            //var text = property.objectReferenceValue as TextAsset;
+            //if (_container == null | _text != text)
+            var defaultAsset = property.objectReferenceValue as DefaultAsset;
+            if (_container == null | _defaultAsset != defaultAsset)
                 ForceUpdateContainer(property);
         }
         private void ForceUpdateContainer(SerializedProperty property)
         {
-            var text = property.objectReferenceValue as TextAsset;
-            _text = text;
-            _container = text == null ? null : new ContainerEditorInfo(text, Event.current.alt);
+            //var text = property.objectReferenceValue as TextAsset;
+            //_text = text;
+            //_container = text == null ? null : new ContainerEditorInfo(text, Event.current.alt);
+
+            var defaultAsset = property.objectReferenceValue as DefaultAsset;
+            _defaultAsset = defaultAsset;
+            _container = defaultAsset == null ? null : new ContainerEditorInfo(defaultAsset, Event.current.alt);
 
             _color = Color.white;
             if (_container == null)
