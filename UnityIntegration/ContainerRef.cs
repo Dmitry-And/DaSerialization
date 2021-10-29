@@ -228,7 +228,8 @@ public struct ContainerRef : IEquatable<ContainerRef>
     public T Load<T>(int id, bool objectExpected = true)
     {
         T result = default;
-        Load(ref result, id, objectExpected);
+        //Load(ref result, id, objectExpected);
+        LoadDefaultAsset(ref result, id, objectExpected);
         return result;
     }
 
