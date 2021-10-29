@@ -11,11 +11,24 @@ namespace DaSerialization.Editor
         private static GUIStyle TextStyle;
         private ContainerEditorView _view;
         private TextAsset _asset;
+        private DefaultAsset _defaultAsset;
 
         public ContainerInspectorPopup(ContainerEditorInfo containerInfo, TextAsset asset)
         {
             _view = new ContainerEditorView(containerInfo, asset != null);
             _asset = asset;
+            if (TextStyle == null)
+            {
+                TextStyle = new GUIStyle(EditorStyles.textArea);
+                TextStyle.wordWrap = true;
+                TextStyle.fontSize--;
+            }
+        }
+
+        public ContainerInspectorPopup(ContainerEditorInfo containerInfo, DefaultAsset asset)
+        {
+            _view = new ContainerEditorView(containerInfo, asset != null);
+            _defaultAsset = asset;
             if (TextStyle == null)
             {
                 TextStyle = new GUIStyle(EditorStyles.textArea);
@@ -33,9 +46,13 @@ namespace DaSerialization.Editor
             var updatedContainer = _view.Draw(pos);
             if (updatedContainer != null && _asset != null)
             {
-                ContainerAssetUtils.WriteToTextAsset(updatedContainer, _asset);
-                var container = ContainerRef.FromTextAsset(_asset).Container;
-                _view = new ContainerEditorView(new ContainerEditorInfo(container), _asset);
+                //ContainerAssetUtils.WriteToTextAsset(updatedContainer, _asset);
+                //var container = ContainerRef.FromTextAsset(_asset).Container;
+                //_view = new ContainerEditorView(new ContainerEditorInfo(container), _asset);
+                ContainerAssetUtils.WriteToDefaultAsset(updatedContainer, _defaultAsset);
+                var container = ContainerRef.FromDefaultAsset(_defaultAsset).Container;
+                _view = new ContainerEditorView(new ContainerEditorInfo(container), _defaultAsset);
+
             }
         }
     }

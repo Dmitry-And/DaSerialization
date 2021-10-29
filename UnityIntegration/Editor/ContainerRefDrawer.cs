@@ -56,7 +56,8 @@ namespace DaSerialization.Editor
         {
             EditorGUI.BeginProperty(pos, label, property);
 
-            var containerProp = property.FindPropertyRelative(ContainerRefWithId.TextAssetFieldName);
+            //var containerProp = property.FindPropertyRelative(ContainerRefWithId.TextAssetFieldName);
+            var containerProp = property.FindPropertyRelative(ContainerRefWithId.DefaultAssetFieldName);
             var idProp = property.FindPropertyRelative(nameof(ContainerRefWithId.Id));
 
             var position = EditorGUI.PrefixLabel(pos, GUIUtility.GetControlID(FocusType.Passive), label);
@@ -85,8 +86,9 @@ namespace DaSerialization.Editor
                 ForceUpdateContainer(containerProp);
                 if (_container != null && _container.IsValid)
                 {
-                    var textAsset = containerProp.objectReferenceValue as TextAsset;
-                    PopupWindow.Show(infoRect, new ContainerInspectorPopup(_container, textAsset));
+                    //var textAsset = containerProp.objectReferenceValue as TextAsset;
+                    var defaultAsset = containerProp.objectReferenceValue as DefaultAsset;
+                    PopupWindow.Show(infoRect, new ContainerInspectorPopup(_container, defaultAsset));
                 }
             }
             GUI.backgroundColor = Color.white;

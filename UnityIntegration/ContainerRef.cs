@@ -16,6 +16,7 @@ using UnityEditor;
 public struct ContainerRefWithId : IEquatable<ContainerRefWithId>
 {
     public static string TextAssetFieldName = nameof(_textAsset);
+    public static string DefaultAssetFieldName = nameof(_defaultAsset);
 
     [FormerlySerializedAs("Container")]
     [SerializeField] private TextAsset _textAsset;
