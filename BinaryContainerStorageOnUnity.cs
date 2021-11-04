@@ -14,7 +14,7 @@ namespace DaSerialization
             string.IsNullOrEmpty(_persistentRuntimePathPrefix)
             ? _persistentRuntimePathPrefix = Application.persistentDataPath + "/Storage/"
             : _persistentRuntimePathPrefix;
-        public static string PersistentFileExtension = ".bytes";
+        public static string PersistentFileExtension = ".container";
 
         public BinaryContainerStorageOnUnity(SerializerStorage serializers = null)
             : base(serializers) { }

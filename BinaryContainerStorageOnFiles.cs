@@ -6,7 +6,7 @@ namespace DaSerialization
     public class BinaryContainerStorageOnFiles : AContainerStorage
     {
         public string StoragePathPrefix;
-        public string StorageFileExtension = ".bytes";
+        public string StorageFileExtension = ".container";
 
         public BinaryContainerStorageOnFiles(SerializerStorage serializers = null, string prefix = "../")
             : base(serializers)

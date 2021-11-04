@@ -7,7 +7,6 @@ namespace DaSerialization.Tests
         public static void CreateContainer(string containerPath)
         {
             var storage = new BinaryContainerStorageOnFiles(null, "");
-            storage.StorageFileExtension = ".container";
             var container = storage.CreateContainer();
 
             var testObject2 = new TestObject();
