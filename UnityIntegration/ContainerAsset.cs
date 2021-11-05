@@ -1,9 +1,16 @@
 using UnityEngine;
 using DaSerialization;
+using System.IO;
+using UnityEditor;
 
 public class ContainerAsset : Object
 {
     public byte[] bytes;
+
+    public ContainerAsset(string path)
+    {
+        bytes = File.ReadAllBytes(path);
+    }
 
     public bool TryGetContainer(byte[] data, out BinaryContainer container, bool verbose = false)
     {
