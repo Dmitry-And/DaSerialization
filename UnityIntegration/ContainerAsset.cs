@@ -1,7 +1,7 @@
 using UnityEngine;
 using DaSerialization;
 
-public class ContainerAsset : Object
+public class ContainerAsset : ScriptableObject
 {
     public byte[] bytes;
     private BinaryContainer _container;

@@ -1,5 +1,6 @@
 using UnityEngine;
 using UnityEditor.AssetImporters;
+using System.IO;
 
 [ScriptedImporter(1, "container")]
 public class ContainerImporter : ScriptedImporter 
@@ -8,7 +9,8 @@ public class ContainerImporter : ScriptedImporter
 
     public override void OnImportAsset(AssetImportContext ctx)
     {
-        _containerAsset = new ContainerAsset(assetPath);
+        _containerAsset = (ContainerAsset)ScriptableObject.CreateInstance("ContainerAsset");
+        _containerAsset.bytes = File.ReadAllBytes(assetPath);
 
         ctx.AddObjectToAsset("Container", _containerAsset);
         ctx.SetMainObject(_containerAsset);
