@@ -367,6 +367,19 @@ namespace DaSerialization.Internal
                 WriteToDefaultAsset(container, defaultAsset);
         }
 
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static void SaveContainerAsset<T>(ContainerAsset containerAsset, ref BinaryContainer container, T obj, int id, bool andWriteToAsset)
+        {
+            BinaryContainer.IsValidObjectId(id, true);
+            if (containerAsset == null)
+                throw new NullReferenceException("Trying to save to Null container");
+
+            container = container ?? UnityStorage.Instance.CreateContainer();
+            container.Serialize(obj, id);
+            if (andWriteToAsset)
+                WriteToContainerAsset(container, containerAsset);
+        }
+
         public static void Remove(TextAsset textAsset, BinaryContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
         {
             BinaryContainer.IsValidObjectId(idToDelete, true);
@@ -393,6 +406,19 @@ namespace DaSerialization.Internal
                 WriteToDefaultAsset(container, defaultAsset);
         }
 
+        public static void RemoveContainerAsset(ContainerAsset containerAsset, BinaryContainer container, int idToDelete, Type typeToDelete, bool andWriteToAsset)
+        {
+            BinaryContainer.IsValidObjectId(idToDelete, true);
+            if (containerAsset == null)
+                throw new NullReferenceException("Trying to remove from Null container");
+            if (container == null) // the same as !IsValid
+                throw new NullReferenceException("Trying to remove from invalid container");
+
+            container.Remove(idToDelete, typeToDelete);
+            if (andWriteToAsset)
+                WriteToContainerAsset(container, containerAsset);
+        }
+
         public static void WriteToTextAsset(BinaryContainer container, TextAsset textAsset)
         {
             if (container == null) // same as !IsValid
@@ -413,6 +439,18 @@ namespace DaSerialization.Internal
                 return;
             }
             var path = AssetDatabase.GetAssetPath(defaultAsset);
+            UnityStorage.Instance.SaveContainerAtPath(container, path);
+            AssetDatabase.Refresh();
+        }
+
+        public static void WriteToContainerAsset(BinaryContainer container, ContainerAsset containerAsset)
+        {
+            if (container == null) // same as !IsValid
+            {
+                Debug.LogError("Trying to write invalid container");
+                return;
+            }
+            var path = AssetDatabase.GetAssetPath(containerAsset);
             UnityStorage.Instance.SaveContainerAtPath(container, path);
             AssetDatabase.Refresh();
         }
