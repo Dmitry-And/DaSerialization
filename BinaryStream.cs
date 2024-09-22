@@ -34,8 +34,7 @@ namespace DaSerialization
         private MemoryStream _stream;
         private BinaryStreamReader _reader;
         private BinaryStreamWriter _writer;
-        private bool _locked = true;
-        public bool IsLocked => _locked;
+        public bool IsIncorrectPosition { get; private set; }
         // 0 - nothing is serializing,
         // positive - something is serializing,
         // negative - something is deserializing
@@ -43,15 +42,15 @@ namespace DaSerialization
 
         public long Position
         {
-            get { return _stream == null | _locked ? -1 : _stream.Position; }
+            get { return _stream == null | IsIncorrectPosition ? -1 : _stream.Position; }
             protected set
             {
                 if (value < 0 | _stream == null || _stream.Length < value)
-                    _locked = true;
+                    IsIncorrectPosition = true;
                 else
                 {
                     _stream.Seek(value, SeekOrigin.Begin);
-                    _locked = false;
+                    IsIncorrectPosition = false;
                 }
             }
         }
@@ -146,13 +145,13 @@ namespace DaSerialization
         {
             if (_stream == null)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} from empty {this.PrettyTypeName()}");
-            if (_locked)
+            if (IsIncorrectPosition)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} from {this.PrettyTypeName()} w/o setting position");
             if (destination == null)
                 throw new ArgumentException("Other stream is null");
             if (!destination.Writable)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} which is not writable");
-            if (destination._locked)
+            if (destination.IsIncorrectPosition)
                 throw new InvalidOperationException($"Trying to {nameof(CopyTo)} to {destination.PrettyTypeName()} w/o setting position");
             if (Position + length > Length)
                 throw new IndexOutOfRangeException($"Trying to {nameof(CopyTo)} from {this.PrettyTypeName()} more bytes than it has: position {Position}, length {Length}, copying {length}");
@@ -202,7 +201,7 @@ namespace DaSerialization
             _writer = null;
             _stream?.Dispose();
             _stream = null;
-            _locked = true;
+            IsIncorrectPosition = true;
         }
 
         public MemoryStream GetUnderlyingStream() => _stream;

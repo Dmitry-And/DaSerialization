@@ -46,7 +46,7 @@ namespace DaSerialization
         {
             if (_stream == null)
                 throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from empty {this.PrettyTypeName()}");
-            if (_binaryStream.IsLocked)
+            if (_binaryStream.IsIncorrectPosition)
                 throw new InvalidOperationException($"Trying to {nameof(ReadMetadata)} from {this.PrettyTypeName()} w/o setting position");
             OnDeserializeMetaBegin(meta, metaInfo);
             int result;
@@ -587,7 +587,7 @@ namespace DaSerialization
 
         private void CheckStreamReady()
         {
-            if (_binaryStream.IsLocked)
+            if (_binaryStream.IsIncorrectPosition)
                 throw new Exception($"Trying to read/write from/to stream w/o setting position");
         }
 
