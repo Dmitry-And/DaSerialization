@@ -1,4 +1,4 @@
-﻿using System.Runtime.CompilerServices;
+using System.Runtime.CompilerServices;
 
 namespace DaSerialization
 {
@@ -296,6 +296,112 @@ namespace DaSerialization
             if (bytes > 0)
                 writer.WriteUIntPacked(value, bytes);
         }
+
+        #endregion
+
+        #region ascii string packing
+        // each symbol encoded in 7-bit ASCII values, 0-31 symbols ignored, 0 - stop symbol
+
+        public static string ReadStringASCIIPacked(this BinaryStreamReader reader, string metaInfo = null)
+        {
+            reader.BeginSection("Ascii String", metaInfo);
+            int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
+            if (length <= 0)
+            {
+                reader.EndSection();
+                return length < 0 ? null : "";
+            }
+            int offset = 0;
+            uint buffer = 0;
+            string result;
+            using (C.Temporary.BorrowStringBuilder(out var sb))
+            {
+                sb.EnsureCapacity(length);
+                while (length > 0)
+                {
+                    buffer |= ((uint)reader.ReadByte()) << offset;
+                    offset += 8;
+                    while (offset >= 7 & length > 0)
+                    {
+                        var symbol = buffer & 0x7F;
+                        if (IsASCII(symbol))
+                            sb.Append((char)symbol);
+                        buffer >>= 7;
+                        offset -= 7;
+                        length--;
+                    }
+                }
+                result = sb.ToString();
+            }
+            reader.EndSection();
+            return result;
+        }
+
+        public static void SkipStringASCIIPacked(this BinaryStreamReader reader, string metaInfo = null)
+        {
+            reader.BeginSection("Ascii String", metaInfo);
+            int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
+            if (length <= 0)
+            {
+                reader.EndSection();
+                return;
+            }
+            int offset = 0;
+            while (length > 0)
+            {
+                reader.ReadByte();
+                offset += 8;
+                while (offset >= 7 & length > 0)
+                {
+                    offset -= 7;
+                    length--;
+                }
+            }
+            reader.EndSection();
+        }
+
+        public static void WriteStringASCIIPacked(this BinaryStreamWriter writer, string s)
+        {
+            if (s == null)
+            {
+                writer.WriteMetadata(Metadata.CollectionSize, -1);
+                return;
+            }
+            int length = s.Length;
+            int asciiLength = 0;
+            for (int i = 0; i < length; i++)
+            {
+                uint code = (uint)s[i];
+                // ignore non-character and non-ascii symbols
+                if (IsASCII(code))
+                    asciiLength++;
+            }
+            writer.WriteMetadata(Metadata.CollectionSize, asciiLength);
+            
+            uint buffer = 0;
+            int offset = 0;
+            for (int i = 0; i < length; i++)
+            {
+                uint code = (uint)s[i];
+                // ignore non-character and non-ascii symbols
+                if (!IsASCII(code))
+                    continue;
+                buffer |= code << offset;
+                offset += 7;
+                if (offset >= 8)
+                {
+                    writer.WriteByte((byte)buffer);
+                    buffer >>= 8;
+                    offset -= 8;
+                }
+            }
+            if (offset > 0)
+                writer.WriteByte((byte)buffer);
+        }
+
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static bool IsASCII(uint symbol) => symbol > 31 & symbol < 127;
 
         #endregion
     }
