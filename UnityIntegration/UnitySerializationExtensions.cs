@@ -1,12 +1,4 @@
-﻿//#define UNITY_STRUCTS_EXIST // uncomment this line if you use Unity structs in non-unity project
-
-#if UNITY_2018_1_OR_NEWER
-#define UNITY_STRUCTS_EXIST
-#endif
-
-#if UNITY_STRUCTS_EXIST
-
-using UnityEngine;
+﻿using UnityEngine;
 
 namespace DaSerialization
 {
@@ -88,5 +80,3 @@ namespace DaSerialization
         }
     }
 }
-
-#endif
