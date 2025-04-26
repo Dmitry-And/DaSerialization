@@ -628,6 +628,7 @@ namespace DaSerialization
         //      inner section
         //          SectionDeserializationStarted
         //          SectionDeserializationEnded
+#if INSPECT_DESERIALIZATION
         public delegate void DeserializationStart(Type refType, long streamPos, string name);
         public event DeserializationStart DeserializationStarted;
         public delegate void MetaDeserializationStart(Metadata type, long streamPos, string name);
@@ -643,6 +644,7 @@ namespace DaSerialization
         public event DeserializationEnd DeserializationEnded;
         public event DeserializationEnd PrimitiveDeserializationEnded;
         public event DeserializationEnd SectionDeserializationEnded;
+#endif
         private bool _isDeserializingInternal;
 
         public void OnDeserializeBegin(Type refType, string name, long startPosition = long.MaxValue)
