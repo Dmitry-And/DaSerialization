@@ -107,17 +107,13 @@ namespace DaSerialization
 
         public static int Read3ByteInt32(this BinaryStreamReader reader)
         {
-            reader.BeginSection("3ByteInt32");
-            var result = UIntToInt(Read3ByteUInt32(reader)).ToInt32();
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("3ByteInt32"))
+                return UIntToInt(Read3ByteUInt32Inner(reader)).ToInt32();
         }
         public static uint Read3ByteUInt32(this BinaryStreamReader reader)
         {
-            reader.BeginSection("3ByteUInt32");
-            var result = Read3ByteUInt32Inner(reader);
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("3ByteUInt32"))
+                return Read3ByteUInt32Inner(reader);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static uint Read3ByteUInt32Inner(BinaryStreamReader reader)
@@ -181,17 +177,13 @@ namespace DaSerialization
 
         public static long ReadIntPacked(this BinaryStreamReader reader, int bytesCount)
         {
-            reader.BeginSection("IntPacked");
-            var result = UIntToInt(ReadUIntPacked(reader, bytesCount));
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("IntPacked"))
+                return UIntToInt(ReadUIntPacked(reader, bytesCount));
         }
         public static ulong ReadUIntPacked(this BinaryStreamReader reader, int bytesCount)
         {
-            reader.BeginSection("UIntPacked");
-            var result = ReadUIntPackedInner(reader, bytesCount);
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("UIntPacked"))
+                return ReadUIntPackedInner(reader, bytesCount);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ReadUIntPackedInner(BinaryStreamReader reader, int bytesCount)
@@ -257,17 +249,13 @@ namespace DaSerialization
 
         public static long ReadIntPacked(this BinaryStreamReader reader, string metaInfo = null)
         {
-            reader.BeginSection("Int Packed", metaInfo);
-            var result = UIntToInt(ReadUIntPackedInternal(reader));
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("Int Packed", metaInfo))
+                return UIntToInt(ReadUIntPackedInternal(reader));
         }
         public static ulong ReadUIntPacked(this BinaryStreamReader reader, string metaInfo = null)
         {
-            reader.BeginSection("UInt Packed", metaInfo);
-            var result = ReadUIntPackedInternal(reader);
-            reader.EndSection();
-            return result;
+            using (reader.DeserializationSection("UInt Packed", metaInfo))
+                return ReadUIntPackedInternal(reader);
         }
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
         private static ulong ReadUIntPackedInternal(BinaryStreamReader reader)
@@ -304,60 +292,60 @@ namespace DaSerialization
 
         public static string ReadStringASCIIPacked(this BinaryStreamReader reader, string metaInfo = null)
         {
-            reader.BeginSection("Ascii String", metaInfo);
-            int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
-            if (length <= 0)
+            using (reader.DeserializationSection("Ascii String", metaInfo))
             {
-                reader.EndSection();
-                return length < 0 ? null : "";
-            }
-            int offset = 0;
-            uint buffer = 0;
-            string result;
-            using (C.Temporary.BorrowStringBuilder(out var sb))
-            {
-                sb.EnsureCapacity(length);
-                while (length > 0)
+                int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
+                if (length <= 0)
                 {
-                    buffer |= ((uint)reader.ReadByte()) << offset;
-                    offset += 8;
-                    while (offset >= 7 & length > 0)
-                    {
-                        var symbol = buffer & 0x7F;
-                        if (IsASCII(symbol))
-                            sb.Append((char)symbol);
-                        buffer >>= 7;
-                        offset -= 7;
-                        length--;
-                    }
+                    return length < 0 ? null : "";
                 }
-                result = sb.ToString();
+                int offset = 0;
+                uint buffer = 0;
+                string result;
+                using (C.Temporary.BorrowStringBuilder(out var sb))
+                {
+                    sb.EnsureCapacity(length);
+                    while (length > 0)
+                    {
+                        buffer |= ((uint)reader.ReadByte()) << offset;
+                        offset += 8;
+                        while (offset >= 7 & length > 0)
+                        {
+                            var symbol = buffer & 0x7F;
+                            if (IsASCII(symbol))
+                                sb.Append((char)symbol);
+                            buffer >>= 7;
+                            offset -= 7;
+                            length--;
+                        }
+                    }
+                    result = sb.ToString();
+                }
+                return result;
             }
-            reader.EndSection();
-            return result;
         }
 
         public static void SkipStringASCIIPacked(this BinaryStreamReader reader, string metaInfo = null)
         {
-            reader.BeginSection("Ascii String", metaInfo);
-            int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
-            if (length <= 0)
+            using (reader.DeserializationSection("Ascii String", metaInfo))
             {
-                reader.EndSection();
-                return;
-            }
-            int offset = 0;
-            while (length > 0)
-            {
-                reader.ReadByte();
-                offset += 8;
-                while (offset >= 7 & length > 0)
+                int length = reader.ReadMetadata(Metadata.CollectionSize, "String length");
+                if (length <= 0)
                 {
-                    offset -= 7;
-                    length--;
+                    return;
+                }
+                int offset = 0;
+                while (length > 0)
+                {
+                    reader.ReadByte();
+                    offset += 8;
+                    while (offset >= 7 & length > 0)
+                    {
+                        offset -= 7;
+                        length--;
+                    }
                 }
             }
-            reader.EndSection();
         }
 
         public static void WriteStringASCIIPacked(this BinaryStreamWriter writer, string s)

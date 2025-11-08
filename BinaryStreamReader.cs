@@ -721,13 +721,35 @@ namespace DaSerialization
 #endif
         }
 
-        public void BeginSection(string type, string name = null)
+        public struct DeserializationSectionGuard : IDisposable
+        {
+#if INSPECT_DESERIALIZATION
+            private readonly BinaryStreamReader _reader;
+
+            public DeserializationSectionGuard(BinaryStreamReader reader)
+            {
+                _reader = reader;
+            }
+
+            public void Dispose()
+            {
+                _reader?.EndSection();
+            }
+#else
+            public void Dispose() { }
+#endif
+        }
+
+        public DeserializationSectionGuard DeserializationSection(string type, string name = null)
         {
 #if INSPECT_DESERIALIZATION
             if (!EnableDeserializationInspection)
-                return;
+                return default;
             var pos = _stream.Position;
             SectionDeserializationStarted?.Invoke(type, pos, name);
+            return new DeserializationSectionGuard(this);
+#else
+            return default;
 #endif
         }
         public void EndSection()

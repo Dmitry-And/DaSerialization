@@ -582,7 +582,7 @@ namespace DaSerialization
             var readId = _stream.GetReader().ReadMetadata(Metadata.ObjectID);
             if (readId != entry.ObjectId)
                 throw new Exception($"Read ObjectID ({readId}) doesn't fit the requested id ({entry.ObjectId}) in stream '{_stream.PrettyTypeName()}'");
-            return position + _contentTable[entryIndex].Length;
+            return position + entry.Length;
         }
 
         private bool ValidateAndClearStreamPosition(int entryIndex, long endPos)
