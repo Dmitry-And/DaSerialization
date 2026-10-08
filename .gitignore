@@ -5,3 +5,8 @@
 /*.meta
 # Mac OS
 *.DS_Store
+
+# Documentation metadata generated when this repository is under Unity Assets
+*.md.meta
+/docs.meta
+/docs~.meta
