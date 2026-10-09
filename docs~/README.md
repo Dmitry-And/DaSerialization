@@ -56,4 +56,6 @@ Observed style: four-space indentation, Allman braces, block namespaces, PascalC
 
 `Tests/PackedSerializationTests.cs`, `SerializationTestObjects.cs`, and `TestContainerCreator*.cs` are navigation points for packing, manual serializers and fixture creation. Some test support uses the companion custom test infrastructure; a standalone build/test host was not established in this review. No passing-test claim is made. Future authorized changes should exercise meaningful round trips and supported old versions for the affected format.
 
+The recursive fields and nested `BinaryContainer` fields in `SerializationTestObjects.cs` are marked `[NonSerialized]` to exclude them from Unity's field serializer. Their manual DaSerialization serializers still read and write them explicitly; type IDs, versions and binary field ordering are unchanged. This distinction avoids Unity's serialization cycle and unsupported-type analyzer warnings without removing the binary test fixtures.
+
 Keep dependency/host-specific schemas in their owning repositories. Do not assume any particular game, Unity parent directory, or solution exists. Preserve existing README/LICENSE; this guide supplements them.

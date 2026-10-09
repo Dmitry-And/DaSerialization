@@ -27,19 +27,20 @@ namespace DaSerialization.Tests
         public char[] CharsASCIITest;
         public byte[] BytesTest;
 
-        public TestObject TestObj;
-        public TopLevelStructure TopLevelStruct;
+        // These recursive fixtures are serialized explicitly by DaSerialization, not Unity.
+        [NonSerialized] public TestObject TestObj;
+        [NonSerialized] public TopLevelStructure TopLevelStruct;
 
-        public TestObject[] TestObjectsArray;
-        public TopLevelStructure[] TopLevelStructsArray;
-        public List<TestObject> TestObjectsList;
-        public List<TopLevelStructure> TopLevelStructsList;
+        [NonSerialized] public TestObject[] TestObjectsArray;
+        [NonSerialized] public TopLevelStructure[] TopLevelStructsArray;
+        [NonSerialized] public List<TestObject> TestObjectsList;
+        [NonSerialized] public List<TopLevelStructure> TopLevelStructsList;
 
         public ITestInterface TestInterface;
         public ITestInterface[] TestInterfacesArray;
         public List<ITestInterface> TestInterfacesList;
 
-        public BinaryContainer TestContainer;
+        [NonSerialized] public BinaryContainer TestContainer;
 
         public TestObject() 
         {
@@ -168,18 +169,19 @@ namespace DaSerialization.Tests
         public byte[] BytesTest;
 
         public BottomLevelStructure BottomLevelStruct;
-        public TestObject TestObj;
+        // These recursive fixtures are serialized explicitly by DaSerialization, not Unity.
+        [NonSerialized] public TestObject TestObj;
 
-        public TestObject[] TestObjectsArray;
-        public TopLevelStructure[] TopLevelStructsArray;
-        public List<TestObject> TestObjectsList;
-        public List<TopLevelStructure> TopLevelStructsList;
+        [NonSerialized] public TestObject[] TestObjectsArray;
+        [NonSerialized] public TopLevelStructure[] TopLevelStructsArray;
+        [NonSerialized] public List<TestObject> TestObjectsList;
+        [NonSerialized] public List<TopLevelStructure> TopLevelStructsList;
 
         public ITestInterface TestInterface;
         public ITestInterface[] TestInterfacesArray;
         public List<ITestInterface> TestInterfacesList;
 
-        public BinaryContainer TestContainer;
+        [NonSerialized] public BinaryContainer TestContainer;
 
         public static TopLevelStructure Default
             => new TopLevelStructure() 
